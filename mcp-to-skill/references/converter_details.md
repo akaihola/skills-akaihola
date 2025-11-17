@@ -1,3 +1,14 @@
+# Converter Technical Details
+
+## Conversion Process
+
+The MCP to Skill converter transforms MCP server configurations into Claude Skills through a multi-step process.
+
+### Step 1: Configuration Validation
+
+Load and validate the MCP server configuration:
+
+```json
 {
   "name": "server-name",
   "command": "npx",
