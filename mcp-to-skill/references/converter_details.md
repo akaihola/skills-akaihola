@@ -79,34 +79,7 @@ class MCPExecutor:
 
 ## Context Optimization
 
-### Token Usage Comparison
-
-| Scenario | MCP (preload) | Skill (dynamic) | Savings |
-|----------|---------------|-----------------|---------|
-| Idle | 10,000-50,000 tokens | 100 tokens | 99% |
-| Active | 10,000-50,000 tokens | 5,000 tokens | 50-90% |
-| Executing | 10,000-50,000 tokens | 0 tokens | 100% |
-
-### Calculation Method
-
-Context savings calculated as:
-- Idle: (MCP tokens - Skill tokens) / MCP tokens
-- Active: (MCP tokens - Skill tokens) / MCP tokens
-- Executing: (MCP tokens - 0) / MCP tokens
-
-## Performance Considerations
-
-### Startup Time
-- MCP: Faster (all tools loaded once)
-- Skill: Slightly slower (tools loaded on demand)
-
-### Memory Usage
-- MCP: Higher (all tool definitions in memory)
-- Skill: Lower (only active tools in memory)
-
-### Network Efficiency
-- MCP: More efficient for frequent tool usage
-- Skill: More efficient for infrequent tool usage
+For detailed context optimization strategies, token usage comparisons, and performance considerations, see `context_optimization.md`.
 
 ## Compatibility
 
