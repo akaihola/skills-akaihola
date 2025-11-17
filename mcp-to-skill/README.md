@@ -103,6 +103,14 @@ python executor.py --call '{"tool": "tool_name", "arguments": {...}}'
 
 **"MCP server not responding"**: Verify command, arguments, and environment variables in your config file
 
+**"TypeError: object _AsyncGeneratorContextManager can't be used in 'await' expression"**: This has been fixed in the local template. Ensure you're using the latest version of `convert_mcp_to_skill.py`. See `references/async_context_manager_fix.md` for details.
+
+## Recent Updates
+
+### Async Context Manager Fix (Latest)
+
+The converter now properly handles MCP's async context manager protocol. All generated skills automatically include this fix. For technical details, see `references/async_context_manager_fix.md`.
+
 ## Credits
 
 This skill uses the mcp-to-skill-converter from https://github.com/GBSOSS/-mcp-to-skill-converter

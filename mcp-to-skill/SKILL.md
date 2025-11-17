@@ -153,6 +153,19 @@ Verify the config file:
 - Environment variables are set
 - Server is accessible
 
+### "TypeError: object _AsyncGeneratorContextManager can't be used in 'await' expression"
+
+This error has been fixed in recent versions. The issue occurred with improper async context manager handling. 
+
+**Solution:** Ensure you're using the latest version of the converter:
+
+```bash
+cd mcp-to-skill
+python scripts/convert_mcp_to_skill.py --mcp-config your-config.json --output-dir ./your-skill
+```
+
+For technical details about this fix, see `references/async_context_manager_fix.md`.
+
 ## Requirements
 
 - Python 3.8+

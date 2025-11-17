@@ -88,9 +88,29 @@ class MCPSkillGenerator:
             self._cleanup()
 
     async def _download_converter(self):
-        """Download the latest mcp_to_skill.py converter."""
-        print("Downloading latest converter script...")
+        """Download the latest mcp_to_skill.py converter or use local version."""
+        # Check if we have a local fixed version
+        local_converter = Path(__file__).parent / "mcp_to_skill_fixed.py"
 
+        if local_converter.exists():
+            print("Using local fixed converter script...")
+            try:
+                with open(local_converter, "r") as f:
+                    converter_script = f.read()
+
+                converter_path = self.output_dir / "mcp_to_skill.py"
+                with open(converter_path, "w") as f:
+                    f.write(converter_script)
+
+                converter_path.chmod(0o755)  # Make executable
+                print(f"✓ Copied local converter to: {converter_path}")
+                return
+            except Exception as e:
+                print(f"Warning: Error using local converter: {e}")
+                print("Falling back to downloading from GitHub...")
+
+        # Fallback to downloading from GitHub
+        print("Downloading latest converter script...")
         try:
             with urllib.request.urlopen(self.converter_url) as response:
                 converter_script = response.read().decode("utf-8")
