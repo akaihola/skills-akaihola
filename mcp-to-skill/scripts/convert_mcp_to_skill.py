@@ -123,49 +123,18 @@ class MCPSkillGenerator:
         docs_dir = self.output_dir / "docs"
         docs_dir.mkdir(exist_ok=True)
 
-        # Create a README with usage instructions
-        readme_content = f"""# {self.server_name} Skill
+        # Load README template
+        template_path = (
+            Path(__file__).parent.parent / "assets" / "templates" / "README.md.template"
+        )
+        with open(template_path, "r") as f:
+            readme_template = f.read()
 
-This skill was generated from an MCP server configuration using the mcp-to-skill converter.
-
-## Installation
-
-1. Install dependencies:
-```bash
-pip install mcp
-```
-
-2. The skill is ready to use with Claude.
-
-## Usage
-
-Claude will automatically discover this skill and use it when appropriate.
-
-## Testing
-
-You can test the skill directly:
-
-```bash
-# List available tools
-python executor.py --list
-
-# Get details about a specific tool
-python executor.py --describe tool_name
-
-# Call a tool
-python executor.py --call '{{"tool": "tool_name", "arguments": {{"param": "value"}}}}'
-```
-
-## Configuration
-
-The MCP server configuration is stored in `mcp-config.json`.
-
-## Context Savings
-
-This skill provides significant context savings compared to using the MCP server directly:
-- Idle: ~100 tokens vs ~{len(self.mcp_config.get('tools', [])) * 500} tokens
-- Active: ~5k tokens vs ~{len(self.mcp_config.get('tools', [])) * 500} tokens
-"""
+        # Populate template
+        estimated_tokens = len(self.mcp_config.get("tools", [])) * 500
+        readme_content = readme_template.format(
+            server_name=self.server_name, estimated_tokens=estimated_tokens
+        )
 
         readme_path = self.output_dir / "README.md"
         with open(readme_path, "w") as f:
@@ -178,44 +147,15 @@ This skill provides significant context savings compared to using the MCP server
         examples_dir = self.output_dir / "examples"
         examples_dir.mkdir(exist_ok=True)
 
-        # Create a simple test script
-        test_script_content = "#!/usr/bin/env python3\n"
-        test_script_content += '"""\nTest script for generated skill\n"""\n\n'
-        test_script_content += "import json\n"
-        test_script_content += "import subprocess\n"
-        test_script_content += "import sys\n\n"
-        test_script_content += "def run_command(cmd):\n"
-        test_script_content += '    """Run a command and return the result."""\n'
-        test_script_content += "    try:\n"
-        test_script_content += "        result = subprocess.run(cmd, capture_output=True, text=True, check=True)\n"
-        test_script_content += "        return result.stdout\n"
-        test_script_content += "    except subprocess.CalledProcessError as e:\n"
-        test_script_content += '        return f"Error: {e.stderr}"\n\n'
-        test_script_content += "def main():\n"
-        test_script_content += '    """Test the generated skill."""\n'
-        test_script_content += '    print("Testing generated skill...")\n\n'
-        test_script_content += "    # Test listing tools\n"
-        test_script_content += '    print("\\n1. Listing available tools:")\n'
-        test_script_content += '    tools_output = run_command([sys.executable, "executor.py", "--list"])\n'
-        test_script_content += "    print(tools_output)\n\n"
-        test_script_content += "    # Parse tools\n"
-        test_script_content += "    try:\n"
-        test_script_content += "        tools = json.loads(tools_output)\n"
-        test_script_content += "        if tools and len(tools) > 0:\n"
-        test_script_content += '            first_tool = tools[0]["name"]\n\n'
-        test_script_content += "            # Test describing a tool\n"
-        test_script_content += (
-            '            print(f"\\n2. Describing tool: {first_tool}")\n'
+        # Load test script template
+        template_path = (
+            Path(__file__).parent.parent
+            / "assets"
+            / "templates"
+            / "test_skill.py.template"
         )
-        test_script_content += '            describe_output = run_command([sys.executable, "executor.py", "--describe", first_tool])\n'
-        test_script_content += "            print(describe_output)\n"
-        test_script_content += "        else:\n"
-        test_script_content += '            print("No tools found to test")\n'
-        test_script_content += "    except json.JSONDecodeError:\n"
-        test_script_content += '        print("Could not parse tools list")\n\n'
-        test_script_content += '    print("\\nTest complete")\n\n'
-        test_script_content += 'if __name__ == "__main__":\n'
-        test_script_content += "    main()\n"
+        with open(template_path, "r") as f:
+            test_script_content = f.read()
 
         test_script_path = examples_dir / "test_skill.py"
         with open(test_script_path, "w") as f:
