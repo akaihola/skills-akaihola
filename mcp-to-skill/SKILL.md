@@ -1,11 +1,11 @@
 name: mcp-to-skill
-description: Convert any MCP server into a Claude Skill with 90% context savings. This skill should be used when the user wants to convert an MCP server to a skill to reduce context usage and improve performance.
+description: Convert any MCP server into a Claude Skill with 90% context savings. Use this skill when converting an MCP server to a skill to reduce context usage and improve performance.
 version: 1.0.0
 ---
 
 # MCP to Skill Converter
 
-This skill converts any MCP (Model Context Protocol) server into a Claude Skill using the progressive disclosure pattern, resulting in significant context savings and improved performance.
+Convert any MCP (Model Context Protocol) server into a Claude Skill using the progressive disclosure pattern for significant context savings and improved performance.
 
 ## Context Efficiency Benefits
 
@@ -13,7 +13,7 @@ Traditional MCP approach:
 - All tools loaded at startup (10-50k tokens for 20+ tools)
 - Context available: 85% of total
 
-This skill approach:
+Skill approach:
 - Metadata only: ~100 tokens at startup
 - Full instructions (when used): ~5k tokens
 - Tool execution: 0 tokens (runs externally)
@@ -22,28 +22,28 @@ This skill approach:
 ## When to Use This Skill
 
 Use this converter when:
-- You have 10+ MCP tools
+- Working with 10+ MCP tools
 - Context space is tight
-- Most tools won't be used in each conversation
+- Most tools are not used in each conversation
 - Tools are independent
 
 Stick with direct MCP when:
-- You have 1-5 tools
-- Need complex OAuth flows
-- Need persistent connections
+- Working with 1-5 tools
+- Complex OAuth flows are required
+- Persistent connections are needed
 - Cross-platform compatibility is critical
 
 ## How It Works
 
-The converter applies the "progressive disclosure" pattern:
-1. Reads your MCP server configuration
-2. Generates a Skill structure with:
+Apply the "progressive disclosure" pattern:
+1. Read the MCP server configuration
+2. Generate a Skill structure with:
    - SKILL.md - Instructions for Claude
    - executor.py - Handles MCP calls dynamically
    - Config files
-3. Claude loads metadata only (~100 tokens)
-4. Full instructions load when the skill is needed
-5. Executor runs MCP tools outside context
+3. Load metadata only (~100 tokens)
+4. Load full instructions when the skill is needed
+5. Run MCP tools through executor outside context
 
 ## Usage Pattern
 
@@ -87,7 +87,7 @@ cp -r ./output-dir ~/.claude/skills/skill-name
 
 ### convert_mcp_to_skill.py
 
-Main converter script that transforms MCP configurations into skills.
+Transform MCP configurations into skills using this main converter script.
 
 Usage:
 ```bash
@@ -100,7 +100,7 @@ Parameters:
 
 ## Example MCP Configurations
 
-See `assets/examples/` for sample MCP configurations:
+Reference `assets/examples/` for sample MCP configurations:
 
 - GitHub MCP server
 - Slack MCP server
@@ -109,7 +109,7 @@ See `assets/examples/` for sample MCP configurations:
 
 ## Generated Skill Structure
 
-The converter creates the following structure:
+Generated skills follow this structure:
 
 ```
 skill-name/
@@ -121,7 +121,7 @@ skill-name/
 
 ## Testing Generated Skills
 
-After conversion, test the generated skill:
+Test generated skills after conversion:
 
 ```bash
 cd skill-directory
@@ -140,13 +140,15 @@ python executor.py --call '{"tool": "tool_name", "arguments": {...}}'
 
 ### "mcp package not found"
 
+Install the mcp package:
+
 ```bash
 pip install mcp
 ```
 
 ### "MCP server not responding"
 
-Check your config file:
+Verify the config file:
 - Command is correct
 - Environment variables are set
 - Server is accessible
@@ -158,7 +160,7 @@ Check your config file:
 
 ## References
 
-For more information, see:
+Reference these files for additional information:
 - `references/mcp_basics.md` - MCP protocol fundamentals
 - `references/converter_details.md` - Technical details about the converter
 - `references/context_optimization.md` - Context optimization strategies
