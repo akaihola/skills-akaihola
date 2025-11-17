@@ -1,44 +1,26 @@
 # MCP to Skill Converter
 
-This skill converts any MCP (Model Context Protocol) server into a Claude Skill using the progressive disclosure pattern, resulting in significant context savings and improved performance.
+Convert Model Context Protocol (MCP) servers into Claude Skills with 90-99% context savings using progressive disclosure.
 
-## Overview
+## What This Does
 
-The MCP to Skill Converter applies the "progressive disclosure" pattern to MCP servers:
-- **At startup**: Only skill metadata is loaded (~100 tokens)
-- **On use**: Full tool list and instructions are loaded (~5k tokens)
-- **On execution**: Tools are called dynamically (0 context tokens)
+Transforms MCP servers into Claude Skills that load tools on-demand instead of preloading all tool definitions. This dramatically reduces context token usage while maintaining full functionality.
 
-This approach can reduce context usage by 90-99% compared to traditional MCP implementations.
+## Installation
 
-## Benefits
+```bash
+# 1. Convert an MCP server config to a skill
+python scripts/convert_mcp_to_skill.py \
+  --mcp-config path/to/config.json \
+  --output-dir ./output-dir
 
-### Context Efficiency
-- Traditional MCP: All tools loaded at startup (10-50k tokens for 20+ tools)
-- Skill approach: Metadata only (~100 tokens) until used
-- Result: More context available for actual work
+# 2. Install dependencies in the generated skill
+cd ./output-dir
+pip install mcp
 
-### Performance
-- Faster startup with minimal context loading
-- Efficient tool execution without context overhead
-- Better memory usage for large tool sets
-
-## Quick Start
-
-1. Create an MCP configuration file (see examples in `assets/examples/`)
-2. Run the converter:
-   ```bash
-   python scripts/convert_mcp_to_skill.py --mcp-config path/to/config.json --output-dir ./output-dir
-   ```
-3. Install dependencies:
-   ```bash
-   cd ./output-dir
-   pip install mcp
-   ```
-4. Install the skill:
-   ```bash
-   cp -r ./output-dir ~/.claude/skills/skill-name
-   ```
+# 3. Install the skill for Claude
+cp -r ./output-dir ~/.claude/skills/skill-name
+```
 
 ## Examples
 
@@ -69,19 +51,11 @@ for config in assets/examples/*.json; do
 done
 ```
 
-## When to Use
+## When to Use This
 
-### Use this converter when:
-- You have 10+ MCP tools
-- Context space is tight
-- Most tools won't be used in each conversation
-- Tools are independent
+**Convert to skill** if you have 10+ tools and want to maximize available context.
 
-### Stick with MCP when:
-- You have 1-5 tools
-- Need complex OAuth flows
-- Need persistent connections
-- Cross-platform compatibility is critical
+**Keep using MCP directly** if you have 5 or fewer tools, need OAuth flows, or require persistent connections.
 
 ## Structure
 
@@ -108,20 +82,8 @@ mcp-to-skill/
 - mcp package (install with `pip install mcp`)
 - Internet connection (for downloading converter)
 
-## Troubleshooting
+## Testing Generated Skills
 
-### "mcp package not found"
-```bash
-pip install mcp
-```
-
-### "MCP server not responding"
-Check your config file:
-- Command is correct
-- Environment variables are set
-- Server is accessible
-
-### Testing generated skills
 ```bash
 cd skill-directory
 
@@ -135,14 +97,11 @@ python executor.py --describe tool_name
 python executor.py --call '{"tool": "tool_name", "arguments": {...}}'
 ```
 
-## Performance Comparison
+## Troubleshooting
 
-Real example with GitHub MCP server (8 tools):
+**"mcp package not found"**: Run `pip install mcp`
 
-| Metric | MCP | Skill | Savings |
-|--------|-----|-------|---------|
-| Idle | 8,000 tokens | 100 tokens | 98.75% |
-| Active | 8,000 tokens | 5,000 tokens | 37.5% |
+**"MCP server not responding"**: Verify command, arguments, and environment variables in your config file
 
 ## Credits
 
