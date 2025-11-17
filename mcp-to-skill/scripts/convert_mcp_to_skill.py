@@ -33,26 +33,59 @@ class MCPSkillGenerator:
         self.output_dir = Path(output_dir)
         self.server_name = mcp_config.get("name", "unnamed-mcp-server")
         self.converter_url = "https://raw.githubusercontent.com/GBSOSS/-mcp-to-skill-converter/main/mcp_to_skill.py"
+        self.temp_files = []  # Track temporary files for cleanup
+
+    def _validate_config(self):
+        """Validate the MCP configuration structure."""
+        required_fields = ["name", "command"]
+        missing_fields = [
+            field for field in required_fields if field not in self.mcp_config
+        ]
+
+        if missing_fields:
+            raise ValueError(
+                f"MCP config missing required fields: {', '.join(missing_fields)}"
+            )
+
+        if not isinstance(self.mcp_config.get("args", []), list):
+            raise ValueError("MCP config 'args' field must be a list")
+
+        if "env" in self.mcp_config and not isinstance(self.mcp_config["env"], dict):
+            raise ValueError("MCP config 'env' field must be a dictionary")
+
+        print("✓ MCP configuration validated")
 
     async def generate(self):
         """Generate the complete skill structure."""
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            # Validate configuration first
+            self._validate_config()
 
-        print(f"Generating skill for MCP server: {self.server_name}")
+            # Check if output directory exists and has files
+            if self.output_dir.exists() and any(self.output_dir.iterdir()):
+                print(f"Warning: Output directory {self.output_dir} is not empty")
+                print("Existing files may be overwritten")
 
-        # 1. Download the latest converter script
-        await self._download_converter()
+            self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 2. Run the converter to generate the skill
-        await self._run_converter()
+            print(f"Generating skill for MCP server: {self.server_name}")
 
-        # 3. Add additional documentation
-        self._add_documentation()
+            # 1. Download the latest converter script
+            await self._download_converter()
 
-        # 4. Add example usage
-        self._add_examples()
+            # 2. Run the converter to generate the skill
+            await self._run_converter()
 
-        print(f"✓ Skill generated at: {self.output_dir}")
+            # 3. Add additional documentation
+            self._add_documentation()
+
+            # 4. Add example usage
+            self._add_examples()
+
+            print(f"✓ Skill generated at: {self.output_dir}")
+        finally:
+            # Clean up temporary files
+            self._cleanup()
 
     async def _download_converter(self):
         """Download the latest mcp_to_skill.py converter."""
@@ -79,6 +112,8 @@ class MCPSkillGenerator:
 
         # Create a temporary config file
         temp_config_path = self.output_dir / "temp_mcp_config.json"
+        self.temp_files.append(temp_config_path)  # Track for cleanup
+
         with open(temp_config_path, "w") as f:
             json.dump(self.mcp_config, f, indent=2)
 
@@ -108,9 +143,6 @@ class MCPSkillGenerator:
                             dest.unlink()
                     shutil.move(str(item), str(dest))
                 shutil.rmtree(generated_skill_dir)
-
-            # Clean up temp config
-            temp_config_path.unlink()
 
         except subprocess.CalledProcessError as e:
             print(f"Error running converter: {e}")
@@ -181,6 +213,16 @@ class MCPSkillGenerator:
 
         test_script_path.chmod(0o755)
         print(f"✓ Added test script: {test_script_path}")
+
+    def _cleanup(self):
+        """Clean up temporary files."""
+        for temp_file in self.temp_files:
+            try:
+                if temp_file.exists():
+                    temp_file.unlink()
+                    print(f"✓ Cleaned up: {temp_file.name}")
+            except Exception as e:
+                print(f"Warning: Could not delete temporary file {temp_file}: {e}")
 
 
 async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
