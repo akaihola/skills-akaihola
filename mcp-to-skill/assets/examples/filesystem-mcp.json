@@ -1,0 +1,7 @@
+{
+  "name": "filesystem",
+  "description": "Filesystem access via MCP",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/directory"],
+  "env": {}
+}

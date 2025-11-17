@@ -1,0 +1,9 @@
+{
+  "name": "slack",
+  "description": "Slack API access via MCP",
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-slack"],
+  "env": {
+    "SLACK_BOT_TOKEN": "xoxb-your-slack-bot-token-here"
+  }
+}

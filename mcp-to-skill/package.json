@@ -1,0 +1,29 @@
+{
+  "name": "mcp-to-skill",
+  "version": "1.0.0",
+  "description": "Convert any MCP server into a Claude Skill with 90% context savings",
+  "main": "scripts/convert_mcp_to_skill.py",
+  "scripts": {
+    "convert": "python scripts/convert_mcp_to_skill.py",
+    "test": "python scripts/convert_mcp_to_skill.py --mcp-config assets/examples/github-mcp.json --output-dir ./test-output"
+  },
+  "keywords": [
+    "mcp",
+    "skill",
+    "claude",
+    "context-optimization",
+    "converter"
+  ],
+  "author": "Antti Kaihola",
+  "license": "MIT",
+  "dependencies": {
+    "mcp": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GBSOSS/-mcp-to-skill-converter"
+  },
+  "engines": {
+    "python": ">=3.8"
+  }
+}
