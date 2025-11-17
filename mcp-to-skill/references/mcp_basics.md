@@ -1,3 +1,16 @@
+# MCP Basics
+
+## Model Context Protocol Overview
+
+The Model Context Protocol (MCP) is a standardized protocol for connecting AI models to external tools and data sources. MCP servers expose tools that AI assistants can discover and invoke dynamically.
+
+## MCP Server Configuration
+
+MCP servers are configured using JSON files that specify how to launch and communicate with the server.
+
+### Basic Configuration Format
+
+```json
 {
   "name": "server-name",
   "command": "npx",
