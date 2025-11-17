@@ -6,7 +6,7 @@ This skill was generated from an MCP server configuration using the mcp-to-skill
 
 1. Install dependencies:
 ```bash
-pip install mcp
+uv pip install mcp
 ```
 
 2. The skill is ready to use with Claude.

@@ -74,7 +74,7 @@ python scripts/convert_mcp_to_skill.py --mcp-config path/to/config.json --output
 
 ```bash
 cd ./output-dir
-pip install mcp
+uv pip install mcp
 ```
 
 ### Step 4: Install the Skill
@@ -143,7 +143,7 @@ python executor.py --call '{"tool": "tool_name", "arguments": {...}}'
 Install the mcp package:
 
 ```bash
-pip install mcp
+uv pip install mcp
 ```
 
 ### "MCP server not responding"
@@ -156,7 +156,7 @@ Verify the config file:
 ## Requirements
 
 - Python 3.8+
-- mcp package (install with `pip install mcp`)
+- mcp package (install with `uv pip install mcp`)
 
 ## References
 

@@ -259,7 +259,7 @@ async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
     print(f"\nTo use this skill:")
     print(f"1. Install dependencies:")
     print(f"   cd {output_dir}")
-    print(f"   pip install mcp")
+    print(f"   uv pip install mcp")
     print(f"\n2. Copy to Claude skills directory:")
     print(f"   cp -r {output_dir} ~/.claude/skills/")
     print(f"\n3. Claude will discover it automatically")

@@ -93,7 +93,7 @@ The converter works with any standard MCP server:
 
 ### Requirements
 - Python 3.8+
-- mcp package (install with `pip install mcp`)
+- mcp package (install with `uv pip install mcp`)
 - Internet connection (for downloading converter)
 
 ## Limitations
@@ -138,7 +138,7 @@ The converter works with any standard MCP server:
    - Ensure server is accessible
 
 3. **Generated Skill Doesn't Work**
-   - Install mcp package: `pip install mcp`
+   - Install mcp package: `uv pip install mcp`
    - Check executor permissions
    - Verify MCP server is running
 

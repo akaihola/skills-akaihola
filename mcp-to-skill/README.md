@@ -16,7 +16,7 @@ python scripts/convert_mcp_to_skill.py \
 
 # 2. Install dependencies in the generated skill
 cd ./output-dir
-pip install mcp
+uv pip install mcp
 
 # 3. Install the skill for Claude
 cp -r ./output-dir ~/.claude/skills/skill-name
@@ -79,7 +79,7 @@ mcp-to-skill/
 ## Requirements
 
 - Python 3.8+
-- mcp package (install with `pip install mcp`)
+- mcp package (install with `uv pip install mcp`)
 - Internet connection (for downloading converter)
 
 ## Testing Generated Skills
@@ -99,7 +99,7 @@ python executor.py --call '{"tool": "tool_name", "arguments": {...}}'
 
 ## Troubleshooting
 
-**"mcp package not found"**: Run `pip install mcp`
+**"mcp package not found"**: Run `uv pip install mcp`
 
 **"MCP server not responding"**: Verify command, arguments, and environment variables in your config file
 
