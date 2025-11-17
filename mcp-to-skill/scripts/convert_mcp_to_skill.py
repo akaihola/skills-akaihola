@@ -127,8 +127,17 @@ class MCPSkillGenerator:
         template_path = (
             Path(__file__).parent.parent / "assets" / "templates" / "README.md.template"
         )
-        with open(template_path, "r") as f:
-            readme_template = f.read()
+        try:
+            with open(template_path, "r") as f:
+                readme_template = f.read()
+        except FileNotFoundError:
+            print(f"Error: Template file not found: {template_path}")
+            print("Skipping README generation")
+            return
+        except IOError as e:
+            print(f"Error reading template file: {e}")
+            print("Skipping README generation")
+            return
 
         # Populate template
         estimated_tokens = len(self.mcp_config.get("tools", [])) * 500
@@ -154,8 +163,17 @@ class MCPSkillGenerator:
             / "templates"
             / "test_skill.py.template"
         )
-        with open(template_path, "r") as f:
-            test_script_content = f.read()
+        try:
+            with open(template_path, "r") as f:
+                test_script_content = f.read()
+        except FileNotFoundError:
+            print(f"Error: Template file not found: {template_path}")
+            print("Skipping test script generation")
+            return
+        except IOError as e:
+            print(f"Error reading template file: {e}")
+            print("Skipping test script generation")
+            return
 
         test_script_path = examples_dir / "test_skill.py"
         with open(test_script_path, "w") as f:
@@ -169,8 +187,18 @@ async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
     """Convert an MCP server configuration to a Skill."""
 
     # Load MCP config
-    with open(mcp_config_path) as f:
-        mcp_config = json.load(f)
+    try:
+        with open(mcp_config_path) as f:
+            mcp_config = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: MCP config file not found: {mcp_config_path}")
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in config file: {e}")
+        sys.exit(1)
+    except IOError as e:
+        print(f"Error reading config file: {e}")
+        sys.exit(1)
 
     # Generate skill
     generator = MCPSkillGenerator(mcp_config, Path(output_dir))
