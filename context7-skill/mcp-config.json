@@ -1,0 +1,10 @@
+{
+  "name": "context7",
+  "description": "Context7 MCP server provides up-to-date, version-specific documentation and code examples for programming languages and services. Dynamically injects current official documentation directly into the context window.",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@upstash/context7-mcp@latest"
+  ],
+  "env": {}
+}

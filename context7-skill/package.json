@@ -1,0 +1,8 @@
+{
+  "name": "skill-context7",
+  "version": "1.0.0",
+  "description": "Claude Skill wrapper for context7 MCP server",
+  "scripts": {
+    "setup": "pip install mcp"
+  }
+}

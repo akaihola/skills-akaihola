@@ -1,0 +1,41 @@
+# context7 Skill
+
+This skill was generated from an MCP server configuration using the mcp-to-skill converter.
+
+## Installation
+
+1. Install dependencies:
+```bash
+uv pip install mcp
+```
+
+2. The skill is ready to use with Claude.
+
+## Usage
+
+Claude will automatically discover this skill and use it when appropriate.
+
+## Testing
+
+You can test the skill directly:
+
+```bash
+# List available tools
+python executor.py --list
+
+# Get details about a specific tool
+python executor.py --describe tool_name
+
+# Call a tool
+python executor.py --call '{"tool": "tool_name", "arguments": {"param": "value"}}'
+```
+
+## Configuration
+
+The MCP server configuration is stored in `mcp-config.json`.
+
+## Context Savings
+
+This skill provides significant context savings compared to using the MCP server directly:
+- Idle: ~100 tokens vs ~0 tokens
+- Active: ~5k tokens vs ~0 tokens
