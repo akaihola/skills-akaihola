@@ -19,6 +19,7 @@ import json
 import sqlite3
 import sys
 from os import path
+from typing import Any
 
 import zstandard as zstd
 from pygments import highlight
@@ -55,7 +56,7 @@ def decompress_if_needed(data_type: str, blob: bytes) -> bytes:
     return blob
 
 
-def parse_thread_json(raw_json: bytes) -> dict[str, any]:
+def parse_thread_json(raw_json: bytes) -> dict[str, Any]:
     obj = json.loads(raw_json)
     # saved shape: { "thread": <DbThread>, "version": "0.x" } or direct DbThread
     if isinstance(obj, dict) and "thread" in obj:
@@ -63,7 +64,7 @@ def parse_thread_json(raw_json: bytes) -> dict[str, any]:
     return obj
 
 
-def read_all_threads(db_path: str = DB_PATH) -> list[dict[str, any]]:
+def read_all_threads(db_path: str = DB_PATH) -> list[dict[str, Any]]:
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     rows = cur.execute(
@@ -82,7 +83,7 @@ def read_all_threads(db_path: str = DB_PATH) -> list[dict[str, any]]:
     return results
 
 
-def make_yaml_output(thread_row: dict[str, any], use_highlighting: bool = True) -> None:
+def make_yaml_output(thread_row: dict[str, Any], use_highlighting: bool = True) -> None:
     yaml = YAML()
     yaml.default_flow_style = False
     yaml.width = 4096
