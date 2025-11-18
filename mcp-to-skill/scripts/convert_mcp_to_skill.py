@@ -11,6 +11,9 @@ This implements the "progressive disclosure" pattern:
 
 Usage:
     python scripts/convert_mcp_to_skill.py --mcp-config mcp-server-config.json --output-dir ./skills/my-mcp-skill
+
+Note: This script requires a local mcp_to_skill.py converter script to be present
+in the same directory.
 """
 
 import argparse
@@ -20,19 +23,17 @@ import os
 import shutil
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class MCPSkillGenerator:
     """Generate a Skill from an MCP server configuration."""
 
-    def __init__(self, mcp_config: Dict[str, Any], output_dir: Path):
+    def __init__(self, mcp_config: dict[str, Any], output_dir: Path):
         self.mcp_config = mcp_config
         self.output_dir = Path(output_dir)
         self.server_name = mcp_config.get("name", "unnamed-mcp-server")
-        self.converter_url = "https://raw.githubusercontent.com/GBSOSS/-mcp-to-skill-converter/main/mcp_to_skill.py"
         self.temp_files = []  # Track temporary files for cleanup
 
     def _validate_config(self):
@@ -70,16 +71,13 @@ class MCPSkillGenerator:
 
             print(f"Generating skill for MCP server: {self.server_name}")
 
-            # 1. Download the latest converter script
-            await self._download_converter()
-
-            # 2. Run the converter to generate the skill
+            # 1. Run the converter to generate the skill
             await self._run_converter()
 
-            # 3. Add additional documentation
+            # 2. Add additional documentation
             self._add_documentation()
 
-            # 4. Add example usage
+            # 3. Add example usage
             self._add_examples()
 
             print(f"✓ Skill generated at: {self.output_dir}")
@@ -87,36 +85,23 @@ class MCPSkillGenerator:
             # Clean up temporary files
             self._cleanup()
 
-    async def _download_converter(self):
-        """Download the latest mcp_to_skill.py converter or use local version."""
-        # Check if we have a local fixed version
-        local_converter = Path(__file__).parent / "mcp_to_skill_fixed.py"
+    def _check_local_converter(self):
+        """Check if the local converter script exists."""
+        local_converter = Path(__file__).parent / "mcp_to_skill.py"
 
-        if local_converter.exists():
-            print("Using local fixed converter script...")
-            # No need to copy the script, we'll run it directly from its location
-            return
-
-        # Fallback to downloading from GitHub
-        print("Downloading latest converter script...")
-        try:
-            with urllib.request.urlopen(self.converter_url) as response:
-                converter_script = response.read().decode("utf-8")
-
-            converter_path = self.output_dir / "mcp_to_skill.py"
-            with open(converter_path, "w") as f:
-                f.write(converter_script)
-
-            converter_path.chmod(0o755)  # Make executable
-            print(f"✓ Downloaded converter to: {converter_path}")
-
-        except Exception as e:
-            print(f"Error downloading converter: {e}")
+        if not local_converter.exists():
+            print("Error: Local converter script not found!")
+            print(f"Expected at: {local_converter}")
             sys.exit(1)
 
+        print("Using local converter script...")
+
     async def _run_converter(self):
-        """Run the downloaded converter script."""
+        """Run the local converter script."""
         print("Running converter script...")
+
+        # Check if local converter exists
+        self._check_local_converter()
 
         # Create a temporary config file
         temp_config_path = self.output_dir / "temp_mcp_config.json"
@@ -129,7 +114,7 @@ class MCPSkillGenerator:
         try:
             cmd = [
                 sys.executable,
-                str(Path(__file__).parent / "mcp_to_skill_fixed.py"),
+                str(Path(__file__).parent / "mcp_to_skill.py"),
                 "--mcp-config",
                 str(temp_config_path),
                 "--output-dir",
@@ -140,7 +125,7 @@ class MCPSkillGenerator:
             print(result.stdout)
 
         except subprocess.CalledProcessError as e:
-            print(f"Error running converter: {e}")
+            print(f"Error running local converter: {e}")
             print(f"Stdout: {e.stdout}")
             print(f"Stderr: {e.stderr}")
             sys.exit(1)
@@ -220,7 +205,7 @@ class MCPSkillGenerator:
                 print(f"Warning: Could not delete temporary file {temp_file}: {e}")
 
 
-async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
+async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str) -> None:
     """Convert an MCP server configuration to a Skill."""
 
     # Load MCP config
@@ -265,7 +250,7 @@ async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
     print(f"  Reduction: ~90-99%")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert MCP server to Claude Skill with progressive disclosure",
         epilog="Example: python scripts/convert_mcp_to_skill.py --mcp-config github-mcp.json --output-dir ./skills/github",

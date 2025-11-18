@@ -19,7 +19,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Import mcp package
 from mcp import ClientSession, StdioServerParameters
@@ -29,7 +29,7 @@ from mcp.client.stdio import stdio_client
 class MCPSkillGenerator:
     """Generate a Skill from an MCP server configuration."""
 
-    def __init__(self, mcp_config: Dict[str, Any], output_dir: Path):
+    def __init__(self, mcp_config: dict[str, Any], output_dir: Path):
         self.mcp_config = mcp_config
         self.output_dir = Path(output_dir)
         self.server_name = mcp_config.get("name", "unnamed-mcp-server")
@@ -58,7 +58,7 @@ class MCPSkillGenerator:
         print(f"✓ Skill generated at: {self.output_dir}")
         print(f"✓ Tools available: {len(tools)}")
 
-    async def _get_mcp_tools(self) -> List[Dict[str, Any]]:
+    async def _get_mcp_tools(self) -> list[dict[str, Any]]:
         """Connect to MCP server and get available tools."""
         command = self.mcp_config.get("command", "")
 
@@ -92,7 +92,7 @@ class MCPSkillGenerator:
             print(f"Error connecting to MCP server: {e}", file=sys.stderr)
             raise e
 
-    def _generate_skill_md(self, tools: List[Dict[str, Any]]):
+    def _generate_skill_md(self, tools: list[dict[str, Any]]):
         """Generate the SKILL.md file with instructions for Claude."""
 
         # Create tool list for Claude
@@ -178,7 +178,7 @@ class MCPSkillGenerator:
         print(f"✓ Generated: {package_path}")
 
 
-async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
+async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str) -> None:
     """Convert an MCP server configuration to a Skill."""
 
     # Load MCP config
@@ -212,7 +212,7 @@ async def convert_mcp_to_skill(mcp_config_path: str, output_dir: str):
     print(f"  Reduction: ~90-99%")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert MCP server to Claude Skill with progressive disclosure",
         epilog="Example: python mcp_to_skill.py --mcp-config github-mcp.json --output-dir ./skills/github",
