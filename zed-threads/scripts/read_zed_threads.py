@@ -25,8 +25,25 @@ from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import YamlLexer
 from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 DB_PATH = path.expanduser("~/.local/share/zed/threads/threads.db")
+
+
+def process_multiline_strings(obj):
+    """
+    Recursively process a data structure to format strings containing newlines
+    using the |- block scalar format.
+    """
+    if isinstance(obj, dict):
+        return {k: process_multiline_strings(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [process_multiline_strings(item) for item in obj]
+    elif isinstance(obj, str) and "\n" in obj:
+        # Convert to LiteralScalarString which will be rendered with |-
+        return LiteralScalarString(obj)
+    else:
+        return obj
 
 
 def decompress_if_needed(data_type: str, blob: bytes) -> bytes:
@@ -71,11 +88,14 @@ def make_yaml_output(thread_row: dict[str, any], use_highlighting: bool = True) 
     yaml.width = 4096
     yaml.indent(mapping=2, sequence=4, offset=2)
 
+    # Process the thread data to handle multiline strings
+    processed_thread = process_multiline_strings(thread_row["thread"])
+
     # Convert YAML to string first
     from io import StringIO
 
     yaml_str = StringIO()
-    yaml.dump(thread_row["thread"], yaml_str)
+    yaml.dump(processed_thread, yaml_str)
     yaml_content = yaml_str.getvalue()
 
     if use_highlighting:
