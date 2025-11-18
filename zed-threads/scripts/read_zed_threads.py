@@ -18,6 +18,7 @@
 import json
 import sqlite3
 import sys
+from io import StringIO
 from os import path
 from typing import Any
 
@@ -93,8 +94,6 @@ def make_yaml_output(thread_row: dict[str, Any], use_highlighting: bool = True) 
     processed_thread = process_multiline_strings(thread_row["thread"])
 
     # Convert YAML to string first
-    from io import StringIO
-
     yaml_str = StringIO()
     yaml.dump(processed_thread, yaml_str)
     yaml_content = yaml_str.getvalue()
