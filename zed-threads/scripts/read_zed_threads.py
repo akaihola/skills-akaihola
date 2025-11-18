@@ -7,11 +7,19 @@
 # ///
 # Minimal script: read zed threads.db, convert to simple LM context, output YAML using ruamel.yaml
 # Produces `content:` as a literal block with `|-` (by removing trailing newline and using LiteralScalarString)
+#
+# Recommended usage (with uv):
+#   uv run read_zed_threads.py          # Output the first thread
+#   uv run read_zed_threads.py 5        # Output the thread at index 5
+#
+# Note: Use `uv run` to automatically handle dependencies defined in the script metadata
 
+import base64
 import json
 import sqlite3
-from os import environ, path
-from typing import Any, Dict, List
+import sys
+from os import path
+from typing import Any
 
 import zstandard as zstd
 from ruamel.yaml import YAML
@@ -21,9 +29,6 @@ DB_PATH = path.expanduser("~/.local/share/zed/threads/threads.db")
 
 
 def decompress_if_needed(data_type: str, blob) -> bytes:
-    import base64
-    import json
-
     # Handle the case where blob is a string (from the database)
     if isinstance(blob, str):
         # The data is a JSON string with a base64-encoded value inside
@@ -97,7 +102,7 @@ def extract_text_from_segment(seg: Any) -> str:
     return ""
 
 
-def message_to_role_and_text(msg: Any) -> Dict[str, str]:
+def message_to_role_and_text(msg: Any) -> dict[str, str]:
     role = "assistant"
     payload = msg
     if isinstance(msg, dict) and len(msg) == 1:
@@ -130,7 +135,7 @@ def message_to_role_and_text(msg: Any) -> Dict[str, str]:
     return {"role": role, "content": content}
 
 
-def parse_thread_json(raw_json: bytes) -> Dict[str, Any]:
+def parse_thread_json(raw_json: bytes) -> dict[str, Any]:
     obj = json.loads(raw_json)
     # saved shape: { "thread": <DbThread>, "version": "0.x" } or direct DbThread
     if isinstance(obj, dict) and "thread" in obj:
@@ -138,7 +143,7 @@ def parse_thread_json(raw_json: bytes) -> Dict[str, Any]:
     return obj
 
 
-def read_all_threads(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
+def read_all_threads(db_path: str = DB_PATH) -> list[dict[str, Any]]:
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     rows = cur.execute(
@@ -157,7 +162,7 @@ def read_all_threads(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
     return results
 
 
-def thread_to_lm_context(thread_obj: Dict[str, Any]) -> List[Dict[str, str]]:
+def thread_to_lm_context(thread_obj: dict[str, Any]) -> list[dict[str, str]]:
     msgs = thread_obj.get("messages", [])
     context = []
     title = thread_obj.get("title") or thread_obj.get("summary") or ""
@@ -170,7 +175,7 @@ def thread_to_lm_context(thread_obj: Dict[str, Any]) -> List[Dict[str, str]]:
     return context
 
 
-def make_yaml_output(thread_row: Dict[str, Any]) -> None:
+def make_yaml_output(thread_row: dict[str, Any]) -> None:
     yaml = YAML()
     yaml.default_flow_style = False
     yaml.width = 4096
@@ -196,8 +201,6 @@ def make_yaml_output(thread_row: Dict[str, Any]) -> None:
 
 
 if __name__ == "__main__":
-    import sys
-
     threads = read_all_threads()
     if not threads:
         print("No valid threads found", file=sys.stderr)
