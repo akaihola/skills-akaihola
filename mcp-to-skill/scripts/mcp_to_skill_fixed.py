@@ -17,8 +17,13 @@ import argparse
 import asyncio
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, List
+
+# Import mcp package
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 
 class MCPSkillGenerator:
@@ -59,160 +64,71 @@ class MCPSkillGenerator:
 
         print(f"Introspecting MCP server: {command}")
 
-        # In a real implementation, this would:
-        # 1. Start the MCP server process
-        # 2. Send tools/list request
-        # 3. Parse the response
+        # Connect to the actual MCP server
+        try:
+            server_params = StdioServerParameters(
+                command=self.mcp_config["command"],
+                args=self.mcp_config.get("args", []),
+                env=self.mcp_config.get("env"),
+            )
 
-        # Mock response for demonstration
-        return [
-            {
-                "name": "example_tool",
-                "description": "An example tool from the MCP server",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "param1": {"type": "string", "description": "First parameter"}
-                    },
-                    "required": ["param1"],
-                },
-            }
-        ]
+            async with stdio_client(server_params) as (read_stream, write_stream):
+                async with ClientSession(read_stream, write_stream) as session:
+                    await session.initialize()
+                    response = await session.list_tools()
+
+                    tools = []
+                    for tool in response.tools:
+                        tools.append(
+                            {
+                                "name": tool.name,
+                                "description": tool.description,
+                                "inputSchema": tool.inputSchema,
+                            }
+                        )
+
+                    return tools
+        except Exception as e:
+            print(f"Error connecting to MCP server: {e}", file=sys.stderr)
+            raise e
 
     def _generate_skill_md(self, tools: List[Dict[str, Any]]):
         """Generate the SKILL.md file with instructions for Claude."""
 
         # Create tool list for Claude
-        tool_list = "\n".join(
-            [
-                f"- `{t['name']}`: {t.get('description', 'No description')}"
-                for t in tools
-            ]
-        )
+        tool_list = ""
+        for tool in tools:
+            name = tool["name"]
+            description = tool.get("description", "No description")
+            tool_list += f"- `{name}`: {description}\n"
 
         # Count tools
         tool_count = len(tools)
+        estimated_tokens = tool_count * 500
+        first_tool_name = tools[0]["name"] if tools else "tool_name"
+        savings_percentage = (
+            int((1 - 5000 / (tool_count * 500)) * 100) if tool_count > 0 else 0
+        )
 
-        content = f"""---
-name: {self.server_name}
-description: Dynamic access to {self.server_name} MCP server ({tool_count} tools)
-version: 1.0.0
----
+        # Load SKILL.md template
+        # The templates are in the mcp-to-skill directory relative to the project root
+        script_dir = Path(__file__).parent
+        project_root = script_dir.parent.parent
+        template_path = (
+            project_root / "mcp-to-skill" / "assets" / "templates" / "SKILL.md.template"
+        )
+        with open(template_path, "r") as f:
+            template_content = f.read()
 
-# {self.server_name} Skill
-
-This skill provides dynamic access to the {self.server_name} MCP server without loading all tool definitions into context.
-
-## Context Efficiency
-
-Traditional MCP approach:
-- All {tool_count} tools loaded at startup
-- Estimated context: {tool_count * 500} tokens
-
-This skill approach:
-- Metadata only: ~100 tokens
-- Full instructions (when used): ~5k tokens
-- Tool execution: 0 tokens (runs externally)
-
-## How This Works
-
-Instead of loading all MCP tool definitions upfront, this skill:
-1. Tells you what tools are available (just names and brief descriptions)
-2. You decide which tool to call based on the user's request
-3. Generate a JSON command to invoke the tool
-4. The executor handles the actual MCP communication
-
-## Available Tools
-
-{tool_list}
-
-## Usage Pattern
-
-When the user's request matches this skill's capabilities:
-
-**Step 1: Identify the right tool** from the list above
-
-**Step 2: Generate a tool call** in this JSON format:
-
-```json
-{{
-  "tool": "tool_name",
-  "arguments": {{
-    "param1": "value1",
-    "param2": "value2"
-  }}
-}}
-```
-
-**Step 3: Execute via bash:**
-
-```bash
-cd $SKILL_DIR
-python executor.py --call 'YOUR_JSON_HERE'
-```
-
-IMPORTANT: Replace $SKILL_DIR with the actual discovered path of this skill directory.
-
-## Getting Tool Details
-
-If you need detailed information about a specific tool's parameters:
-
-```bash
-cd $SKILL_DIR
-python executor.py --describe tool_name
-```
-
-This loads ONLY that tool's schema, not all tools.
-
-## Examples
-
-### Example 1: Simple tool call
-
-User: "Use {self.server_name} to do X"
-
-Your workflow:
-1. Identify tool: `example_tool`
-2. Generate call JSON
-3. Execute:
-
-```bash
-cd $SKILL_DIR
-python executor.py --call '{{"tool": "example_tool", "arguments": {{"param1": "value"}}}}'
-```
-
-### Example 2: Get tool details first
-
-```bash
-cd $SKILL_DIR
-python executor.py --describe example_tool
-```
-
-Returns the full schema, then you can generate the appropriate call.
-
-## Error Handling
-
-If the executor returns an error:
-- Check the tool name is correct
-- Verify required arguments are provided
-- Ensure the MCP server is accessible
-
-## Performance Notes
-
-Context usage comparison for this skill:
-
-| Scenario | MCP (preload) | Skill (dynamic) |
-|----------|---------------|-----------------|
-| Idle | {tool_count * 500} tokens | 100 tokens |
-| Active | {tool_count * 500} tokens | 5k tokens |
-| Executing | {tool_count * 500} tokens | 0 tokens |
-
-Savings: ~{int((1 - 5000/(tool_count * 500)) * 100)}% reduction in typical usage
-
----
-
-*This skill was auto-generated from an MCP server configuration.*
-*Generator: mcp_to_skill.py*
-"""
+        # Format template
+        content = template_content.format(
+            server_name=self.server_name,
+            tool_count=tool_count,
+            estimated_tokens=estimated_tokens,
+            tool_list=tool_list,
+            first_tool_name=first_tool_name,
+            savings_percentage=savings_percentage,
+        )
 
         skill_path = self.output_dir / "SKILL.md"
         skill_path.write_text(content)
@@ -221,156 +137,19 @@ Savings: ~{int((1 - 5000/(tool_count * 500)) * 100)}% reduction in typical usage
     def _generate_executor(self):
         """Generate the executor script that communicates with MCP server."""
 
-        executor_code = '''#!/usr/bin/env python3
-"""
-MCP Skill Executor
-==================
-Handles dynamic communication with the MCP server.
-"""
-
-import json
-import sys
-import asyncio
-import argparse
-from pathlib import Path
-
-# Check if mcp package is available
-try:
-    from mcp import ClientSession, StdioServerParameters
-    from mcp.client.stdio import stdio_client
-    HAS_MCP = True
-except ImportError:
-    HAS_MCP = False
-    print("Warning: mcp package not installed. Install with: pip install mcp", file=sys.stderr)
-
-
-class MCPExecutor:
-    """Execute MCP tool calls dynamically."""
-
-    def __init__(self, server_config):
-        if not HAS_MCP:
-            raise ImportError("mcp package is required. Install with: pip install mcp")
-
-        self.server_config = server_config
-
-    def _get_server_params(self):
-        """Get server parameters for connection."""
-        return StdioServerParameters(
-            command=self.server_config["command"],
-            args=self.server_config.get("args", []),
-            env=self.server_config.get("env")
+        # Load executor.py template
+        # The templates are in the mcp-to-skill directory relative to the project root
+        script_dir = Path(__file__).parent
+        project_root = script_dir.parent.parent
+        template_path = (
+            project_root
+            / "mcp-to-skill"
+            / "assets"
+            / "templates"
+            / "executor.py.template"
         )
-
-    async def list_tools(self):
-        """Get list of available tools."""
-        server_params = self._get_server_params()
-
-        async with stdio_client(server_params) as (read_stream, write_stream):
-            async with ClientSession(read_stream, write_stream) as session:
-                await session.initialize()
-                response = await session.list_tools()
-                return [
-                    {
-                        "name": tool.name,
-                        "description": tool.description
-                    }
-                    for tool in response.tools
-                ]
-
-    async def describe_tool(self, tool_name: str):
-        """Get detailed schema for a specific tool."""
-        server_params = self._get_server_params()
-
-        async with stdio_client(server_params) as (read_stream, write_stream):
-            async with ClientSession(read_stream, write_stream) as session:
-                await session.initialize()
-                response = await session.list_tools()
-                for tool in response.tools:
-                    if tool.name == tool_name:
-                        return {
-                            "name": tool.name,
-                            "description": tool.description,
-                            "inputSchema": tool.inputSchema
-                        }
-                return None
-
-    async def call_tool(self, tool_name: str, arguments: dict):
-        """Execute a tool call."""
-        server_params = self._get_server_params()
-
-        async with stdio_client(server_params) as (read_stream, write_stream):
-            async with ClientSession(read_stream, write_stream) as session:
-                await session.initialize()
-                response = await session.call_tool(tool_name, arguments)
-                return response.content
-
-
-async def main():
-    parser = argparse.ArgumentParser(description="MCP Skill Executor")
-    parser.add_argument("--call", help="JSON tool call to execute")
-    parser.add_argument("--describe", help="Get tool schema")
-    parser.add_argument("--list", action="store_true", help="List all tools")
-
-    args = parser.parse_args()
-
-    # Load server config
-    config_path = Path(__file__).parent / "mcp-config.json"
-    if not config_path.exists():
-        print(f"Error: Configuration file not found: {config_path}", file=sys.stderr)
-        sys.exit(1)
-
-    with open(config_path) as f:
-        config = json.load(f)
-
-    if not HAS_MCP:
-        print("Error: mcp package not installed", file=sys.stderr)
-        print("Install with: pip install mcp", file=sys.stderr)
-        sys.exit(1)
-
-    executor = MCPExecutor(config)
-
-    try:
-        if args.list:
-            tools = await executor.list_tools()
-            print(json.dumps(tools, indent=2))
-
-        elif args.describe:
-            schema = await executor.describe_tool(args.describe)
-            if schema:
-                print(json.dumps(schema, indent=2))
-            else:
-                print(f"Tool not found: {args.describe}", file=sys.stderr)
-                sys.exit(1)
-
-        elif args.call:
-            call_data = json.loads(args.call)
-            result = await executor.call_tool(
-                call_data["tool"],
-                call_data.get("arguments", {})
-            )
-
-            # Format result
-            if isinstance(result, list):
-                for item in result:
-                    if hasattr(item, 'text'):
-                        print(item.text)
-                    else:
-                        print(json.dumps(item.__dict__ if hasattr(item, '__dict__') else item, indent=2))
-            else:
-                print(json.dumps(result.__dict__ if hasattr(result, '__dict__') else result, indent=2))
-        else:
-            parser.print_help()
-
-    except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-'''
+        with open(template_path, "r") as f:
+            executor_code = f.read()
 
         executor_path = self.output_dir / "executor.py"
         executor_path.write_text(executor_code)

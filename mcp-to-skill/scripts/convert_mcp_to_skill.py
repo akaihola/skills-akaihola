@@ -94,20 +94,8 @@ class MCPSkillGenerator:
 
         if local_converter.exists():
             print("Using local fixed converter script...")
-            try:
-                with open(local_converter, "r") as f:
-                    converter_script = f.read()
-
-                converter_path = self.output_dir / "mcp_to_skill.py"
-                with open(converter_path, "w") as f:
-                    f.write(converter_script)
-
-                converter_path.chmod(0o755)  # Make executable
-                print(f"✓ Copied local converter to: {converter_path}")
-                return
-            except Exception as e:
-                print(f"Warning: Error using local converter: {e}")
-                print("Falling back to downloading from GitHub...")
+            # No need to copy the script, we'll run it directly from its location
+            return
 
         # Fallback to downloading from GitHub
         print("Downloading latest converter script...")
@@ -137,32 +125,19 @@ class MCPSkillGenerator:
         with open(temp_config_path, "w") as f:
             json.dump(self.mcp_config, f, indent=2)
 
-        # Run the converter
+        # Run the converter directly from the scripts directory
         try:
             cmd = [
                 sys.executable,
-                str(self.output_dir / "mcp_to_skill.py"),
+                str(Path(__file__).parent / "mcp_to_skill_fixed.py"),
                 "--mcp-config",
                 str(temp_config_path),
                 "--output-dir",
-                str(self.output_dir / "generated_skill"),
+                str(self.output_dir),
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             print(result.stdout)
-
-            # Move the generated skill to the output directory
-            generated_skill_dir = self.output_dir / "generated_skill"
-            if generated_skill_dir.exists():
-                for item in generated_skill_dir.iterdir():
-                    dest = self.output_dir / item.name
-                    if dest.exists():
-                        if dest.is_dir():
-                            shutil.rmtree(dest)
-                        else:
-                            dest.unlink()
-                    shutil.move(str(item), str(dest))
-                shutil.rmtree(generated_skill_dir)
 
         except subprocess.CalledProcessError as e:
             print(f"Error running converter: {e}")
