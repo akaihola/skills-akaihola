@@ -27,66 +27,39 @@ def decompress_if_needed(data_type: str, blob) -> bytes:
     # Handle the case where blob is a string (from the database)
     if isinstance(blob, str):
         # The data is a JSON string with a base64-encoded value inside
-        try:
-            # Parse the JSON string
-            parsed = json.loads(blob)
-            # Extract the base64-encoded data
-            if isinstance(parsed, list) and len(parsed) > 0 and "data" in parsed[0]:
-                data_obj = parsed[0]["data"]
-                if (
-                    isinstance(data_obj, dict)
-                    and data_obj.get("$base64")
-                    and "encoded" in data_obj
-                ):
-                    # Decode the base64-encoded data
-                    encoded = data_obj["encoded"]
-                    decoded = base64.b64decode(encoded)
-                    # Try zstd decompression with max_output_size
-                    try:
-                        dctx = zstd.ZstdDecompressor()
-                        return dctx.decompress(
-                            decoded, max_output_size=50 * 1024 * 1024
-                        )
-                    except Exception:
-                        # If decompression fails, return the decoded data
-                        return decoded
-        except Exception as e:
-            # If parsing fails, try direct base64 decoding
-            try:
-                decoded = base64.b64decode(blob)
-                return decoded
-            except Exception:
-                # If that also fails, return the original blob as bytes
-                return blob.encode("utf-8")
+        # Parse the JSON string
+        parsed = json.loads(blob)
+        # Extract the base64-encoded data
+        data_obj = parsed[0]["data"]
+        # Decode the base64-encoded data
+        encoded = data_obj["encoded"]
+        decoded = base64.b64decode(encoded)
+        # zstd decompression with max_output_size
+        dctx = zstd.ZstdDecompressor()
+        return dctx.decompress(decoded, max_output_size=50 * 1024 * 1024)
     elif isinstance(blob, bytes):
         # Handle the case where blob is already bytes
         if data_type == "zstd":
-            # Try zstd decompression with max_output_size
-            try:
-                dctx = zstd.ZstdDecompressor()
-                return dctx.decompress(blob, max_output_size=50 * 1024 * 1024)
-            except Exception:
-                # If decompression fails, return the original blob
-                return blob
+            # zstd decompression with max_output_size
+            dctx = zstd.ZstdDecompressor()
+            return dctx.decompress(blob, max_output_size=50 * 1024 * 1024)
         return blob
     return blob
 
 
 def extract_text_from_segment(seg: Any) -> str:
-    if seg is None:
-        return ""
     if isinstance(seg, str):
         return seg
     if isinstance(seg, dict):
         # serde enum shapes: {"Text": "..."} or {"Thinking": {"text": "...", ...}}
         if "Text" in seg:
-            return seg["Text"] or ""
+            return seg["Text"]
         if "text" in seg and isinstance(seg["text"], str):
             return seg["text"]
         if "Thinking" in seg:
             inner = seg["Thinking"]
             if isinstance(inner, dict) and "text" in inner:
-                return inner["text"] or ""
+                return inner["text"]
         # Tool-like shapes
         inner = seg.get("ToolUse") or seg.get("tool_use") or seg.get("tool") or seg
         if isinstance(inner, dict):
@@ -102,7 +75,18 @@ def extract_text_from_segment(seg: Any) -> str:
                     pieces.append(json.dumps(raw, ensure_ascii=False))
             if pieces:
                 return " ".join(pieces)
-        # fallback: join string-valued fields
+        # Handle file mentions
+        if "Mention" in seg and isinstance(seg["Mention"], dict):
+            mention = seg["Mention"]
+            if (
+                "uri" in mention
+                and isinstance(mention["uri"], dict)
+                and "File" in mention["uri"]
+            ):
+                file_info = mention["uri"]["File"]
+                if "abs_path" in file_info:
+                    return f"@{file_info['abs_path']}"
+        # join string-valued fields
         parts = []
         for v in seg.values():
             if isinstance(v, str):
@@ -118,7 +102,7 @@ def message_to_role_and_text(msg: Any) -> Dict[str, str]:
     payload = msg
     if isinstance(msg, dict) and len(msg) == 1:
         key = next(iter(msg))
-        payload = msg[key] or {}
+        payload = msg[key]
         k = key.lower()
         if k.startswith("user"):
             role = "user"
@@ -135,14 +119,13 @@ def message_to_role_and_text(msg: Any) -> Dict[str, str]:
         segments = payload.get("content") or payload.get("segments")
     if not segments:
         if isinstance(payload, dict) and "text" in payload:
-            return {"role": role, "content": payload["text"] or ""}
+            return {"role": role, "content": payload["text"]}
         return {"role": role, "content": ""}
 
     parts = []
     for seg in segments:
         t = extract_text_from_segment(seg)
-        if t:
-            parts.append(t)
+        parts.append(t)
     content = "\n".join(parts).strip()
     return {"role": role, "content": content}
 
@@ -158,24 +141,14 @@ def parse_thread_json(raw_json: bytes) -> Dict[str, Any]:
 def read_all_threads(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    try:
-        rows = cur.execute(
-            "SELECT id, summary, updated_at, data_type, data FROM threads ORDER BY updated_at DESC"
-        ).fetchall()
-    except Exception as e:
-        conn.close()
-        raise
+    rows = cur.execute(
+        "SELECT id, summary, updated_at, data_type, data FROM threads ORDER BY updated_at DESC"
+    ).fetchall()
     print(f"Found {len(rows)} rows in database", file=sys.stderr)
     results = []
     for id_, summary, updated_at, data_type, data_blob in rows:
-        try:
-            raw = decompress_if_needed(data_type, data_blob)
-            thread = parse_thread_json(raw)
-        except Exception as e:
-            # skip malformed
-            print(f"Skipping malformed thread {id_}: {e}", file=sys.stderr)
-            continue
-            continue
+        raw = decompress_if_needed(data_type, data_blob)
+        thread = parse_thread_json(raw)
         results.append(
             {"id": id_, "summary": summary, "updated_at": updated_at, "thread": thread}
         )
@@ -233,10 +206,7 @@ if __name__ == "__main__":
     # default: output YAML for the first thread; optionally pass an index as first arg
     idx = 0
     if len(sys.argv) > 1:
-        try:
-            idx = int(sys.argv[1])
-        except Exception:
-            idx = 0
+        idx = int(sys.argv[1])
     if idx < 0 or idx >= len(threads):
         print(f"index out of range (0..{len(threads)-1})")
         sys.exit(2)
