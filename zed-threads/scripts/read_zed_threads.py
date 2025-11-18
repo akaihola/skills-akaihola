@@ -3,6 +3,7 @@
 # dependencies = [
 #   "ruamel.yaml",
 #   "zstandard",
+#   "pygments",
 # ]
 # ///
 # Simplified script: read zed threads.db, output raw thread JSON as YAML
@@ -10,6 +11,7 @@
 # IMPORTANT: Always use `uv run` to execute this script to ensure dependencies are properly installed:
 #   uv run read_zed_threads.py          # Output the first thread
 #   uv run read_zed_threads.py 5        # Output the thread at index 5
+#   uv run read_zed_threads.py --no-color  # Output without syntax highlighting
 #
 # Note: This script requires uv to handle dependencies defined in the script metadata
 
@@ -19,6 +21,9 @@ import sys
 from os import path
 
 import zstandard as zstd
+from pygments import highlight
+from pygments.formatters import TerminalFormatter
+from pygments.lexers import YamlLexer
 from ruamel.yaml import YAML
 
 DB_PATH = path.expanduser("~/.local/share/zed/threads/threads.db")
@@ -60,14 +65,26 @@ def read_all_threads(db_path: str = DB_PATH) -> list[dict[str, any]]:
     return results
 
 
-def make_yaml_output(thread_row: dict[str, any]) -> None:
+def make_yaml_output(thread_row: dict[str, any], use_highlighting: bool = True) -> None:
     yaml = YAML()
     yaml.default_flow_style = False
     yaml.width = 4096
     yaml.indent(mapping=2, sequence=4, offset=2)
 
-    # Output the raw thread JSON as YAML
-    yaml.dump(thread_row["thread"], sys.stdout)
+    # Convert YAML to string first
+    from io import StringIO
+
+    yaml_str = StringIO()
+    yaml.dump(thread_row["thread"], yaml_str)
+    yaml_content = yaml_str.getvalue()
+
+    if use_highlighting:
+        # Apply syntax highlighting and output
+        highlighted_yaml = highlight(yaml_content, YamlLexer(), TerminalFormatter())
+        sys.stdout.write(highlighted_yaml)
+    else:
+        # Output plain YAML without highlighting
+        sys.stdout.write(yaml_content)
 
 
 if __name__ == "__main__":
@@ -79,6 +96,7 @@ if __name__ == "__main__":
 
     # default: output YAML for the first thread; optionally pass an index as first arg
     idx = 0
+    use_highlighting = True
 
     # Parse command line arguments
     i = 1
@@ -86,10 +104,12 @@ if __name__ == "__main__":
         arg = sys.argv[i]
         if arg.isdigit():
             idx = int(arg)
+        elif arg == "--no-color":
+            use_highlighting = False
         i += 1
 
     if idx < 0 or idx >= len(threads):
         print(f"index out of range (0..{len(threads)-1})")
         sys.exit(2)
 
-    make_yaml_output(threads[idx])
+    make_yaml_output(threads[idx], use_highlighting)
