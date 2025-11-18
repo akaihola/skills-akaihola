@@ -29,7 +29,7 @@ Usage notes:
 
 <skill>
 <name>context7</name>
-<description>Dynamic access to context7 MCP server (1 tools)</description>
+<description>Dynamic access to context7 MCP server (2 tools)</description>
 <location>global</location>
 </skill>
 

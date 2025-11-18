@@ -57,7 +57,16 @@ When the user's request matches this skill's capabilities:
 
 **Step 1: Identify the right tool** from the list above
 
-**Step 2: Generate a tool call** in this JSON format:
+**Step 2: ALWAYS get tool details first** to obtain correct parameter names and types:
+
+```bash
+cd $SKILL_DIR
+python executor.py --describe tool_name
+```
+
+This loads ONLY that tool's schema, not all tools.
+
+**Step 3: Generate a tool call** using the exact parameter names from Step 2:
 
 ```json
 {
@@ -69,7 +78,7 @@ When the user's request matches this skill's capabilities:
 }
 ```
 
-**Step 3: Execute via bash:**
+**Step 4: Execute via bash:**
 
 ```bash
 cd $SKILL_DIR
@@ -78,48 +87,46 @@ python executor.py --call 'YOUR_JSON_HERE'
 
 IMPORTANT: Replace $SKILL_DIR with the actual discovered path of this skill directory.
 
-## Getting Tool Details
+## Important Note
 
-If you need detailed information about a specific tool's parameters:
-
-```bash
-cd $SKILL_DIR
-python executor.py --describe tool_name
-```
-
-This loads ONLY that tool's schema, not all tools.
+You MUST use `--describe` before calling any tool to get the correct parameter names and types. Do not guess parameter names as this will result in errors.
 
 ## Examples
 
-### Example 1: Simple tool call
+### Example 1: Complete workflow
 
 User: "Use context7 to do X"
 
 Your workflow:
 1. Identify tool: `resolve-library-id`
-2. Generate call JSON
-3. Execute:
+2. Get tool details: `python executor.py --describe resolve-library-id`
+3. Generate call JSON using exact parameter names from Step 2
+4. Execute:
 
 ```bash
 cd $SKILL_DIR
 python executor.py --call '{"tool": "resolve-library-id", "arguments": {"param1": "value"}}'
 ```
 
-### Example 2: Get tool details first
+### Example 2: Tool details output
 
 ```bash
 cd $SKILL_DIR
 python executor.py --describe resolve-library-id
 ```
 
-Returns the full schema, then you can generate the appropriate call.
+Returns the full schema with parameter names, types, and requirements.
 
 ## Error Handling
 
 If the executor returns an error:
 - Check the tool name is correct
-- Verify required arguments are provided
+- Verify you used `--describe` to get the exact parameter names
+- Ensure all required arguments are provided
+- Check that parameter types match what's expected
 - Ensure the MCP server is accessible
+
+Common error: "Invalid arguments for tool" - This usually means you used an incorrect parameter name. Always run `--describe` first to get the correct parameter names.
 
 ## Performance Notes
 
