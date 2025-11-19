@@ -19,7 +19,9 @@ import json
 import sqlite3
 import sys
 from io import StringIO
+from itertools import chain
 from os import path
+from pathlib import Path
 from typing import Any
 
 import zstandard as zstd
@@ -28,8 +30,120 @@ from pygments.formatters import TerminalFormatter
 from pygments.lexers import YamlLexer
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString
+from ruamel.yaml.scanner import SimpleKey
 
 DB_PATH = path.expanduser("~/.local/share/zed/threads/threads.db")
+
+
+def pick(dictionary, pick_keys, discard_keys, ignore_keys=()):
+    difference = (set(dictionary) - set(ignore_keys)).symmetric_difference(
+        set(pick_keys + discard_keys)
+    )
+    if difference:
+        raise ValueError(
+            f"Got keys {set(dictionary)} but trying to pick {pick_keys} and drop {discard_keys}\nin {dictionary}"
+        )
+    return [value for key, value in dictionary.items() if key in pick_keys]
+
+
+def simplify_mention(mention_data):
+    uri, content = pick(mention_data, ["uri", "content"], [])
+    for uri_type, data in uri.items():
+        if uri_type == "File":
+            path = Path(pick(data, ["abs_path"], [])[0])
+            yield f"@{path}"
+            yield f"```{path.suffix[1:]}"
+            yield content
+            yield "```"
+        elif uri_type == "Rule":
+            (name,) = pick(data, ["name"], ["id"])
+            yield f"@{name}"
+            yield f"```"
+            yield content.strip()
+            yield "```"
+
+
+def simplify_user(user_data):
+    (part_data,) = pick(user_data, ["content"], ["id"])
+    for element, data in chain.from_iterable(part.items() for part in part_data):
+        if element == "Text":
+            yield data
+        elif element == "Mention":
+            yield from simplify_mention(data)
+        else:
+            yield repr((element, data))
+
+
+def simplify_agent(agent_data):
+    content, tool_results = pick(agent_data, ["content", "tool_results"], [])
+    for content_type, content_data in chain.from_iterable(
+        part.items() for part in content
+    ):
+        if content_type == "Thinking":
+            (text,) = pick(content_data, ["text"], ["signature"])
+            if text.strip():
+                yield {content_type: text}
+        elif content_type == "Text":
+            if content_data.strip():
+                yield {"Agent": content_data.strip()}
+        elif content_type == "ToolUse":
+            name, input = pick(
+                content_data,
+                ["name", "input"],
+                ["id", "raw_input", "is_input_complete"],
+            )
+            yield {content_type: {"name": name, "input": input}}
+        else:
+            raise ValueError(f"Unexpected content type: {content_type}")
+    for tool_result in tool_results.values():
+        tool_name = tool_result["tool_name"]
+        if tool_name == "edit_file":
+            is_error, content = pick(
+                tool_result,
+                ["is_error", "content"],
+                ["tool_name", "tool_use_id", "output"],
+                ["old_text", "diff", "edit_agent_output"],
+            )
+        elif tool_name == "grep":
+            is_error, content = pick(
+                tool_result,
+                ["is_error", "content"],
+                ["tool_name", "tool_use_id", "output"],
+            )
+        elif tool_name == "read_file":
+            is_error, content = pick(
+                tool_result,
+                ["is_error", "content"],
+                ["tool_name", "tool_use_id", "output"],
+            )
+        else:
+            raise ValueError(f"Unexpected tool name: {tool_name}")
+        (text,) = pick(content, ["Text"], [])
+        yield {"ToolError" if is_error else "ToolResult": text}
+
+
+def simplify_messages(messages):
+    for message in messages:
+        if isinstance(message, str):
+            yield {"?": message}
+        else:
+            for role, data in message.items():
+                if role == "User":
+                    yield {role: "\n".join(simplify_user(data))}
+                elif role == "Agent":
+                    yield from simplify_agent(data)
+                else:
+                    yield {role: data}
+
+
+def simplify_thread_data(thread):
+    """
+    Simplify thread data for human readability by:
+    - Removing unnecessary metadata
+    - Extracting key information
+    - Restructuring complex nested objects
+    """
+    return {"messages": list(simplify_messages(thread["messages"]))}
 
 
 def process_multiline_strings(obj):
@@ -90,8 +204,11 @@ def make_yaml_output(thread_row: dict[str, Any], use_highlighting: bool = True) 
     yaml.width = 4096
     yaml.indent(mapping=2, sequence=4, offset=2)
 
-    # Process the thread data to handle multiline strings
-    processed_thread = process_multiline_strings(thread_row["thread"])
+    # First simplify the thread data for human readability
+    simplified_thread = simplify_thread_data(thread_row["thread"])
+
+    # Then process the simplified data to handle multiline strings
+    processed_thread = process_multiline_strings(simplified_thread)
 
     # Convert YAML to string first
     yaml_str = StringIO()
