@@ -161,16 +161,18 @@ def simplify_agent(agent: Agent) -> Generator[dict[str, Any], None, None]:
             if part.Text.strip():
                 yield {"Agent": part.Text.strip()}
         if part.ToolUse:
-            yield {
-                "ToolUse": {
-                    "name": part.ToolUse.name,
-                    "input": part.ToolUse.input,
+            tool_use = part.ToolUse
+            tool_item = {
+                "Tool": {
+                    "name": tool_use.name,
+                    "input": tool_use.input,
                 }
             }
-
-    for tool_result in agent.tool_results.values():
-        text = tool_result.content.Text
-        yield {"ToolError" if tool_result.is_error else "ToolResult": text}
+            if tool_use.id in agent.tool_results:
+                result = agent.tool_results[tool_use.id]
+                result_key = "error" if result.is_error else "result"
+                tool_item["Tool"][result_key] = result.content.Text
+            yield tool_item
 
 
 def simplify_messages(messages: list[Any]) -> Generator[dict[str, Any], None, None]:
