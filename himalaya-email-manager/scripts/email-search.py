@@ -76,8 +76,9 @@ def search_emails(
 
     for email in envelopes:
         if from_filter:
-            from_name = email.get("from", {}).get("name", "").lower()
-            from_addr = email.get("from", {}).get("addr", "").lower()
+            from_field = email.get("from") or {}
+            from_name = (from_field.get("name") or "").lower()
+            from_addr = (from_field.get("addr") or "").lower()
             from_search = from_filter.lower()
             if from_search not in from_name and from_search not in from_addr:
                 continue
@@ -136,8 +137,9 @@ def search_emails(
 
         for email in results:
             date_str = email.get("date", "N/A")[:10]
-            from_name = email.get("from", {}).get("name", "")
-            from_addr = email.get("from", {}).get("addr", "")
+            from_field = email.get("from") or {}
+            from_name = from_field.get("name", "")
+            from_addr = from_field.get("addr", "")
             from_display = f"{from_name} <{from_addr}>" if from_name else from_addr
             subject = email.get("subject", "(no subject)")
             msg_id = email.get("id", "N/A")
