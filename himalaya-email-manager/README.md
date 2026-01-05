@@ -71,6 +71,7 @@ scripts/email-delete.sh 56838 --execute
 - "Show me emails from Spotify from the last week"
 - "Find all emails about invoices"
 - "Save email ID 56873"
+- "Save email with attachments to ~/documents"
 - "Delete email ID 56838"
 - "What did I send yesterday?"
 
@@ -87,6 +88,7 @@ The IMAP account is configured in `~/.config/himalaya/config.toml`.
 - ✅ Fast IMAP search (server-side)
 - ✅ Safe deletion with preview (dry-run by default)
 - ✅ Save emails to file (markdown, text, JSON formats)
+- ✅ Download email attachments with custom directory support
 - ✅ Folder support (INBOX, Sent, Drafts, Archive, etc.)
 - ✅ Unicode support (Finnish characters, emojis)
 - ✅ Date range filtering
@@ -97,6 +99,7 @@ The IMAP account is configured in `~/.config/himalaya/config.toml`.
 
 - Delete operations show preview before execution (dry-run by default)
 - Save operations prompt before overwriting existing files (use --overwrite to skip)
+- Attachment downloads default to himalaya's downloads directory (customize with --attachment-dir)
 - Uses message UIDs for safe identification
 - Changes sync immediately with IMAP server
 

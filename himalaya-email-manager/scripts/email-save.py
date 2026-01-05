@@ -5,6 +5,8 @@ from pathlib import Path
 import json
 import subprocess
 import sys
+import re
+import shutil
 from datetime import datetime
 from textwrap import dedent
 from typing import Literal
@@ -128,7 +130,9 @@ def generate_filename(
     return f"{message_id}.{ext}"
 
 
-def format_markdown(envelope: dict, body: str, folder: str) -> str:
+def format_markdown(
+    envelope: dict, body: str, folder: str, attachments: list[Path] | None = None
+) -> str:
     """Format email as Markdown."""
     from_data = envelope.get("from", {})
     from_addr = from_data.get("address", "")
@@ -156,6 +160,12 @@ def format_markdown(envelope: dict, body: str, folder: str) -> str:
     subject_str = envelope.get("subject", "")
     message_id = envelope.get("id", "")
 
+    attachments_section = ""
+    if attachments:
+        attachments_section = "\n\n---\n\n**Attachments:**\n"
+        for attachment in attachments:
+            attachments_section += f"- `{attachment}`\n"
+
     return dedent(
         f"""\
         # {subject_str}
@@ -167,7 +177,7 @@ def format_markdown(envelope: dict, body: str, folder: str) -> str:
 
         ---
 
-        {body}
+        {body}{attachments_section}
 
         ---
 
@@ -176,7 +186,9 @@ def format_markdown(envelope: dict, body: str, folder: str) -> str:
     )
 
 
-def format_text(envelope: dict, body: str, folder: str) -> str:
+def format_text(
+    envelope: dict, body: str, folder: str, attachments: list[Path] | None = None
+) -> str:
     """Format email as plain text."""
     from_data = envelope.get("from", {})
     from_addr = from_data.get("address", "")
@@ -204,6 +216,12 @@ def format_text(envelope: dict, body: str, folder: str) -> str:
     subject_str = envelope.get("subject", "")
     message_id = envelope.get("id", "")
 
+    attachments_section = ""
+    if attachments:
+        attachments_section = "\n\n---\n\nAttachments:\n"
+        for attachment in attachments:
+            attachments_section += f"  - {attachment}\n"
+
     return dedent(
         f"""\
         From: {from_str}
@@ -211,12 +229,56 @@ def format_text(envelope: dict, body: str, folder: str) -> str:
         Date: {date_str}
         Subject: {subject_str}
 
-        {body}
+        {body}{attachments_section}
 
         ---
         Saved from: {folder} (ID: {message_id})
         """
     )
+
+
+def _download_attachments_internal(
+    message_id: int, folder: str, attachment_dir: Path | None, verbose: bool = False
+) -> list[Path]:
+    """Download attachments from an email message.
+
+    Returns list of downloaded attachment paths.
+    """
+    result = run_himalaya(
+        [
+            "attachment",
+            "download",
+            "--account",
+            ACCOUNT,
+            "--folder",
+            folder,
+            str(message_id),
+        ],
+        verbose=verbose,
+    )
+
+    downloaded_files = []
+    output_lines = result.stdout + result.stderr
+    for line in output_lines.splitlines():
+        match = re.search(r'Downloading "(.+?)"…', line)
+        if match:
+            downloaded_path = Path(match.group(1))
+            downloaded_files.append(downloaded_path)
+            if verbose:
+                console.print(f"[dim]Found attachment:[/dim] {downloaded_path}")
+
+    if attachment_dir and downloaded_files:
+        attachment_dir.mkdir(parents=True, exist_ok=True)
+        moved_files = []
+        for old_path in downloaded_files:
+            new_path = attachment_dir / old_path.name
+            shutil.move(str(old_path), str(new_path))
+            moved_files.append(new_path)
+            if verbose:
+                console.print(f"[dim]Moved to:[/dim] {new_path}")
+        return moved_files
+
+    return downloaded_files
 
 
 def format_json(envelope: dict, body: str, folder: str) -> str:
@@ -245,6 +307,12 @@ def save(
     overwrite: bool = typer.Option(
         False, "--overwrite", help="Overwrite existing file without confirmation"
     ),
+    download_attachments: bool = typer.Option(
+        False, "--download-attachments", help="Download email attachments"
+    ),
+    attachment_dir: Path | None = typer.Option(
+        None, "--attachment-dir", help="Directory for attachments"
+    ),
     verbose: bool = typer.Option(
         False, "-v", "--verbose", help="Show himalaya commands"
     ),
@@ -261,11 +329,24 @@ def save(
     console.print(f"[dim]Fetching message body...[/dim]")
     body = get_message_body(message_id, folder, verbose)
 
+    attachments: list[Path] | None = None
+    if download_attachments:
+        console.print(f"[dim]Downloading attachments...[/dim]")
+        attachments = _download_attachments_internal(
+            message_id, folder, attachment_dir, verbose
+        )
+        if attachments:
+            console.print(
+                f"[green]✓[/green] Downloaded [cyan]{len(attachments)}[/cyan] attachment(s)"
+            )
+        else:
+            console.print("[dim]No attachments found[/dim]")
+
     console.print(f"[dim]Formatting as {format}...[/dim]")
     if format == "markdown":
-        content = format_markdown(envelope, body, folder)
+        content = format_markdown(envelope, body, folder, attachments)
     elif format == "text":
-        content = format_text(envelope, body, folder)
+        content = format_text(envelope, body, folder, attachments)
     else:
         content = format_json(envelope, body, folder)
 
