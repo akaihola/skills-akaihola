@@ -33,6 +33,27 @@ scripts/email-search.sh --date-start "2025-12-01" --date-end "2025-12-31"
 scripts/email-search.sh --from "@newsletter.com" --subject "unsubscribe" --limit 5
 ```
 
+### Save Emails
+
+Save email content to file:
+
+```bash
+# Save as markdown
+scripts/email-save.sh 56873
+
+# Save to specific directory
+scripts/email-save.sh 56873 --output ~/saved-emails
+
+# Save with date prefix
+scripts/email-save.sh 56873 --date-prefix
+
+# Save as JSON
+scripts/email-save.sh 56873 --format json
+
+# Save from Sent folder
+scripts/email-save.sh --folder Sent 12345
+```
+
 ### Delete Emails
 
 Delete with safety preview:
@@ -49,6 +70,7 @@ scripts/email-delete.sh 56838 --execute
 
 - "Show me emails from Spotify from the last week"
 - "Find all emails about invoices"
+- "Save email ID 56873"
 - "Delete email ID 56838"
 - "What did I send yesterday?"
 
@@ -62,10 +84,9 @@ nix-shell -p himalaya --run "himalaya --help"
 
 The IMAP account is configured in `~/.config/himalaya/config.toml`.
 
-
-
 - ✅ Fast IMAP search (server-side)
 - ✅ Safe deletion with preview (dry-run by default)
+- ✅ Save emails to file (markdown, text, JSON formats)
 - ✅ Folder support (INBOX, Sent, Drafts, Archive, etc.)
 - ✅ Unicode support (Finnish characters, emojis)
 - ✅ Date range filtering
@@ -75,9 +96,9 @@ The IMAP account is configured in `~/.config/himalaya/config.toml`.
 ## Safety
 
 - Delete operations show preview before execution (dry-run by default)
+- Save operations prompt before overwriting existing files (use --overwrite to skip)
 - Uses message UIDs for safe identification
 - Changes sync immediately with IMAP server
-- No local file manipulation
 
 ## Troubleshooting
 

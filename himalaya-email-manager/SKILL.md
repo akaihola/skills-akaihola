@@ -22,9 +22,11 @@ uv run scripts/email-summary.py
 ```
 
 **Options:**
+
 - `-v, --verbose` - Show himalaya commands being executed
 
 Output includes:
+
 - Rich table format with timestamps, senders, and subjects
 - Categorized by folder (📥 INBOX, 📤 Sent)
 - Unicode support (Finnish characters, emojis)
@@ -38,6 +40,7 @@ uv run scripts/email-search.py [options]
 ```
 
 **Options:**
+
 - `--folder FOLDER` - Folder to search (default: INBOX)
 - `--from SENDER` - Filter by sender email/name (case-insensitive)
 - `--subject TEXT` - Filter by subject text (case-insensitive)
@@ -51,6 +54,7 @@ uv run scripts/email-search.py [options]
 All filters apply with AND logic. Results include message IDs for deletion. Dates must be in YYYY-MM-DD format. FROM filter matches both sender name and email address.
 
 **Examples:**
+
 ```bash
 # Search by sender
 uv run scripts/email-search.py --from "spotify.com"
@@ -71,6 +75,68 @@ uv run scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" 
 uv run scripts/email-search.py --limit 200 --no-limit
 ```
 
+## Save Emails to File
+
+Save email content to a file in various formats:
+
+```bash
+uv run scripts/email-save.py <message-id> [options]
+```
+
+**Options:**
+
+- `--folder FOLDER` - Folder to search (default: INBOX)
+- `--output PATH` - Output directory or file path (default: current directory)
+- `--format FORMAT` - Output format: markdown, text, or json (default: markdown)
+- `--date-prefix` - Add YYYY-MM-DD date prefix to filename (uses email date)
+- `--overwrite` - Overwrite existing file without confirmation
+- `-v, --verbose` - Show himalaya commands being executed
+- `--help` - Show help message
+
+**Arguments:**
+
+- `message-id` - Message ID to save (obtained from search results)
+
+**Output formats:**
+
+- **markdown**: Rich format with headers and metadata
+- **text**: Plain text with basic headers
+- **json**: Raw JSON output from himalaya (envelope + body data)
+
+**Filename behavior:**
+
+- Default: `{message-id}.{ext}`
+- With `--date-prefix`: `{YYYY-MM-DD}-{subject-sanitized}.{ext}`
+- Subject characters: Spaces and emojis preserved, slashes converted to dashes
+
+**Examples:**
+
+```bash
+# Save as markdown to current directory
+uv run scripts/email-save.py 56873
+
+# Save to specific directory
+uv run scripts/email-save.py 56873 --output ~/saved-emails
+
+# Save with date prefix
+uv run scripts/email-save.py 56873 --date-prefix --output /tmp/emails
+
+# Save as text format
+uv run scripts/email-save.py 56873 --format text
+
+# Save as JSON
+uv run scripts/email-save.py 56873 --format json
+
+# Save to specific file path
+uv run scripts/email-save.py 56873 --output ~/important-email.md
+
+# Overwrite existing file without prompt
+uv run scripts/email-save.py 56873 --overwrite --output ~/email.md
+
+# Save from Sent folder
+uv run scripts/email-save.py --folder Sent 12345 --output ~/sent-emails
+```
+
 ## Delete Emails
 
 Delete emails by message ID with safety preview:
@@ -80,12 +146,14 @@ uv run scripts/email-delete.py <message-id> [options]
 ```
 
 **Options:**
+
 - `--folder FOLDER` - Folder to delete from (default: INBOX)
 - `--execute` - Actually perform deletion (default: dry-run mode)
 - `-v, --verbose` - Show himalaya commands being executed
 - `--help` - Show help message
 
 **Arguments:**
+
 - `message-id` - Message ID to delete (obtained from search results)
 
 **Safety:** Always run in dry-run mode first to verify the correct message.
@@ -93,6 +161,7 @@ In interactive mode, you'll be prompted for confirmation before deletion.
 When called by OpenCode agent, deletion proceeds immediately with `--execute` flag.
 
 **Examples:**
+
 ```bash
 # Preview deletion
 uv run scripts/email-delete.py 56838
@@ -109,11 +178,13 @@ uv run scripts/email-delete.py --folder Sent 12345 --execute
 Interpret natural language queries as appropriate script calls:
 
 **Summary queries:**
+
 - "Show me today's emails" → email-summary.py
 - "What emails did I get today?" → email-summary.py
 - "Summary of recent emails" → email-summary.py
 
 **Search queries:**
+
 - "Find emails from Spotify" → email-search.py --from "spotify.com"
 - "Show me emails about invoices" → email-search.py --subject "invoice"
 - "Search for Atomikettu emails from the past two weeks" → email-search.py --from "atomikettu" --date-start "2025-12-17" --date-end "2025-12-31"
@@ -121,13 +192,21 @@ Interpret natural language queries as appropriate script calls:
 - "Search INBOX for emails from john@example.com" → email-search.py --from "john@example.com"
 - "Find emails with 'newsletter' in subject" → email-search.py --subject "newsletter"
 
+**Save queries:**
+
+- "Save email ID 56873" → email-save.py 56873
+- "Save as JSON" → email-save.py 56873 --format json
+- "Save to ~/emails folder with date prefix" → email-save.py 56873 --output ~/emails --date-prefix
+
 **Delete queries:**
+
 - "Delete email ID 56838" → email-delete.py 56838 (show preview, ask for confirmation)
 - "Remove the email from Spotify" → First search to find ID, then delete with confirmation
 
 ## Implementation Notes
 
 **When calling scripts:**
+
 1. Always invoke with `uv run scripts/<script-name>.py` (handles environment and deps)
 2. All nix-shell commands are embedded in Python scripts - don't add them manually
 3. For search by sender or subject, use --from and --subject flags
@@ -139,12 +218,14 @@ Interpret natural language queries as appropriate script calls:
 9. Use -v/--verbose to see himalaya commands being executed (for debugging)
 
 **Avoid these pitfalls:**
+
 - Don't use --since or --until (not implemented - use --date-start/--date-end)
 - Don't try to search body content (only headers are available in JSON output)
 - Don't forget to add --execute flag when actually deleting (dry-run by default)
 - Don't use incorrect date format (must be YYYY-MM-DD)
 
 **Follow this workflow for search and delete:**
+
 1. Use email-search.py to find messages
 2. Review results with user
 3. Use email-delete.py <ID> to preview deletion
@@ -152,6 +233,7 @@ Interpret natural language queries as appropriate script calls:
 5. Use email-delete.py <ID> --execute to actually delete
 
 **Technical context:**
+
 - Backend: Himalaya v1.1.0 (Rust-based IMAP CLI tool) via Python 3.13 with typer and rich
 - Installation: Nix (nix-shell -p himalaya)
 - Output format: JSON → Rich tables with Python json.loads()
@@ -163,7 +245,7 @@ Interpret natural language queries as appropriate script calls:
 
 ## Using the Scripts
 
-All scripts use PEP 723 inline metadata and require Python 3.13+. 
+All scripts use PEP 723 inline metadata and require Python 3.13+.
 Invoke with `uv run` to automatically handle Python environment and dependencies:
 
 ```bash
@@ -171,5 +253,6 @@ uv run scripts/<script-name>.py [options]
 ```
 
 **Dependencies** (auto-managed by uv):
+
 - typer - for CLI argument parsing
 - rich - for beautiful terminal output
