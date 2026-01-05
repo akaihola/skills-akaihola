@@ -119,13 +119,19 @@ def generate_filename(
     }[output_format]
 
     if date_prefix:
-        try:
-            date_obj = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
-            date_prefix_str = date_obj.strftime("%Y-%m-%d")
-            sanitized_subject = sanitize_filename(subject)
-            return f"{date_prefix_str}-{sanitized_subject}.{ext}"
-        except ValueError:
-            pass
+        for date_format in ["%Y-%m-%d %H:%M%z", "%Y-%m-%d %H:%M:%S%z"]:
+            try:
+                date_obj = datetime.strptime(date_str, date_format)
+                date_prefix_str = date_obj.strftime("%Y-%m-%d")
+                sanitized_subject = sanitize_filename(subject)
+                return f"{date_prefix_str}-{sanitized_subject}.{ext}"
+            except ValueError:
+                continue
+
+        console.print(
+            f"[yellow]⚠[/yellow] Could not parse date: [dim]{date_str}[/dim]\n"
+            f"[yellow]⚠[/yellow] Falling back to message ID in filename"
+        )
 
     return f"{message_id}.{ext}"
 
