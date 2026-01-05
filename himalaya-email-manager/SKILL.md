@@ -89,6 +89,8 @@ uv run scripts/email-save.py <message-id> [options]
 - `--output PATH` - Output directory or file path (default: current directory)
 - `--format FORMAT` - Output format: markdown, text, or json (default: markdown)
 - `--date-prefix` - Add YYYY-MM-DD date prefix to filename (uses email date)
+- `--download-attachments` - Download email attachments
+- `--attachment-dir PATH` - Directory for attachments (default: himalaya downloads directory)
 - `--overwrite` - Overwrite existing file without confirmation
 - `-v, --verbose` - Show himalaya commands being executed
 - `--help` - Show help message
@@ -135,6 +137,12 @@ uv run scripts/email-save.py 56873 --overwrite --output ~/email.md
 
 # Save from Sent folder
 uv run scripts/email-save.py --folder Sent 12345 --output ~/sent-emails
+
+# Save with attachments
+uv run scripts/email-save.py 56873 --download-attachments
+
+# Save with attachments to custom directory
+uv run scripts/email-save.py 56873 --download-attachments --attachment-dir ~/attachments
 ```
 
 ## Delete Emails
