@@ -36,7 +36,7 @@ If searches return no results:
 
 ## Message ID Not Found
 
-If email-delete.sh reports "Message ID not found":
+If email-delete.py reports "Message ID not found":
 
 - Verify the message ID is correct (copy from search results)
 - Check you're searching in the correct folder with --folder
@@ -56,7 +56,7 @@ If you see permission denied errors:
 
 ```bash
 # Make scripts executable
-chmod +x scripts/*.sh
+chmod +x scripts/*.py
 ```
 
 ## IMAP Server Issues

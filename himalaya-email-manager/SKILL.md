@@ -11,7 +11,6 @@ Manage emails using Himalaya IMAP CLI tool. Search, summarize, and delete emails
 
 Himalaya config: ~/.config/himalaya/config.toml
 Invocation: `uv run scripts/<script>.py` (handles Python environment and dependencies)
-Note: nix-shell commands are embedded in Python scripts
 
 ## Get Daily Email Summary
 
@@ -216,14 +215,13 @@ Interpret natural language queries as appropriate script calls:
 **When calling scripts:**
 
 1. Always invoke with `uv run scripts/<script-name>.py` (handles environment and deps)
-2. All nix-shell commands are embedded in Python scripts - don't add them manually
-3. For search by sender or subject, use --from and --subject flags
-4. Date range uses --date-start and --date-end (YYYY-MM-DD format)
-5. Case-insensitive search is automatic - don't worry about capitalization
-6. FROM filter searches both sender name and email address
-7. Always run delete operations in dry-run mode first without --execute flag
-8. Ask user for confirmation before running delete with --execute flag (interactive mode only)
-9. Use -v/--verbose to see himalaya commands being executed (for debugging)
+2. For search by sender or subject, use --from and --subject flags
+3. Date range uses --date-start and --date-end (YYYY-MM-DD format)
+4. Case-insensitive search is automatic - don't worry about capitalization
+5. FROM filter searches both sender name and email address
+6. Always run delete operations in dry-run mode first without --execute flag
+7. Ask user for confirmation before running delete with --execute flag (interactive mode only)
+8. Use -v/--verbose to see himalaya commands being executed (for debugging)
 
 **Avoid these pitfalls:**
 

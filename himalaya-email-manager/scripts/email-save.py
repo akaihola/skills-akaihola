@@ -31,7 +31,7 @@ ACCOUNT = "akaihola"
 
 
 def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.CompletedProcess:
-    """Run a himalaya command and return the result."""
+    """Run a himalaya command and return result."""
     if verbose:
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
@@ -49,35 +49,25 @@ def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.Completed
     return result
 
 
-def get_envelope(message_id: int, folder: str, verbose: bool = False) -> dict | None:
-    """Get envelope by ID."""
-    result = run_himalaya(
-        [
-            "envelope",
-            "list",
-            "--account",
-            ACCOUNT,
-            "--folder",
-            folder,
-            "--output",
-            "json",
-        ],
-        verbose=verbose,
-    )
+def parse_email_headers(message_text: str) -> dict:
+    """Parse email headers from message text."""
+    headers_end = message_text.find("\n\n")
+    if headers_end == -1:
+        headers_end = message_text.find("\n---\n")
 
-    try:
-        envelopes = json.loads(result.stdout)
-        for envelope in envelopes:
-            if str(envelope["id"]) == str(message_id):
-                return envelope
-        return None
-    except json.JSONDecodeError as e:
-        console.print(f"[red]Error parsing JSON:[/red] {e}")
-        raise typer.Exit(1)
+    header_text = message_text[:headers_end] if headers_end > 0 else message_text
+
+    headers = {}
+    for line in header_text.split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            headers[key.strip().lower()] = value.strip()
+
+    return headers
 
 
-def get_message_body(message_id: int, folder: str, verbose: bool = False) -> str:
-    """Get message body content."""
+def get_message(message_id: int, folder: str, verbose: bool = False) -> dict:
+    """Get full message (headers + body) by ID."""
     result = run_himalaya(
         [
             "message",
@@ -87,7 +77,6 @@ def get_message_body(message_id: int, folder: str, verbose: bool = False) -> str
             "--folder",
             folder,
             "--preview",
-            "--no-headers",
             "--output",
             "json",
             str(message_id),
@@ -96,8 +85,79 @@ def get_message_body(message_id: int, folder: str, verbose: bool = False) -> str
     )
 
     try:
-        body = json.loads(result.stdout)
-        return body if isinstance(body, str) else ""
+        message_text = json.loads(result.stdout)
+        if not isinstance(message_text, str):
+            message_text = ""
+
+        headers = parse_email_headers(message_text)
+
+        headers_end = message_text.find("\n\n")
+        if headers_end == -1:
+            headers_end = message_text.find("\n---\n")
+        body = (
+            message_text[headers_end + 2 :].strip() if headers_end > 0 else message_text
+        )
+
+        envelope = {
+            "id": str(message_id),
+            "from": {},
+            "to": {},
+            "date": "",
+            "subject": "",
+        }
+
+        if "from" in headers:
+            from_match = re.match(r"^(.*?)\s*<([^>]+)>$", headers["from"])
+            if from_match:
+                envelope["from"] = {
+                    "name": from_match.group(1).strip(),
+                    "address": from_match.group(2).strip(),
+                }
+            elif "<" in headers["from"] and ">" in headers["from"]:
+                email = re.search(r"<([^>]+)>", headers["from"])
+                if email:
+                    envelope["from"] = {"address": email.group(1)}
+            else:
+                envelope["from"] = {"address": headers["from"]}
+
+        if "to" in headers:
+            to_addrs = [addr.strip() for addr in headers["to"].split(",")]
+            if len(to_addrs) == 1:
+                to_match = re.match(r"^(.*?)\s*<([^>]+)>$", to_addrs[0])
+                if to_match:
+                    envelope["to"] = {
+                        "name": to_match.group(1).strip(),
+                        "address": to_match.group(2).strip(),
+                    }
+                elif "<" in to_addrs[0] and ">" in to_addrs[0]:
+                    email = re.search(r"<([^>]+)>", to_addrs[0])
+                    if email:
+                        envelope["to"] = {"address": email.group(1)}
+                else:
+                    envelope["to"] = {"address": to_addrs[0]}
+            else:
+                envelope["to"] = []
+                for to_addr in to_addrs:
+                    to_match = re.match(r"^(.*?)\s*<([^>]+)>$", to_addr)
+                    if to_match:
+                        envelope["to"].append(
+                            {
+                                "name": to_match.group(1).strip(),
+                                "address": to_match.group(2).strip(),
+                            }
+                        )
+                    elif "<" in to_addr and ">" in to_addr:
+                        email = re.search(r"<([^>]+)>", to_addr)
+                        if email:
+                            envelope["to"].append({"address": email.group(1)})
+                    else:
+                        envelope["to"].append({"address": to_addr})
+
+        envelope["date"] = headers.get("date", "")
+        envelope["subject"] = headers.get("subject", "")
+
+        return {"envelope": envelope, "body": body}
+
     except json.JSONDecodeError as e:
         console.print(f"[red]Error parsing JSON:[/red] {e}")
         raise typer.Exit(1)
@@ -333,15 +393,11 @@ def save(
 ):
     """Save an email to a file."""
 
-    console.print(f"[dim]Fetching envelope {message_id} from {folder}...[/dim]")
-    envelope = get_envelope(message_id, folder, verbose)
+    console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
+    message_data = get_message(message_id, folder, verbose)
 
-    if not envelope:
-        console.print(f"[red]Email with ID {message_id} not found in {folder}[/red]")
-        raise typer.Exit(1)
-
-    console.print(f"[dim]Fetching message body...[/dim]")
-    body = get_message_body(message_id, folder, verbose)
+    envelope = message_data["envelope"]
+    body = message_data["body"]
 
     attachments: list[Path] | None = None
     if download_attachments:

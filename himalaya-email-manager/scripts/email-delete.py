@@ -12,6 +12,8 @@
 import subprocess
 import json
 import sys
+import re
+from typing import Literal
 
 import rich.console
 import rich.panel
@@ -20,17 +22,23 @@ import typer
 ACCOUNT = "akaihola"
 
 
-def run_himalaya(
-    args: list[str], verbose: bool = False, check: bool = True
-) -> subprocess.CompletedProcess[str]:
-    """Run himalaya and return result."""
-    cmd = ["himalaya"] + args
-
-    console = rich.console.Console(force_terminal=False)
+def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.CompletedProcess:
+    """Run a himalaya command and return result."""
     if verbose:
-        console.print(f"[dim]Running: {' '.join(cmd)}[/dim]")
+        console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
-    return subprocess.run(cmd, capture_output=True, text=True, check=check)
+    result = subprocess.run(
+        ["himalaya"] + args,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0 and not args[0] == "envelope" and args[1] == "delete":
+        console.print(f"[red]Error running himalaya:[/red] {result.stderr}")
+        console.print(f"[red]Command:[/red] himalaya {' '.join(args)}")
+        raise typer.Exit(1)
+
+    return result
 
 
 def is_interactive() -> bool:
@@ -38,27 +46,117 @@ def is_interactive() -> bool:
     return sys.stdin.isatty()
 
 
-def get_email_by_id(message_id: int, folder: str, verbose: bool = False) -> dict | None:
-    """Get email details by message ID."""
-    args = [
-        "envelope",
-        "list",
-        "--account",
-        ACCOUNT,
-        "--folder",
-        folder,
-        "--output",
-        "json",
-    ]
+def parse_email_headers(message_text: str) -> dict:
+    """Parse email headers from message text."""
+    headers_end = message_text.find("\n\n")
+    if headers_end == -1:
+        headers_end = message_text.find("\n---\n")
 
-    result = run_himalaya(args, verbose=verbose)
-    envelopes = json.loads(result.stdout) if result.stdout.strip() else []
+    header_text = message_text[:headers_end] if headers_end > 0 else message_text
 
-    for email in envelopes:
-        if email.get("id") == message_id:
-            return email
+    headers = {}
+    for line in header_text.split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            headers[key.strip().lower()] = value.strip()
 
-    return None
+    return headers
+
+
+def get_message(message_id: int, folder: str, verbose: bool = False) -> dict | None:
+    """Get full message (headers + body) by ID."""
+    result = run_himalaya(
+        [
+            "message",
+            "read",
+            "--account",
+            ACCOUNT,
+            "--folder",
+            folder,
+            "--preview",
+            "--output",
+            "json",
+            str(message_id),
+        ],
+        verbose=verbose,
+    )
+
+    try:
+        message_text = json.loads(result.stdout)
+        if not isinstance(message_text, str):
+            return None
+
+        headers = parse_email_headers(message_text)
+
+        headers_end = message_text.find("\n\n")
+        if headers_end == -1:
+            headers_end = message_text.find("\n---\n")
+        body = (
+            message_text[headers_end + 2 :].strip() if headers_end > 0 else message_text
+        )
+
+        envelope = {
+            "id": str(message_id),
+            "from": {},
+            "to": {},
+            "date": "",
+            "subject": "",
+        }
+
+        if "from" in headers:
+            from_match = re.match(r"^(.*?)\s*<([^>]+)>$", headers["from"])
+            if from_match:
+                envelope["from"] = {
+                    "name": from_match.group(1).strip(),
+                    "address": from_match.group(2).strip(),
+                }
+            elif "<" in headers["from"] and ">" in headers["from"]:
+                email = re.search(r"<([^>]+)>", headers["from"])
+                if email:
+                    envelope["from"] = {"address": email.group(1)}
+            else:
+                envelope["from"] = {"address": headers["from"]}
+
+        if "to" in headers:
+            to_addrs = [addr.strip() for addr in headers["to"].split(",")]
+            if len(to_addrs) == 1:
+                to_match = re.match(r"^(.*?)\s*<([^>]+)>$", to_addrs[0])
+                if to_match:
+                    envelope["to"] = {
+                        "name": to_match.group(1).strip(),
+                        "address": to_match.group(2).strip(),
+                    }
+                elif "<" in to_addrs[0] and ">" in to_addrs[0]:
+                    email = re.search(r"<([^>]+)>", to_addrs[0])
+                    if email:
+                        envelope["to"] = {"address": email.group(1)}
+                else:
+                    envelope["to"] = {"address": to_addrs[0]}
+            else:
+                envelope["to"] = []
+                for to_addr in to_addrs:
+                    to_match = re.match(r"^(.*?)\s*<([^>]+)>$", to_addr)
+                    if to_match:
+                        envelope["to"].append(
+                            {
+                                "name": to_match.group(1).strip(),
+                                "address": to_match.group(2).strip(),
+                            }
+                        )
+                    elif "<" in to_addr and ">" in to_addr:
+                        email = re.search(r"<([^>]+)>", to_addr)
+                        if email:
+                            envelope["to"].append({"address": email.group(1)})
+                    else:
+                        envelope["to"].append({"address": to_addr})
+
+        envelope["date"] = headers.get("date", "")
+        envelope["subject"] = headers.get("subject", "")
+
+        return {"envelope": envelope, "body": body}
+
+    except json.JSONDecodeError:
+        return None
 
 
 def show_email_preview(email: dict) -> None:
@@ -66,8 +164,11 @@ def show_email_preview(email: dict) -> None:
     console = rich.console.Console(force_terminal=False)
 
     date_str = email.get("date", "N/A")
-    from_name = email.get("from", {}).get("name", "")
-    from_addr = email.get("from", {}).get("addr", "")
+    from_data = email.get("from", {})
+    from_name = from_data.get("name", "") if isinstance(from_data, dict) else ""
+    from_addr = (
+        from_data.get("address", "") if isinstance(from_data, dict) else from_data
+    )
     from_display = f"{from_name} <{from_addr}>" if from_name else from_addr
     subject = email.get("subject", "(no subject)")
     msg_id = email.get("id", "N/A")
@@ -91,15 +192,17 @@ def delete_email(
     """Delete email by message ID with safety checks."""
     console = rich.console.Console(force_terminal=False)
 
-    email = get_email_by_id(message_id, folder, verbose=verbose)
+    console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
+    message_data = get_message(message_id, folder, verbose=verbose)
 
-    if not email:
+    if not message_data:
         console.print()
         console.print(
             f"[red]❌ Error: Email with ID {message_id} not found in folder {folder}[/red]"
         )
         sys.exit(1)
 
+    email = message_data["envelope"]
     show_email_preview(email)
 
     if not execute:
@@ -124,17 +227,20 @@ def delete_email(
             console.print("[yellow]Delete cancelled.[/yellow]")
             return
 
-    args = [
-        "envelope",
-        "delete",
-        "--account",
-        ACCOUNT,
-        "--folder",
-        folder,
-        str(message_id),
-    ]
+    console.print(f"[dim]Deleting message {message_id}...[/dim]")
 
-    result = run_himalaya(args, verbose=verbose, check=False)
+    result = run_himalaya(
+        [
+            "envelope",
+            "delete",
+            "--account",
+            ACCOUNT,
+            "--folder",
+            folder,
+            str(message_id),
+        ],
+        verbose=verbose,
+    )
 
     if result.returncode == 0:
         console.print()
