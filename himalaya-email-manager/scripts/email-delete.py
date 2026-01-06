@@ -23,15 +23,14 @@ ACCOUNT = "akaihola"
 def run_himalaya(
     args: list[str], verbose: bool = False, check: bool = True
 ) -> subprocess.CompletedProcess[str]:
-    """Run himalaya via nix-shell and return result."""
-    cmd = f"himalaya {' '.join(args)}"
-    full_cmd = ["nix-shell", "-p", "himalaya", "--run", cmd]
+    """Run himalaya and return result."""
+    cmd = ["himalaya"] + args
 
     console = rich.console.Console(force_terminal=False)
     if verbose:
-        console.print(f"[dim]Running: {' '.join(full_cmd)}[/dim]")
+        console.print(f"[dim]Running: {' '.join(cmd)}[/dim]")
 
-    return subprocess.run(full_cmd, capture_output=True, text=True, check=check)
+    return subprocess.run(cmd, capture_output=True, text=True, check=check)
 
 
 def is_interactive() -> bool:

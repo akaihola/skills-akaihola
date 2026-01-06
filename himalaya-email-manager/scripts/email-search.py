@@ -27,14 +27,13 @@ UNLIMITED_PAGE_SIZE = 10000
 
 
 def run_himalaya(args: list[str], page_size: int, verbose: bool = False) -> list[dict]:
-    """Run himalaya via nix-shell and return parsed JSON output."""
-    cmd = f"himalaya {' '.join(args)}"
-    full_cmd = ["nix-shell", "-p", "himalaya", "--run", cmd]
+    """Run himalaya and return parsed JSON output."""
+    cmd = ["himalaya"] + args
 
     if verbose:
-        rich.console.Console().print(f"[dim]Running: {' '.join(full_cmd)}[/dim]")
+        rich.console.Console().print(f"[dim]Running: {' '.join(cmd)}[/dim]")
 
-    result = subprocess.run(full_cmd, capture_output=True, text=True, check=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
     if result.stdout.strip():
         return json.loads(result.stdout)
