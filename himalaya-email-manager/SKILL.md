@@ -243,7 +243,7 @@ Interpret natural language queries as appropriate script calls:
 **Technical context:**
 
 - Backend: Himalaya v1.1.0 (Rust-based IMAP CLI tool) via Python 3.13 with typer and rich
-- Installation: Nix (nix-shell -p himalaya)
+- Installation: Himalaya must be installed on your system
 - Output format: JSON → Rich tables with Python json.loads()
 - Authentication: Keyring-based (managed by Himalaya)
 - Protocol: IMAP over TLS (direct server communication)
