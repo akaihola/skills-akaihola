@@ -8,10 +8,10 @@ If you see connection errors when running scripts:
 
 ```bash
 # Test connection
-nix-shell -p himalaya --run "himalaya account list"
+himalaya account list
 
 # List folders
-nix-shell -p himalaya --run "himalaya folder list"
+himalaya folder list
 
 # View account details
 cat ~/.config/himalaya/config.toml
@@ -72,20 +72,21 @@ If IMAP server is slow or unresponsive:
 
 If scripts don't run:
 
-1. Verify Nix is installed and working
-2. Test: `nix-shell -p himalaya --run "himalaya --help"`
-3. Check that all scripts have the shebang line `#!/usr/bin/env bash`
-4. Ensure jq is available (Nix package)
+1. Verify Himalaya is installed: `himalaya --help`
+2. Ensure uv is available for Python environment management
+3. Check that Python 3.13+ is installed
 
 ## Technical Context
 
 This skill uses:
-- **Himalaya v1.1.0** - Rust-based IMAP CLI tool
-- **jq** - JSON parsing and formatting
-- **Nix** - Package management
+
+- **Himalaya v1.1.0** - Rust-based IMAP CLI tool (must be installed)
+- **Python 3.13+** - Script runtime
+- **uv** - Python environment and dependency management
 - **IMAP protocol** - Direct server communication (mail.gandi.net)
 
 All operations are performed directly on the IMAP server, ensuring:
+
 - Real-time access to emails
 - Immediate synchronization with other clients (Thunderbird, webmail)
 - No risk of local file corruption

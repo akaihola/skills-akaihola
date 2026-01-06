@@ -9,7 +9,7 @@ Natural language interface for email management using Himalaya IMAP CLI tool.
 Get a summary of emails from the past 24 hours:
 
 ```bash
-scripts/email-summary.sh
+uv run scripts/email-summary.py
 ```
 
 ### Search Emails
@@ -18,19 +18,19 @@ Search by sender, subject, date, or folder:
 
 ```bash
 # Basic search (latest 20)
-scripts/email-search.sh
+uv run scripts/email-search.py
 
 # By sender
-scripts/email-search.sh --from "spotify.com"
+uv run scripts/email-search.py --from "spotify.com"
 
 # By subject
-scripts/email-search.sh --subject "invoice"
+uv run scripts/email-search.py --subject "invoice"
 
 # By date range
-scripts/email-search.sh --date-start "2025-12-01" --date-end "2025-12-31"
+uv run scripts/email-search.py --date-start "2025-12-01" --date-end "2025-12-31"
 
 # Multiple filters
-scripts/email-search.sh --from "@newsletter.com" --subject "unsubscribe" --limit 5
+uv run scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" --limit 5
 ```
 
 ### Save Emails
@@ -39,19 +39,19 @@ Save email content to file:
 
 ```bash
 # Save as markdown
-scripts/email-save.sh 56873
+uv run scripts/email-save.py 56873
 
 # Save to specific directory
-scripts/email-save.sh 56873 --output ~/saved-emails
+uv run scripts/email-save.py 56873 --output ~/saved-emails
 
 # Save with date prefix
-scripts/email-save.sh 56873 --date-prefix
+uv run scripts/email-save.py 56873 --date-prefix
 
 # Save as JSON
-scripts/email-save.sh 56873 --format json
+uv run scripts/email-save.py 56873 --format json
 
 # Save from Sent folder
-scripts/email-save.sh --folder Sent 12345
+uv run scripts/email-save.py --folder Sent 12345
 ```
 
 ### Delete Emails
@@ -60,10 +60,10 @@ Delete with safety preview:
 
 ```bash
 # Preview deletion
-scripts/email-delete.sh 56838
+uv run scripts/email-delete.py 56838
 
 # Actually delete
-scripts/email-delete.sh 56838 --execute
+uv run scripts/email-delete.py 56838 --execute
 ```
 
 ## Natural Language Queries
@@ -77,13 +77,15 @@ scripts/email-delete.sh 56838 --execute
 
 ## Installation
 
-Himalaya is installed via Nix:
+Himalaya must be installed on your system. Test your installation:
 
 ```bash
-nix-shell -p himalaya --run "himalaya --help"
+himalaya --help
 ```
 
 The IMAP account is configured in `~/.config/himalaya/config.toml`.
+
+All scripts use PEP 723 inline metadata and require Python 3.13+. Invoke with `uv run` to automatically handle Python environment and dependencies.
 
 - ✅ Fast IMAP search (server-side)
 - ✅ Safe deletion with preview (dry-run by default)
