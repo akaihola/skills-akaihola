@@ -1,5 +1,13 @@
-#!/usr/bin/env nix-shell
-#!nix-shell -i python3 -p python312 python312Packages.typer python312Packages.rich
+#!/usr/bin/env python3
+"""Save emails to files in various formats."""
+
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "typer>=0.12.0",
+#     "rich>=13.7.0",
+# ]
+# ///
 
 from pathlib import Path
 import json
