@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 """
 Test script for generated skill
 """
@@ -23,7 +27,7 @@ def main():
 
     # Test listing tools
     print("\n1. Listing available tools:")
-    tools_output = run_command([sys.executable, "executor.py", "--list"])
+    tools_output = run_command(["./../executor.py", "--list"])
     print(tools_output)
 
     # Parse tools
@@ -34,7 +38,9 @@ def main():
 
             # Test describing a tool
             print(f"\n2. Describing tool: {first_tool}")
-            describe_output = run_command([sys.executable, "executor.py", "--describe", first_tool])
+            describe_output = run_command(
+                ["./../executor.py", "--describe", first_tool]
+            )
             print(describe_output)
         else:
             print("No tools found to test")
