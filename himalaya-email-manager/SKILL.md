@@ -89,7 +89,7 @@ uv run scripts/email-save.py <message-id> [options]
 - `--format FORMAT` - Output format: markdown, text, or json (default: markdown)
 - `--date-prefix` - Add YYYY-MM-DD date prefix to filename (uses email date)
 - `--download-attachments` - Download email attachments
-- `--attachment-dir PATH` - Directory for attachments (default: himalaya downloads directory)
+- `--attachment-dir PATH` - Directory for attachments (default: current directory, same as email save location)
 - `--overwrite` - Overwrite existing file without confirmation
 - `-v, --verbose` - Show himalaya commands being executed
 - `--help` - Show help message

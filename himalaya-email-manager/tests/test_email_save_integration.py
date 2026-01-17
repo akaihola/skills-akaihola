@@ -18,7 +18,6 @@ class TestDownloadAttachmentsInternal:
 
     def test_attachments_moved_to_specified_directory(self, tmp_path):
         """Verify attachments are moved to specified directory."""
-        test_dir = tmp_path
         message_id = 57039
         folder = "INBOX"
 
@@ -48,7 +47,7 @@ class TestDownloadAttachmentsInternal:
             )
 
             result = _download_attachments_internal(
-                message_id, folder, test_dir, verbose=False
+                message_id, folder, tmp_path, verbose=False
             )
 
             assert len(result) == 5
@@ -56,12 +55,11 @@ class TestDownloadAttachmentsInternal:
             assert len(moved_files) == 5
 
             for src, dst in moved_files:
-                assert dst.parent == test_dir
+                assert dst.parent == tmp_path
                 assert "obf_attachment" in dst.name
 
     def test_attachments_default_to_current_directory(self, tmp_path):
         """Verify attachments move to current directory when dir specified."""
-        current_dir = tmp_path
         message_id = 57039
         folder = "INBOX"
 
@@ -89,22 +87,24 @@ class TestDownloadAttachmentsInternal:
             )
 
             result = _download_attachments_internal(
-                message_id, folder, current_dir, verbose=False
+                message_id, folder, tmp_path, verbose=False
             )
 
             assert len(result) == 3
             for src, dst in moved_files:
-                assert dst.parent == current_dir
+                assert dst.parent == tmp_path
 
     def test_no_attachments_returns_empty_list(self, tmp_path):
         """Verify empty list when no attachments found."""
-        test_dir = tmp_path
-        message_id = 12345
+        message_id = 57039
         folder = "INBOX"
 
         himalaya_output = ""
 
-        with patch("subprocess.run") as mock_run, patch("shutil.move") as mock_move:
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("shutil.move") as mock_move,
+        ):
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["himalaya"],
                 returncode=0,
@@ -113,7 +113,7 @@ class TestDownloadAttachmentsInternal:
             )
 
             result = _download_attachments_internal(
-                message_id, folder, test_dir, verbose=False
+                message_id, folder, tmp_path, verbose=False
             )
 
             assert result == []
@@ -121,7 +121,7 @@ class TestDownloadAttachmentsInternal:
 
     def test_attachment_dir_creation(self, tmp_path):
         """Verify attachment directory is created if it doesn't exist."""
-        test_dir = tmp_path / "subdir" / "attachments"
+        attachment_dir = tmp_path / "subdir" / "attachments"
         message_id = 57039
         folder = "INBOX"
 
@@ -141,14 +141,13 @@ class TestDownloadAttachmentsInternal:
             )
 
             result = _download_attachments_internal(
-                message_id, folder, test_dir, verbose=False
+                message_id, folder, attachment_dir, verbose=False
             )
 
             mock_mkdir.assert_called_once()
 
     def test_attachment_names_preserved(self, tmp_path):
         """Verify attachment names are preserved from himalaya output."""
-        test_dir = tmp_path
         message_id = 57039
         folder = "INBOX"
 
@@ -175,7 +174,7 @@ class TestDownloadAttachmentsInternal:
             )
 
             result = _download_attachments_internal(
-                message_id, folder, test_dir, verbose=False
+                message_id, folder, tmp_path, verbose=False
             )
 
             assert len(result) == 2
