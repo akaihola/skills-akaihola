@@ -3,6 +3,7 @@
 
 import json
 from pathlib import Path
+from textwrap import dedent
 from unittest.mock import MagicMock, patch, call
 import subprocess
 import sys
@@ -367,10 +368,3 @@ class TestSaveCommandAttachmentBehavior:
             assert "obf_img_001.png" in written_content
             assert "obf_doc.pdf" in written_content
             assert "Attachments:" in written_content
-
-
-def dedent(s):
-    """Helper to dedent strings."""
-    from textwrap import dedent as _dedent
-
-    return _dedent(s)
