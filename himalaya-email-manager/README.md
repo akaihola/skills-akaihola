@@ -39,19 +39,19 @@ Save email content to file:
 
 ```bash
 # Save as markdown
-uv run scripts/email-save.py 56873
+uv run scripts/email_save.py 56873
 
 # Save to specific directory
-uv run scripts/email-save.py 56873 --output ~/saved-emails
+uv run scripts/email_save.py 56873 --output ~/saved-emails
 
 # Save with date prefix
-uv run scripts/email-save.py 56873 --date-prefix
+uv run scripts/email_save.py 56873 --date-prefix
 
 # Save as JSON
-uv run scripts/email-save.py 56873 --format json
+uv run scripts/email_save.py 56873 --format json
 
 # Save from Sent folder
-uv run scripts/email-save.py --folder Sent 12345
+uv run scripts/email_save.py --folder Sent 12345
 ```
 
 ### Delete Emails
@@ -101,7 +101,7 @@ All scripts use PEP 723 inline metadata and require Python 3.13+. Invoke with `u
 
 - Delete operations show preview before execution (dry-run by default)
 - Save operations prompt before overwriting existing files (use --overwrite to skip)
-- Attachment downloads default to himalaya's downloads directory (customize with --attachment-dir)
+- Attachment downloads default to current directory, matching email save location (customize with --attachment-dir)
 - Uses message UIDs for safe identification
 - Changes sync immediately with IMAP server
 
