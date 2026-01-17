@@ -20,13 +20,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 def test_parse_email_headers_with_date():
     """Test parsing headers when Date header is present."""
     from email_save import parse_email_headers
+    from textwrap import dedent
 
-    message_text = """From: sender@example.com
-To: recipient@example.com
-Subject: Test Subject
-Date: Wed, 15 Jan 2026 10:23:00 +0000
+    message_text = dedent(
+        """\
+        From: sender@example.com
+        To: recipient@example.com
+        Subject: Test Subject
+        Date: Wed, 15 Jan 2026 10:23:00 +0000
 
-Body content here."""
+        Body content here."""
+    )
 
     headers = parse_email_headers(message_text)
     assert headers.get("date") == "Wed, 15 Jan 2026 10:23:00 +0000"
@@ -37,12 +41,16 @@ Body content here."""
 def test_parse_email_headers_without_date():
     """Test parsing headers when Date header is missing (the problematic case)."""
     from email_save import parse_email_headers
+    from textwrap import dedent
 
-    message_text = """From: Employee <employee@company.example>
-To: User <user@example.org>
-Subject: Missing Date Header
+    message_text = dedent(
+        """\
+        From: Employee <employee@company.example>
+        To: User <user@example.org>
+        Subject: Missing Date Header
 
-Body content here."""
+        Body content here."""
+    )
 
     headers = parse_email_headers(message_text)
     assert headers.get("date") is None
