@@ -40,4 +40,4 @@ jobs:
       - name: Run tests
         run: |
           cd himalaya-email-manager
-          uv run pytest tests/test_email_save_integration.py -v --tb=short
+          uv run pytest tests/ -v --tb=short
