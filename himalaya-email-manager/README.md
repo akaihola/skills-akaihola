@@ -35,23 +35,26 @@ uv run scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" 
 
 ### Save Emails
 
-Save email content to file:
+Save email content to file (attachments are downloaded by default):
 
 ```bash
-# Save as markdown
+# Save as markdown (attachments downloaded)
 uv run scripts/email_save.py 56873
 
-# Save to specific directory
+# Save to specific directory (attachments downloaded)
 uv run scripts/email_save.py 56873 --output ~/saved-emails
 
-# Save with date prefix
+# Save with date prefix (attachments downloaded)
 uv run scripts/email_save.py 56873 --date-prefix
 
-# Save as JSON
+# Save as JSON (attachments downloaded)
 uv run scripts/email_save.py 56873 --format json
 
-# Save from Sent folder
+# Save from Sent folder (attachments downloaded)
 uv run scripts/email_save.py --folder Sent 12345
+
+# Save without attachments
+uv run scripts/email_save.py 56873 --no-download-attachments
 ```
 
 ### Delete Emails
