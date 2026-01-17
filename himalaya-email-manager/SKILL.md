@@ -79,7 +79,7 @@ uv run scripts/email-search.py --limit 200 --no-limit
 Save email content to a file in various formats:
 
 ```bash
-uv run scripts/email-save.py <message-id> [options]
+uv run scripts/email_save.py <message-id> [options]
 ```
 
 **Options:**
@@ -89,7 +89,7 @@ uv run scripts/email-save.py <message-id> [options]
 - `--format FORMAT` - Output format: markdown, text, or json (default: markdown)
 - `--date-prefix` - Add YYYY-MM-DD date prefix to filename (uses email date)
 - `--download-attachments` - Download email attachments
-- `--attachment-dir PATH` - Directory for attachments (default: himalaya downloads directory)
+- `--attachment-dir PATH` - Directory for attachments (default: current directory, same as email save location)
 - `--overwrite` - Overwrite existing file without confirmation
 - `-v, --verbose` - Show himalaya commands being executed
 - `--help` - Show help message
@@ -114,34 +114,34 @@ uv run scripts/email-save.py <message-id> [options]
 
 ```bash
 # Save as markdown to current directory
-uv run scripts/email-save.py 56873
+uv run scripts/email_save.py 56873
 
 # Save to specific directory
-uv run scripts/email-save.py 56873 --output ~/saved-emails
+uv run scripts/email_save.py 56873 --output ~/saved-emails
 
 # Save with date prefix
-uv run scripts/email-save.py 56873 --date-prefix --output /tmp/emails
+uv run scripts/email_save.py 56873 --date-prefix --output /tmp/emails
 
 # Save as text format
-uv run scripts/email-save.py 56873 --format text
+uv run scripts/email_save.py 56873 --format text
 
 # Save as JSON
-uv run scripts/email-save.py 56873 --format json
+uv run scripts/email_save.py 56873 --format json
 
 # Save to specific file path
-uv run scripts/email-save.py 56873 --output ~/important-email.md
+uv run scripts/email_save.py 56873 --output ~/important-email.md
 
 # Overwrite existing file without prompt
-uv run scripts/email-save.py 56873 --overwrite --output ~/email.md
+uv run scripts/email_save.py 56873 --overwrite --output ~/email.md
 
 # Save from Sent folder
-uv run scripts/email-save.py --folder Sent 12345 --output ~/sent-emails
+uv run scripts/email_save.py --folder Sent 12345 --output ~/sent-emails
 
 # Save with attachments
-uv run scripts/email-save.py 56873 --download-attachments
+uv run scripts/email_save.py 56873 --download-attachments
 
 # Save with attachments to custom directory
-uv run scripts/email-save.py 56873 --download-attachments --attachment-dir ~/attachments
+uv run scripts/email_save.py 56873 --download-attachments --attachment-dir ~/attachments
 ```
 
 ## Delete Emails
@@ -201,9 +201,9 @@ Interpret natural language queries as appropriate script calls:
 
 **Save queries:**
 
-- "Save email ID 56873" → email-save.py 56873
-- "Save as JSON" → email-save.py 56873 --format json
-- "Save to ~/emails folder with date prefix" → email-save.py 56873 --output ~/emails --date-prefix
+- "Save email ID 56873" → email_save.py 56873
+- "Save as JSON" → email_save.py 56873 --format json
+- "Save to ~/emails folder with date prefix" → email_save.py 56873 --output ~/emails --date-prefix
 
 **Delete queries:**
 

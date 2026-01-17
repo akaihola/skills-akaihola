@@ -133,14 +133,14 @@ uv run scripts/email-delete.py --folder Sent 12345 --execute
 
 **WARNING:** Always run in dry-run mode first to verify the correct message!
 
-## email-save.py
+## email_save.py
 
 Save email content to file in various formats.
 
 **Usage:**
 
 ```bash
-uv run scripts/email-save.py <message-id> [options]
+uv run scripts/email_save.py <message-id> [options]
 ```
 
 **Options:**
@@ -169,25 +169,25 @@ uv run scripts/email-save.py <message-id> [options]
 
 ```bash
 # Save as markdown to current directory
-uv run scripts/email-save.py 56873
+uv run scripts/email_save.py 56873
 
 # Save to specific directory
-uv run scripts/email-save.py 56873 --output ~/saved-emails
+uv run scripts/email_save.py 56873 --output ~/saved-emails
 
 # Save with date prefix
-uv run scripts/email-save.py 56873 --date-prefix
+uv run scripts/email_save.py 56873 --date-prefix
 
 # Save as text format
-uv run scripts/email-save.py 56873 --format text
+uv run scripts/email_save.py 56873 --format text
 
 # Save as JSON
-uv run scripts/email-save.py 56873 --format json
+uv run scripts/email_save.py 56873 --format json
 
 # Save with attachments
-uv run scripts/email-save.py 56873 --download-attachments
+uv run scripts/email_save.py 56873 --download-attachments
 
 # Save with attachments to custom directory
-uv run scripts/email-save.py 56873 --download-attachments --attachment-dir ~/attachments
+uv run scripts/email_save.py 56873 --download-attachments --attachment-dir ~/attachments
 ```
 
 ## email-read.py
