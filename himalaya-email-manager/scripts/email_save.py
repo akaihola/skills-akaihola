@@ -445,7 +445,10 @@ def save(
         False, "--overwrite", help="Overwrite existing file without confirmation"
     ),
     download_attachments: bool = typer.Option(
-        False, "--download-attachments", help="Download email attachments"
+        True,
+        "--download-attachments",
+        "--no-download-attachments",
+        help="Download email attachments (default: enabled, use --no-download-attachments to skip)",
     ),
     attachment_dir: Path | None = typer.Option(
         None, "--attachment-dir", help="Directory for attachments"
