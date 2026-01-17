@@ -94,6 +94,67 @@ uv run scripts/email_save.py <message-id> [options]
 - `-v, --verbose` - Show himalaya commands being executed
 - `--help` - Show help message
 
+## Post-Save Attachment Processing
+
+After saving emails with `--download-attachments`, automatically inspect each attachment using vision capabilities:
+
+1. **Use vision to analyze** each image attachment
+2. **Classify** the content type (icon, logo, table, signature, complex image)
+3. **Convert** to text representation where appropriate
+4. **Update** the saved email file with replacements
+5. **Delete** replaced attachment files
+
+### Classification Guidelines
+
+| Content Type              | Characteristics                            | Replacement Format                          |
+| ------------------------- | ------------------------------------------ | ------------------------------------------- |
+| **Icons/Emojis/Symbols**  | Small, single glyph, no text               | Unicode character (e.g., ✓, ★, →)           |
+| **Logos**                 | Company/brand imagery, decorative          | Text description: `[Logo: Company Name]`    |
+| **Signatures**            | Handwritten-style text, often at email end | Text: `[Signature: Name]` or extracted text |
+| **Brief text**            | Very short text content (1-3 words)        | Extracted text verbatim                     |
+| **Simple tables**         | Single-line cells, no images               | Markdown table                              |
+| **Complex tables**        | Multi-line cells, no images                | ASCII table                                 |
+| **Photos/Complex images** | Photographs, screenshots, diagrams         | **Keep unchanged**                          |
+
+### Replacement Process
+
+1. Read the saved email file
+2. For each attachment reference in the file:
+   a. Inspect the image using vision capability
+   b. Determine if it can be replaced with text
+   c. If yes: generate appropriate text representation
+   d. If no: leave the attachment reference unchanged
+3. Write updated content to the email file
+4. Delete successfully replaced attachment files
+
+### Example Conversions
+
+**Icon → Unicode:**
+
+```
+Before: ![](attachments/checkmark.png)
+After: ✓
+```
+
+**Simple table → Markdown:**
+
+```markdown
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Value A  | Value B  |
+```
+
+**Complex table → ASCII:**
+
+```
++------------+-----------+
+| Header 1   | Header 2  |
++------------+-----------+
+| Multi-line | Content   |
+| cell here  | goes here |
++------------+-----------+
+```
+
 **Arguments:**
 
 - `message-id` - Message ID to save (obtained from search results)
@@ -143,6 +204,49 @@ uv run scripts/email_save.py 56873 --download-attachments
 # Save with attachments to custom directory
 uv run scripts/email_save.py 56873 --download-attachments --attachment-dir ~/attachments
 ```
+
+## Save Email Workflow (Agent)
+
+When user asks to save an email with attachments:
+
+1. Run `email_save.py <id> --download-attachments --output <dir>`
+2. Read the list of downloaded attachments from output
+3. For each image attachment:
+   - Use `look_at` tool or other vision capabilities to inspect the image
+   - Classify content and determine if it can be replaced with text
+4. If any attachments were replaced:
+   - Update the saved email file with text replacements
+   - Delete the replaced attachment files
+5. Report to user what was saved and what was converted
+
+### Attachment Classification
+
+- **Replace with Unicode**: Icons, emojis, symbols, checkmarks, arrows
+- **Replace with Markdown table**: Tables with single-line text cells
+- **Replace with ASCII table**: Tables with multi-line text cells
+- **Replace with text**: Very brief text (1-3 words), signatures
+- **Keep unchanged**: Photos, screenshots, complex diagrams, charts
+
+## ASCII Table Format
+
+For complex tables with multi-line content, use this standardized format:
+
+```
++------------+---------------+
+| Column 1   | Column 2      |
++------------+---------------+
+| Line 1     | Multi-line    |
+| continues  | content here  |
++------------+---------------+
+```
+
+Key characteristics:
+
+- Use `+` for corners
+- Use `-` for horizontal lines
+- Use `|` for vertical lines
+- Column widths match content
+- All cells must have aligned pipes
 
 ## Delete Emails
 
