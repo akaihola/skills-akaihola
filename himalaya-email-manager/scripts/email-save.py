@@ -402,8 +402,9 @@ def save(
     attachments: list[Path] | None = None
     if download_attachments:
         console.print(f"[dim]Downloading attachments...[/dim]")
+        effective_attachment_dir = attachment_dir or Path(".")
         attachments = _download_attachments_internal(
-            message_id, folder, attachment_dir, verbose
+            message_id, folder, effective_attachment_dir, verbose
         )
         if attachments:
             console.print(
