@@ -18,6 +18,7 @@ import shutil
 from datetime import datetime
 from textwrap import dedent
 from typing import Literal
+from email.utils import parsedate_to_datetime
 
 import typer
 from rich.console import Console
@@ -64,6 +65,46 @@ def parse_email_headers(message_text: str) -> dict:
             headers[key.strip().lower()] = value.strip()
 
     return headers
+
+
+def get_envelope_date(
+    message_id: int, folder: str, from_address: str = "", verbose: bool = False
+) -> str:
+    """Fetch envelope date from himalaya envelope list by searching.
+
+    Searches envelopes by sender address and finds the one matching the message ID.
+    Returns date string in ISO 8601 format if found, empty string otherwise.
+    """
+    if not from_address:
+        return ""
+
+    try:
+        result = run_himalaya(
+            [
+                "envelope",
+                "list",
+                "--account",
+                ACCOUNT,
+                "--folder",
+                folder,
+                "--output",
+                "json",
+                f"from {from_address}",
+            ],
+            verbose=verbose,
+        )
+
+        envelopes = json.loads(result.stdout)
+        if isinstance(envelopes, list):
+            for envelope in envelopes:
+                if envelope.get("id") == str(message_id) and "date" in envelope:
+                    return envelope["date"]
+    except (json.JSONDecodeError, KeyError, IndexError):
+        pass
+    except SystemExit:
+        pass
+
+    return ""
 
 
 def get_message(message_id: int, folder: str, verbose: bool = False) -> dict:
@@ -154,6 +195,10 @@ def get_message(message_id: int, folder: str, verbose: bool = False) -> dict:
                         envelope["to"].append({"address": to_addr})
 
         envelope["date"] = headers.get("date", "")
+        if not envelope["date"]:
+            from_addr = envelope.get("from", {}).get("address", "")
+            envelope["date"] = get_envelope_date(message_id, folder, from_addr, verbose)
+
         envelope["subject"] = headers.get("subject", "")
 
         return {"envelope": envelope, "body": body}
@@ -186,15 +231,33 @@ def generate_filename(
         "json": "json",
     }[output_format]
 
-    if date_prefix:
-        for date_format in ["%Y-%m-%d %H:%M%z", "%Y-%m-%d %H:%M:%S%z"]:
+    if date_prefix and date_str:
+        date_formats = [
+            "%Y-%m-%d %H:%M%z",
+            "%Y-%m-%d %H:%M:%S%z",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%d",
+        ]
+
+        for date_format in date_formats:
             try:
                 date_obj = datetime.strptime(date_str, date_format)
+                date_obj = date_obj.astimezone()
                 date_prefix_str = date_obj.strftime("%Y-%m-%d")
                 sanitized_subject = sanitize_filename(subject)
                 return f"{date_prefix_str}-{sanitized_subject}.{ext}"
             except ValueError:
                 continue
+
+        try:
+            date_obj = parsedate_to_datetime(date_str)
+            date_obj = date_obj.astimezone()
+            date_prefix_str = date_obj.strftime("%Y-%m-%d")
+            sanitized_subject = sanitize_filename(subject)
+            return f"{date_prefix_str}-{sanitized_subject}.{ext}"
+        except (TypeError, ValueError):
+            pass
 
         console.print(
             f"[yellow]⚠[/yellow] Could not parse date: [dim]{date_str}[/dim]\n"
