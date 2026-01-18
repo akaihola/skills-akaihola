@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Save emails to files in various formats."""
 
 # /// script
@@ -30,7 +29,9 @@ console = Console()
 ACCOUNT = "akaihola"
 
 
-def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.CompletedProcess:
+def run_himalaya(
+    args: list[str], *, verbose: bool = False
+) -> subprocess.CompletedProcess:
     """Run a himalaya command and return result."""
     if verbose:
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
@@ -74,7 +75,7 @@ def parse_email_headers(message_text: str) -> dict:
 
 
 def get_envelope_date(
-    message_id: int, folder: str, from_address: str = "", verbose: bool = False
+    message_id: int, folder: str, from_address: str = "", *, verbose: bool = False
 ) -> str:
     """Fetch envelope date from himalaya envelope list by searching.
 
@@ -113,7 +114,7 @@ def get_envelope_date(
     return ""
 
 
-def get_message(message_id: int, folder: str, verbose: bool = False) -> dict:
+def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
     """Get full message (headers + body) by ID."""
     result = run_himalaya(
         [
@@ -203,7 +204,9 @@ def get_message(message_id: int, folder: str, verbose: bool = False) -> dict:
         envelope["date"] = headers.get("date", "")
         if not envelope["date"]:
             from_addr = envelope.get("from", {}).get("address", "")
-            envelope["date"] = get_envelope_date(message_id, folder, from_addr, verbose)
+            envelope["date"] = get_envelope_date(
+                message_id, folder, from_addr, verbose=verbose
+            )
 
         envelope["subject"] = headers.get("subject", "")
 
@@ -228,6 +231,7 @@ def generate_filename(
     subject: str,
     date_str: str,
     output_format: str,
+    *,
     date_prefix: bool = False,
 ) -> str:
     """Generate filename for the saved email."""
@@ -384,6 +388,7 @@ def fix_attachment_paths_in_body(
     body: str,
     downloaded_files: list[Path],
     email_output_dir: Path,
+    *,
     verbose: bool = False,
 ) -> str:
     """Replace himalaya's default download paths with correct relative paths.
@@ -418,7 +423,8 @@ def fix_attachment_paths_in_body(
             filename_to_relative_path[attachment_path.name] = str(attachment_path)
             if verbose:
                 console.print(
-                    f"[dim]Path mapping (absolute): {attachment_path.name} → {attachment_path}[/dim]"
+                    f"[dim]Path mapping (absolute): {attachment_path.name}"
+                    f" → {attachment_path}[/dim]"
                 )
 
     replacement_count = 0
@@ -445,7 +451,7 @@ def fix_attachment_paths_in_body(
 
 
 def _download_attachments_internal(
-    message_id: int, folder: str, attachment_dir: Path | None, verbose: bool = False
+    message_id: int, folder: str, attachment_dir: Path | None, *, verbose: bool = False
 ) -> list[Path]:
     """Download attachments from an email message.
 
@@ -499,7 +505,7 @@ def format_json(envelope: dict, body: str, folder: str) -> str:
 
 
 @app.command()
-def save(
+def save(  # noqa: FBT001
     message_id: int = typer.Argument(..., help="Message ID to save"),
     folder: str = typer.Option("INBOX", "--folder", "-f", help="Folder to search"),
     output: Path = typer.Option(
@@ -509,13 +515,10 @@ def save(
         "markdown", "--format", help="Output format (markdown/text/json)"
     ),
     date_prefix: bool = typer.Option(
-        False, "--date-prefix", help="Add YYYY-MM-DD prefix to filename"
-    ),
-    overwrite: bool = typer.Option(
-        False, "--overwrite", help="Overwrite existing file without confirmation"
+        default=False, "--overwrite", help="Overwrite existing file without confirmation"
     ),
     download_attachments: bool = typer.Option(
-        True,
+        default=True,
         "--download-attachments",
         "--no-download-attachments",
         help="Download email attachments (default: enabled, use --no-download-attachments to skip)",
@@ -524,19 +527,21 @@ def save(
         None, "--attachment-dir", help="Directory for attachments"
     ),
     verbose: bool = typer.Option(
-        False, "-v", "--verbose", help="Show himalaya commands"
+        default=False, "-v", "--verbose", help="Show himalaya commands"
     ),
 ) -> None:
     """Save an email to a file."""
     console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
-    message_data = get_message(message_id, folder, verbose)
+    message_data = get_message(message_id, folder, verbose=verbose)
 
     envelope = message_data["envelope"]
     body = message_data["body"]
 
     subject = envelope.get("subject", "")
     date = envelope["date"]
-    filename = generate_filename(message_id, subject, date, format, date_prefix)
+    filename = generate_filename(
+        message_id, subject, date, format, date_prefix=date_prefix
+    )
 
     # Determine output_path first, before downloading attachments
     if output:
@@ -562,7 +567,7 @@ def save(
         console.print("[dim]Downloading attachments...[/dim]")
         effective_attachment_dir = attachment_dir or output_path.parent
         attachments = _download_attachments_internal(
-            message_id, folder, effective_attachment_dir, verbose
+            message_id, folder, effective_attachment_dir, verbose=verbose
         )
         if attachments:
             console.print(
@@ -574,7 +579,7 @@ def save(
     if attachments:
         email_output_dir = output_path.parent
         body = fix_attachment_paths_in_body(
-            body, attachments, email_output_dir, verbose
+            body, attachments, email_output_dir, verbose=verbose
         )
 
     console.print(f"[dim]Formatting as {format}...[/dim]")
