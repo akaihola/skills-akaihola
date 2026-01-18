@@ -37,7 +37,19 @@ ACCOUNT = "akaihola"
 def run_himalaya(
     args: list[str], *, verbose: bool = False
 ) -> subprocess.CompletedProcess:
-    """Run a himalaya command and return result."""
+    """Run a himalaya command and return result.
+
+    Args:
+        args: Command arguments to pass to himalaya
+        verbose: Print debug info about the command
+
+    Returns:
+        CompletedProcess containing stdout, stderr, and return code
+
+    Raises:
+        typer.Exit: If himalaya is not found or command fails
+
+    """
     if verbose:
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
@@ -63,7 +75,12 @@ def run_himalaya(
 
 
 def parse_email_headers(message_text: str) -> dict:
-    """Parse email headers from message text."""
+    """Parse email headers from message text.
+
+    Returns:
+        Dictionary mapping lowercase header names to values
+
+    """
     headers_end = message_text.find("\n\n")
     if headers_end == -1:
         headers_end = message_text.find("\n---\n")
@@ -85,7 +102,16 @@ def get_envelope_date(
     """Fetch envelope date from himalaya envelope list by searching.
 
     Searches envelopes by sender address and finds the one matching the message ID.
-    Returns date string in ISO 8601 format if found, empty string otherwise.
+
+    Args:
+        message_id: Message ID to search for
+        folder: Folder to search in
+        from_address: Sender address to filter by
+        verbose: Print debug info
+
+    Returns:
+        Date string in ISO 8601 format if found, empty string otherwise
+
     """
     if not from_address:
         return ""
@@ -120,7 +146,12 @@ def get_envelope_date(
 
 
 def parse_email_address(address: str) -> dict:
-    """Parse a single email address into name and address components."""
+    """Parse a single email address into name and address components.
+
+    Returns:
+        Dictionary with 'address' key, and optionally 'name' key
+
+    """
     match = re.match(r"^(.*?)\s*<([^>]+)>$", address)
     if match:
         return {
@@ -135,7 +166,12 @@ def parse_email_address(address: str) -> dict:
 
 
 def parse_to_addresses(to_header: str) -> dict | list:
-    """Parse To header into single address dict or list of dicts."""
+    """Parse To header into single address dict or list of dicts.
+
+    Returns:
+        Single address dict if one recipient, list of dicts for multiple recipients
+
+    """
     to_addrs = [addr.strip() for addr in to_header.split(",")]
     if len(to_addrs) == 1:
         return parse_email_address(to_addrs[0])
@@ -143,7 +179,12 @@ def parse_to_addresses(to_header: str) -> dict | list:
 
 
 def extract_message_body(message_text: str) -> str:
-    """Extract body from message text by finding headers separator."""
+    """Extract body from message text by finding headers separator.
+
+    Returns:
+        Message body content after headers separator
+
+    """
     headers_end = message_text.find("\n\n")
     if headers_end == -1:
         headers_end = message_text.find("\n---\n")
@@ -151,7 +192,15 @@ def extract_message_body(message_text: str) -> str:
 
 
 def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
-    """Get full message (headers + body) by ID."""
+    """Get full message (headers + body) by ID.
+
+    Returns:
+        Dictionary with 'envelope' and 'body' keys
+
+    Raises:
+        typer.Exit: If JSON parsing fails
+
+    """
     result = run_himalaya(
         [
             "message",
@@ -198,20 +247,27 @@ def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
             )
 
         envelope["subject"] = headers.get("subject", "")
-
-        return {"envelope": envelope, "body": body}
-
     except json.JSONDecodeError as e:
         console.print(f"[red]Error parsing JSON:[/red] {e}")
         raise typer.Exit(1) from e
+    else:
+        return {"envelope": envelope, "body": body}
+
+
+MAX_FILENAME_LENGTH = 200
 
 
 def sanitize_filename(name: str) -> str:
-    """Sanitize filename for Unix filesystems."""
+    """Sanitize filename for Unix filesystems.
+
+    Returns:
+        Safe filename string for Unix systems
+
+    """
     sanitized = name.replace("/", "-").replace("\\", "-")
     sanitized = sanitized.replace("\x00", "")
-    if len(sanitized) > 200:
-        sanitized = sanitized[:200]
+    if len(sanitized) > MAX_FILENAME_LENGTH:
+        sanitized = sanitized[:MAX_FILENAME_LENGTH]
     return sanitized
 
 
@@ -223,7 +279,12 @@ def generate_filename(
     *,
     date_prefix: bool = False,
 ) -> str:
-    """Generate filename for the saved email."""
+    """Generate filename for the saved email.
+
+    Returns:
+        Filename string with appropriate extension
+
+    """
     ext = {
         "markdown": "md",
         "text": "txt",
@@ -241,27 +302,27 @@ def generate_filename(
 
         for date_format in date_formats:
             try:
-                date_obj = datetime.strptime(date_str, date_format)
+                date_obj = datetime.strptime(date_str, date_format)  # noqa: DTZ007
                 date_obj = date_obj.astimezone()
                 date_prefix_str = date_obj.strftime("%Y-%m-%d")
                 sanitized_subject = sanitize_filename(subject)
-                return f"{date_prefix_str}-{sanitized_subject}.{ext}"
             except ValueError:
                 continue
+            else:
+                return f"{date_prefix_str}-{sanitized_subject}.{ext}"
 
         try:
             date_obj = parsedate_to_datetime(date_str)
             date_obj = date_obj.astimezone()
             date_prefix_str = date_obj.strftime("%Y-%m-%d")
             sanitized_subject = sanitize_filename(subject)
-            return f"{date_prefix_str}-{sanitized_subject}.{ext}"
         except (TypeError, ValueError):
-            pass
-
-        console.print(
-            f"[yellow]⚠[/yellow] Could not parse date: [dim]{date_str}[/dim]\n"
-            f"[yellow]⚠[/yellow] Falling back to message ID in filename"
-        )
+            console.print(
+                f"[yellow]⚠[/yellow] Could not parse date: [dim]{date_str}[/dim]\n"
+                f"[yellow]⚠[/yellow] Falling back to message ID in filename"
+            )
+        else:
+            return f"{date_prefix_str}-{sanitized_subject}.{ext}"
 
     return f"{message_id}.{ext}"
 
@@ -269,7 +330,12 @@ def generate_filename(
 def format_markdown(
     envelope: dict, body: str, folder: str, attachments: list[Path] | None = None
 ) -> str:
-    """Format email as Markdown."""
+    """Format email as Markdown.
+
+    Returns:
+        Formatted email as Markdown string
+
+    """
     from_data = envelope.get("from", {})
     from_addr = from_data.get("address", "")
     from_name = from_data.get("name", "")
@@ -325,7 +391,12 @@ def format_markdown(
 def format_text(
     envelope: dict, body: str, folder: str, attachments: list[Path] | None = None
 ) -> str:
-    """Format email as plain text."""
+    """Format email as plain text.
+
+    Returns:
+        Formatted email as plain text string
+
+    """
     from_data = envelope.get("from", {})
     from_addr = from_data.get("address", "")
     from_name = from_data.get("name", "")
@@ -444,7 +515,9 @@ def _download_attachments_internal(
 ) -> list[Path]:
     """Download attachments from an email message.
 
-    Returns list of downloaded attachment paths.
+    Returns:
+        List of downloaded attachment paths
+
     """
     result = run_himalaya(
         [
@@ -484,7 +557,12 @@ def _download_attachments_internal(
 
 
 def format_json(envelope: dict, body: str, folder: str) -> str:
-    """Format email as JSON (raw from himalaya)."""
+    """Format email as JSON (raw from himalaya).
+
+    Returns:
+        Formatted email as JSON string
+
+    """
     data = {
         "folder": folder,
         "envelope": envelope,
@@ -509,19 +587,23 @@ class SaveOptions:
 
 
 def _determine_output_path(output: Path | None, filename: str) -> Path:
-    """Determine the output file path from user input."""
+    """Determine the output file path from user input.
+
+    Returns:
+        Resolved output path
+
+    """
     if output:
         if output.is_dir():
             output.mkdir(parents=True, exist_ok=True)
             return output / filename
-        elif output.exists():
+        if output.exists():
             return output
-        elif not output.suffix:
+        if not output.suffix:
             output.mkdir(parents=True, exist_ok=True)
             return output / filename
-        else:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            return output
+        output.parent.mkdir(parents=True, exist_ok=True)
+        return output
 
     return Path(filename)
 
@@ -532,7 +614,12 @@ def _process_attachments(
     folder: str,
     output_path: Path,
 ) -> list[Path] | None:
-    """Download and process email attachments."""
+    """Download and process email attachments.
+
+    Returns:
+        List of attachment paths if downloaded, None otherwise
+
+    """
     if not options.download_attachments:
         return None
 
@@ -558,18 +645,27 @@ def _format_content(
     folder: str,
     attachments: list[Path] | None,
 ) -> str:
-    """Format email content based on output format."""
+    """Format email content based on output format.
+
+    Returns:
+        Formatted email content as string
+
+    """
     console.print(f"[dim]Formatting as {options.output_format}...[/dim]")
     if options.output_format == "markdown":
         return format_markdown(envelope, body, folder, attachments)
-    elif options.output_format == "text":
+    if options.output_format == "text":
         return format_text(envelope, body, folder, attachments)
-    else:
-        return format_json(envelope, body, folder)
+    return format_json(envelope, body, folder)
 
 
-def _handle_existing_file(output_path: Path, overwrite: bool) -> None:
-    """Handle existing file confirmation."""
+def _handle_existing_file(output_path: Path, *, overwrite: bool) -> None:
+    """Handle existing file confirmation.
+
+    Raises:
+        typer.Exit: If user declines to overwrite
+
+    """
     if output_path.exists() and not overwrite:
         console.print(f"[yellow]File already exists:[/yellow] {output_path}")
         if not Confirm.ask("Overwrite?", default=False):
@@ -579,7 +675,7 @@ def _handle_existing_file(output_path: Path, overwrite: bool) -> None:
 
 # ruff: disable[FBT002]
 @app.command()
-def save(
+def save(  # noqa: PLR0913, PLR0917
     message_id: Annotated[int, typer.Argument(..., help="Message ID to save")],
     folder: Annotated[
         str, typer.Option("--folder", "-f", help="Folder to search")
@@ -618,11 +714,7 @@ def save(
         typer.Option("--verbose", "-v", help="Show himalaya commands"),
     ] = False,
 ) -> None:
-    """Save an email to a file.
-
-    Raises:
-        typer.Exit: If message fetching fails or file operation is aborted.
-    """
+    """Save an email to a file."""
     options = SaveOptions(
         message_id=message_id,
         folder=folder,
@@ -660,7 +752,7 @@ def save(
 
     content = _format_content(options, envelope, body, folder, attachments)
 
-    _handle_existing_file(output_path, overwrite)
+    _handle_existing_file(output_path, overwrite=overwrite)
 
     output_path.write_text(content, encoding="utf-8")
     console.print(
