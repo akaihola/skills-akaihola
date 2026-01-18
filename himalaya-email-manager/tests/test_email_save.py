@@ -8,19 +8,18 @@
 # ]
 # ///
 
-from datetime import datetime
-from pathlib import Path
 import sys
-import json
+from pathlib import Path
 
 # Add parent scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 
-def test_parse_email_headers_with_date():
+def test_parse_email_headers_with_date() -> None:
     """Test parsing headers when Date header is present."""
-    from email_save import parse_email_headers
     from textwrap import dedent
+
+    from email_save import parse_email_headers
 
     message_text = dedent(
         """\
@@ -38,10 +37,11 @@ def test_parse_email_headers_with_date():
     assert headers.get("subject") == "Test Subject"
 
 
-def test_parse_email_headers_without_date():
+def test_parse_email_headers_without_date() -> None:
     """Test parsing headers when Date header is missing (the problematic case)."""
-    from email_save import parse_email_headers
     from textwrap import dedent
+
+    from email_save import parse_email_headers
 
     message_text = dedent(
         """\
@@ -58,7 +58,7 @@ def test_parse_email_headers_without_date():
     assert headers.get("subject") == "Missing Date Header"
 
 
-def test_generate_filename_with_date_prefix_iso8601_with_tz():
+def test_generate_filename_with_date_prefix_iso8601_with_tz() -> None:
     """Test filename generation with ISO 8601 date format with timezone."""
     from email_save import generate_filename
 
@@ -76,7 +76,7 @@ def test_generate_filename_with_date_prefix_iso8601_with_tz():
     assert filename.endswith(".md")
 
 
-def test_generate_filename_with_date_prefix_iso8601_with_seconds():
+def test_generate_filename_with_date_prefix_iso8601_with_seconds() -> None:
     """Test filename generation with ISO 8601 date format including seconds."""
     from email_save import generate_filename
 
@@ -94,7 +94,7 @@ def test_generate_filename_with_date_prefix_iso8601_with_seconds():
     assert filename.endswith(".md")
 
 
-def test_generate_filename_with_date_prefix_iso8601_no_tz():
+def test_generate_filename_with_date_prefix_iso8601_no_tz() -> None:
     """Test filename generation with ISO 8601 date format without timezone."""
     from email_save import generate_filename
 
@@ -111,7 +111,7 @@ def test_generate_filename_with_date_prefix_iso8601_no_tz():
     assert filename.endswith(".md")
 
 
-def test_generate_filename_with_date_prefix_iso8601_date_only():
+def test_generate_filename_with_date_prefix_iso8601_date_only() -> None:
     """Test filename generation with date-only ISO 8601 format."""
     from email_save import generate_filename
 
@@ -128,7 +128,7 @@ def test_generate_filename_with_date_prefix_iso8601_date_only():
     assert filename.endswith(".md")
 
 
-def test_generate_filename_with_date_prefix_empty_date():
+def test_generate_filename_with_date_prefix_empty_date() -> None:
     """Test filename generation falls back to message ID when date is empty."""
     from email_save import generate_filename
 
@@ -144,7 +144,7 @@ def test_generate_filename_with_date_prefix_empty_date():
     assert filename == "57039.md"
 
 
-def test_generate_filename_without_date_prefix():
+def test_generate_filename_without_date_prefix() -> None:
     """Test filename generation without date prefix still works."""
     from email_save import generate_filename
 
@@ -161,7 +161,7 @@ def test_generate_filename_without_date_prefix():
     assert "Test Subject" not in filename
 
 
-def test_generate_filename_sanitizes_subject():
+def test_generate_filename_sanitizes_subject() -> None:
     """Test that filename sanitization handles special characters."""
     from email_save import generate_filename
 
@@ -179,7 +179,7 @@ def test_generate_filename_sanitizes_subject():
     assert filename.endswith(".md")
 
 
-def test_date_format_conversion_to_local_time():
+def test_date_format_conversion_to_local_time() -> None:
     """Test that dates are converted to local time before formatting."""
     from email_save import generate_filename
 
@@ -198,7 +198,7 @@ def test_date_format_conversion_to_local_time():
     assert extracted_date == "2026-01-15"
 
 
-def test_generate_filename_various_formats():
+def test_generate_filename_various_formats() -> None:
     """Test filename generation with different output formats."""
     from email_save import generate_filename
 
@@ -215,10 +215,8 @@ def test_generate_filename_various_formats():
         assert filename.endswith(f".{ext}")
 
 
-def test_rfc2822_date_format():
+def test_rfc2822_date_format() -> None:
     """Test parsing RFC 2822 formatted dates that may come from message headers."""
-    from datetime import datetime
-
     rfc2822_date = "Wed, 15 Jan 2026 10:23:00 +0000"
 
     from email.utils import parsedate_to_datetime
@@ -230,7 +228,7 @@ def test_rfc2822_date_format():
     assert parsed.day == 15
 
 
-def test_generate_filename_missing_date_header_scenario():
+def test_generate_filename_missing_date_header_scenario() -> None:
     """Test filename generation when date_str is completely empty (missing header).
 
     This is the scenario from issue #18: emails without Date header that would
@@ -251,7 +249,7 @@ def test_generate_filename_missing_date_header_scenario():
     assert not filename.startswith("202")
 
 
-def test_generate_filename_with_envelope_iso8601_format():
+def test_generate_filename_with_envelope_iso8601_format() -> None:
     """Test filename generation with envelope date format (ISO 8601 with timezone).
 
     This tests the envelope fallback format: "2026-01-15 10:23+00:00"
@@ -273,7 +271,7 @@ def test_generate_filename_with_envelope_iso8601_format():
     assert filename.endswith(".md")
 
 
-def test_generate_filename_envelope_format_with_seconds():
+def test_generate_filename_envelope_format_with_seconds() -> None:
     """Test envelope date format with seconds (another common variation)."""
     from email_save import generate_filename
 
@@ -290,7 +288,7 @@ def test_generate_filename_envelope_format_with_seconds():
     assert filename.endswith(".md")
 
 
-def test_parse_email_headers_missing_date_is_failure_scenario():
+def test_parse_email_headers_missing_date_is_failure_scenario() -> None:
     """Test that parse_email_headers returns empty date for messages without Date header.
 
     This confirms the failure scenario from issue #18: messages where the Date
@@ -313,10 +311,11 @@ It contains important information."""
     assert headers.get("subject") == "Important Business Matter"
 
 
-def test_fix_attachment_paths_same_directory():
+def test_fix_attachment_paths_same_directory() -> None:
     """Test fixing attachment paths when attachments are in same dir as email."""
-    from email_save import fix_attachment_paths_in_body
     from textwrap import dedent
+
+    from email_save import fix_attachment_paths_in_body
 
     body = dedent(
         """\
@@ -332,7 +331,7 @@ def test_fix_attachment_paths_same_directory():
         Path("./image007.png"),
     ]
 
-    email_output_dir = Path(".")
+    email_output_dir = Path()
     updated_body = fix_attachment_paths_in_body(
         body, downloaded_files, email_output_dir
     )
@@ -342,7 +341,7 @@ def test_fix_attachment_paths_same_directory():
     assert "/home/akaihola/Lataukset" not in updated_body
 
 
-def test_fix_attachment_paths_subdirectory():
+def test_fix_attachment_paths_subdirectory() -> None:
     """Test fixing attachment paths when attachments are in subdirectory."""
     from email_save import fix_attachment_paths_in_body
 
@@ -361,13 +360,13 @@ def test_fix_attachment_paths_subdirectory():
     assert "/home/akaihola/Lataukset" not in updated_body
 
 
-def test_fix_attachment_paths_no_attachments():
+def test_fix_attachment_paths_no_attachments() -> None:
     """Test that body is unchanged when no attachments provided."""
     from email_save import fix_attachment_paths_in_body
 
     body = "Some email text without any attachments"
     downloaded_files = []
-    email_output_dir = Path(".")
+    email_output_dir = Path()
 
     updated_body = fix_attachment_paths_in_body(
         body, downloaded_files, email_output_dir
@@ -376,7 +375,7 @@ def test_fix_attachment_paths_no_attachments():
     assert updated_body == body
 
 
-def test_fix_attachment_paths_with_multiple_attachments():
+def test_fix_attachment_paths_with_multiple_attachments() -> None:
     """Test fixing paths for multiple attachments including different types."""
     from email_save import fix_attachment_paths_in_body
 
@@ -398,7 +397,7 @@ def test_fix_attachment_paths_with_multiple_attachments():
         Path("./attachments/image007.png"),
     ]
 
-    email_output_dir = Path(".")
+    email_output_dir = Path()
     updated_body = fix_attachment_paths_in_body(
         body, downloaded_files, email_output_dir
     )
@@ -408,7 +407,7 @@ def test_fix_attachment_paths_with_multiple_attachments():
     assert "/home/akaihola/Lataukset" not in updated_body
 
 
-def test_fix_attachment_paths_preserves_other_content():
+def test_fix_attachment_paths_preserves_other_content() -> None:
     """Test that fixing paths doesn't modify other message content."""
     from email_save import fix_attachment_paths_in_body
 
@@ -422,7 +421,7 @@ def test_fix_attachment_paths_preserves_other_content():
     )
 
     downloaded_files = [Path("./image.png")]
-    email_output_dir = Path(".")
+    email_output_dir = Path()
     updated_body = fix_attachment_paths_in_body(
         body, downloaded_files, email_output_dir
     )
@@ -433,7 +432,7 @@ def test_fix_attachment_paths_preserves_other_content():
     assert 'filename="image.png"' in updated_body
 
 
-def test_fix_attachment_paths_unmapped_attachment():
+def test_fix_attachment_paths_unmapped_attachment() -> None:
     """Test that unmapped attachments in body remain unchanged."""
     from email_save import fix_attachment_paths_in_body
 
@@ -445,7 +444,7 @@ def test_fix_attachment_paths_unmapped_attachment():
     )
 
     downloaded_files = [Path("./mapped.png")]
-    email_output_dir = Path(".")
+    email_output_dir = Path()
     updated_body = fix_attachment_paths_in_body(
         body, downloaded_files, email_output_dir
     )
