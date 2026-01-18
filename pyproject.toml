@@ -30,6 +30,7 @@ revision = "origin/main..."
 src = "."
 
 [tool.ruff.lint]
+preview = true
 select = ["ALL"]
 ignore = [
     "COM812", # Trailing comma missing

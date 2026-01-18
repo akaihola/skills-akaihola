@@ -506,6 +506,7 @@ def format_json(envelope: dict, body: str, folder: str) -> str:
     return json.dumps(data, indent=2, ensure_ascii=False)
 
 
+# ruff: disable[FBT002]
 @app.command()
 def save(
     message_id: Annotated[int, typer.Argument(..., help="Message ID to save")],
@@ -623,6 +624,9 @@ def save(
             border_style="green",
         )
     )
+
+
+# ruff: enable[FBT002]
 
 
 if __name__ == "__main__":
