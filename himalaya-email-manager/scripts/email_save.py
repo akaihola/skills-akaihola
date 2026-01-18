@@ -414,12 +414,16 @@ def fix_attachment_paths_in_body(
                     f"[dim]Path mapping (absolute): {attachment_path.name} → {attachment_path}[/dim]"
                 )
 
+    replacement_count = 0
+
     def replace_path(match: re.Match) -> str:
+        nonlocal replacement_count
         part_type = match.group(1)
         old_path = match.group(2)
         if old_path:
             filename = Path(old_path).name
             if filename in filename_to_relative_path:
+                replacement_count += 1
                 new_path = filename_to_relative_path[filename]
                 return f'<#part type={part_type} filename="{new_path}"><#/part>'
         return match.group(0)
@@ -427,8 +431,8 @@ def fix_attachment_paths_in_body(
     pattern = r'<#part\s+type=([^>\s]+)\s+filename="([^"]+)"><#/part>'
     updated_body = re.sub(pattern, replace_path, body)
 
-    if verbose and updated_body != body:
-        console.print(f"[dim]Fixed {body.count('<#part')} attachment path(s)[/dim]")
+    if verbose and replacement_count > 0:
+        console.print(f"[dim]Fixed {replacement_count} attachment path(s)[/dim]")
 
     return updated_body
 
@@ -524,24 +528,11 @@ def save(
     envelope = message_data["envelope"]
     body = message_data["body"]
 
-    attachments: list[Path] | None = None
-    if download_attachments:
-        console.print(f"[dim]Downloading attachments...[/dim]")
-        effective_attachment_dir = attachment_dir or Path(".")
-        attachments = _download_attachments_internal(
-            message_id, folder, effective_attachment_dir, verbose
-        )
-        if attachments:
-            console.print(
-                f"[green]✓[/green] Downloaded [cyan]{len(attachments)}[/cyan] attachment(s)"
-            )
-        else:
-            console.print("[dim]No attachments found[/dim]")
-
     subject = envelope.get("subject", "")
     date = envelope["date"]
     filename = generate_filename(message_id, subject, date, format, date_prefix)
 
+    # Determine output_path first, before downloading attachments
     if output:
         if output.is_dir():
             output.mkdir(parents=True, exist_ok=True)
@@ -556,6 +547,23 @@ def save(
             output_path.parent.mkdir(parents=True, exist_ok=True)
     else:
         output_path = Path(filename)
+
+    # Ensure output directory exists before downloading
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    attachments: list[Path] | None = None
+    if download_attachments:
+        console.print(f"[dim]Downloading attachments...[/dim]")
+        effective_attachment_dir = attachment_dir or output_path.parent
+        attachments = _download_attachments_internal(
+            message_id, folder, effective_attachment_dir, verbose
+        )
+        if attachments:
+            console.print(
+                f"[green]✓[/green] Downloaded [cyan]{len(attachments)}[/cyan] attachment(s)"
+            )
+        else:
+            console.print("[dim]No attachments found[/dim]")
 
     if attachments:
         email_output_dir = output_path.parent
