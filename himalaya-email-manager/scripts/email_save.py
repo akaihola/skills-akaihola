@@ -16,6 +16,7 @@ import json
 import re
 import shutil
 import subprocess  # noqa: S404
+from dataclasses import dataclass
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -202,7 +203,7 @@ def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
 
     except json.JSONDecodeError as e:
         console.print(f"[red]Error parsing JSON:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 def sanitize_filename(name: str) -> str:
@@ -492,6 +493,90 @@ def format_json(envelope: dict, body: str, folder: str) -> str:
     return json.dumps(data, indent=2, ensure_ascii=False)
 
 
+@dataclass
+class SaveOptions:
+    """Options for saving an email."""
+
+    message_id: int
+    folder: str
+    output: Path | None
+    output_format: Literal["markdown", "text", "json"]
+    overwrite: bool
+    download_attachments: bool
+    attachment_dir: Path | None
+    date_prefix: bool
+    verbose: bool
+
+
+def _determine_output_path(output: Path | None, filename: str) -> Path:
+    """Determine the output file path from user input."""
+    if output:
+        if output.is_dir():
+            output.mkdir(parents=True, exist_ok=True)
+            return output / filename
+        elif output.exists():
+            return output
+        elif not output.suffix:
+            output.mkdir(parents=True, exist_ok=True)
+            return output / filename
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            return output
+
+    return Path(filename)
+
+
+def _process_attachments(
+    options: SaveOptions,
+    message_id: int,
+    folder: str,
+    output_path: Path,
+) -> list[Path] | None:
+    """Download and process email attachments."""
+    if not options.download_attachments:
+        return None
+
+    console.print("[dim]Downloading attachments...[/dim]")
+    effective_attachment_dir = options.attachment_dir or output_path.parent
+    attachments = _download_attachments_internal(
+        message_id, folder, effective_attachment_dir, verbose=options.verbose
+    )
+    if attachments:
+        console.print(
+            f"[green]✓[/green] Downloaded [cyan]{len(attachments)}[/cyan] attachment(s)"
+        )
+    else:
+        console.print("[dim]No attachments found[/dim]")
+
+    return attachments
+
+
+def _format_content(
+    options: SaveOptions,
+    envelope: dict,
+    body: str,
+    folder: str,
+    attachments: list[Path] | None,
+) -> str:
+    """Format email content based on output format."""
+    console.print(f"[dim]Formatting as {options.output_format}...[/dim]")
+    if options.output_format == "markdown":
+        return format_markdown(envelope, body, folder, attachments)
+    elif options.output_format == "text":
+        return format_text(envelope, body, folder, attachments)
+    else:
+        return format_json(envelope, body, folder)
+
+
+def _handle_existing_file(output_path: Path, overwrite: bool) -> None:
+    """Handle existing file confirmation."""
+    if output_path.exists() and not overwrite:
+        console.print(f"[yellow]File already exists:[/yellow] {output_path}")
+        if not Confirm.ask("Overwrite?", default=False):
+            console.print("[dim]Aborted.[/dim]")
+            raise typer.Exit(0)
+
+
 # ruff: disable[FBT002]
 @app.command()
 def save(
@@ -533,7 +618,23 @@ def save(
         typer.Option("--verbose", "-v", help="Show himalaya commands"),
     ] = False,
 ) -> None:
-    """Save an email to a file."""
+    """Save an email to a file.
+
+    Raises:
+        typer.Exit: If message fetching fails or file operation is aborted.
+    """
+    options = SaveOptions(
+        message_id=message_id,
+        folder=folder,
+        output=output,
+        output_format=output_format,
+        overwrite=overwrite,
+        download_attachments=download_attachments,
+        attachment_dir=attachment_dir,
+        date_prefix=date_prefix,
+        verbose=verbose,
+    )
+
     console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
     message_data = get_message(message_id, folder, verbose=verbose)
 
@@ -546,38 +647,10 @@ def save(
         message_id, subject, date, output_format, date_prefix=date_prefix
     )
 
-    # Determine output_path first, before downloading attachments
-    if output:
-        if output.is_dir():
-            output.mkdir(parents=True, exist_ok=True)
-            output_path = output / filename
-        elif output.exists():
-            output_path = output
-        elif not output.suffix:
-            output.mkdir(parents=True, exist_ok=True)
-            output_path = output / filename
-        else:
-            output_path = output
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-    else:
-        output_path = Path(filename)
-
-    # Ensure output directory exists before downloading
+    output_path = _determine_output_path(output, filename)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    attachments: list[Path] | None = None
-    if download_attachments:
-        console.print("[dim]Downloading attachments...[/dim]")
-        effective_attachment_dir = attachment_dir or output_path.parent
-        attachments = _download_attachments_internal(
-            message_id, folder, effective_attachment_dir, verbose=verbose
-        )
-        if attachments:
-            console.print(
-                f"[green]✓[/green] Downloaded [cyan]{len(attachments)}[/cyan] attachment(s)"
-            )
-        else:
-            console.print("[dim]No attachments found[/dim]")
+    attachments = _process_attachments(options, message_id, folder, output_path)
 
     if attachments:
         email_output_dir = output_path.parent
@@ -585,19 +658,9 @@ def save(
             body, attachments, email_output_dir, verbose=verbose
         )
 
-    console.print(f"[dim]Formatting as {output_format}...[/dim]")
-    if output_format == "markdown":
-        content = format_markdown(envelope, body, folder, attachments)
-    elif output_format == "text":
-        content = format_text(envelope, body, folder, attachments)
-    else:
-        content = format_json(envelope, body, folder)
+    content = _format_content(options, envelope, body, folder, attachments)
 
-    if output_path.exists() and not overwrite:
-        console.print(f"[yellow]File already exists:[/yellow] {output_path}")
-        if not Confirm.ask("Overwrite?", default=False):
-            console.print("[dim]Aborted.[/dim]")
-            raise typer.Exit(0)
+    _handle_existing_file(output_path, overwrite)
 
     output_path.write_text(content, encoding="utf-8")
     console.print(
