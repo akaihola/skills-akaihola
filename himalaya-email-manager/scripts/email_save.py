@@ -1,4 +1,5 @@
 #!/usr/bin/env -S uv run
+# SPDX-License-Identifier: MIT
 
 """Save emails to files in various formats."""
 
@@ -13,7 +14,7 @@
 import json
 import re
 import shutil
-import subprocess
+import subprocess  # noqa: S404
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -116,6 +117,37 @@ def get_envelope_date(
     return ""
 
 
+def parse_email_address(address: str) -> dict:
+    """Parse a single email address into name and address components."""
+    match = re.match(r"^(.*?)\s*<([^>]+)>$", address)
+    if match:
+        return {
+            "name": match.group(1).strip(),
+            "address": match.group(2).strip(),
+        }
+    if "<" in address and ">" in address:
+        email = re.search(r"<([^>]+)>", address)
+        if email:
+            return {"address": email.group(1)}
+    return {"address": address}
+
+
+def parse_to_addresses(to_header: str) -> dict | list:
+    """Parse To header into single address dict or list of dicts."""
+    to_addrs = [addr.strip() for addr in to_header.split(",")]
+    if len(to_addrs) == 1:
+        return parse_email_address(to_addrs[0])
+    return [parse_email_address(addr) for addr in to_addrs]
+
+
+def extract_message_body(message_text: str) -> str:
+    """Extract body from message text by finding headers separator."""
+    headers_end = message_text.find("\n\n")
+    if headers_end == -1:
+        headers_end = message_text.find("\n---\n")
+    return message_text[headers_end + 2 :].strip() if headers_end > 0 else message_text
+
+
 def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
     """Get full message (headers + body) by ID."""
     result = run_himalaya(
@@ -140,13 +172,7 @@ def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
             message_text = ""
 
         headers = parse_email_headers(message_text)
-
-        headers_end = message_text.find("\n\n")
-        if headers_end == -1:
-            headers_end = message_text.find("\n---\n")
-        body = (
-            message_text[headers_end + 2 :].strip() if headers_end > 0 else message_text
-        )
+        body = extract_message_body(message_text)
 
         envelope = {
             "id": str(message_id),
@@ -157,51 +183,10 @@ def get_message(message_id: int, folder: str, *, verbose: bool = False) -> dict:
         }
 
         if "from" in headers:
-            from_match = re.match(r"^(.*?)\s*<([^>]+)>$", headers["from"])
-            if from_match:
-                envelope["from"] = {
-                    "name": from_match.group(1).strip(),
-                    "address": from_match.group(2).strip(),
-                }
-            elif "<" in headers["from"] and ">" in headers["from"]:
-                email = re.search(r"<([^>]+)>", headers["from"])
-                if email:
-                    envelope["from"] = {"address": email.group(1)}
-            else:
-                envelope["from"] = {"address": headers["from"]}
+            envelope["from"] = parse_email_address(headers["from"])
 
         if "to" in headers:
-            to_addrs = [addr.strip() for addr in headers["to"].split(",")]
-            if len(to_addrs) == 1:
-                to_match = re.match(r"^(.*?)\s*<([^>]+)>$", to_addrs[0])
-                if to_match:
-                    envelope["to"] = {
-                        "name": to_match.group(1).strip(),
-                        "address": to_match.group(2).strip(),
-                    }
-                elif "<" in to_addrs[0] and ">" in to_addrs[0]:
-                    email = re.search(r"<([^>]+)>", to_addrs[0])
-                    if email:
-                        envelope["to"] = {"address": email.group(1)}
-                else:
-                    envelope["to"] = {"address": to_addrs[0]}
-            else:
-                envelope["to"] = []
-                for to_addr in to_addrs:
-                    to_match = re.match(r"^(.*?)\s*<([^>]+)>$", to_addr)
-                    if to_match:
-                        envelope["to"].append(
-                            {
-                                "name": to_match.group(1).strip(),
-                                "address": to_match.group(2).strip(),
-                            }
-                        )
-                    elif "<" in to_addr and ">" in to_addr:
-                        email = re.search(r"<([^>]+)>", to_addr)
-                        if email:
-                            envelope["to"].append({"address": email.group(1)})
-                    else:
-                        envelope["to"].append({"address": to_addr})
+            envelope["to"] = parse_to_addresses(headers["to"])
 
         envelope["date"] = headers.get("date", "")
         if not envelope["date"]:
