@@ -374,6 +374,65 @@ def format_text(
     )
 
 
+def fix_attachment_paths_in_body(
+    body: str,
+    downloaded_files: list[Path],
+    email_output_dir: Path,
+    verbose: bool = False,
+) -> str:
+    """Replace himalaya's default download paths with correct relative paths.
+
+    This fixes a known issue where himalaya's message read output contains
+    <#part filename="..."> tags with paths based on the configured downloads-dir,
+    not where we actually download/move the attachments.
+
+    Args:
+        body: Message body containing <#part> tags with incorrect paths
+        downloaded_files: List of actual attachment paths after download/move
+        email_output_dir: Directory where the email file will be saved
+        verbose: Print debug info about path replacements
+
+    Returns:
+        Body with corrected relative paths in <#part> tags
+    """
+    if not downloaded_files:
+        return body
+
+    filename_to_relative_path = {}
+    for attachment_path in downloaded_files:
+        try:
+            relative_path = attachment_path.relative_to(email_output_dir)
+            filename_to_relative_path[attachment_path.name] = str(relative_path)
+            if verbose:
+                console.print(
+                    f"[dim]Path mapping: {attachment_path.name} → {relative_path}[/dim]"
+                )
+        except ValueError:
+            filename_to_relative_path[attachment_path.name] = str(attachment_path)
+            if verbose:
+                console.print(
+                    f"[dim]Path mapping (absolute): {attachment_path.name} → {attachment_path}[/dim]"
+                )
+
+    def replace_path(match: re.Match) -> str:
+        part_type = match.group(1)
+        old_path = match.group(2)
+        if old_path:
+            filename = Path(old_path).name
+            if filename in filename_to_relative_path:
+                new_path = filename_to_relative_path[filename]
+                return f'<#part type={part_type} filename="{new_path}"><#/part>'
+        return match.group(0)
+
+    pattern = r'<#part\s+type=([^>\s]+)\s+filename="([^"]+)"><#/part>'
+    updated_body = re.sub(pattern, replace_path, body)
+
+    if verbose and updated_body != body:
+        console.print(f"[dim]Fixed {body.count('<#part')} attachment path(s)[/dim]")
+
+    return updated_body
+
+
 def _download_attachments_internal(
     message_id: int, folder: str, attachment_dir: Path | None, verbose: bool = False
 ) -> list[Path]:
@@ -479,14 +538,6 @@ def save(
         else:
             console.print("[dim]No attachments found[/dim]")
 
-    console.print(f"[dim]Formatting as {format}...[/dim]")
-    if format == "markdown":
-        content = format_markdown(envelope, body, folder, attachments)
-    elif format == "text":
-        content = format_text(envelope, body, folder, attachments)
-    else:
-        content = format_json(envelope, body, folder)
-
     subject = envelope.get("subject", "")
     date = envelope["date"]
     filename = generate_filename(message_id, subject, date, format, date_prefix)
@@ -505,6 +556,20 @@ def save(
             output_path.parent.mkdir(parents=True, exist_ok=True)
     else:
         output_path = Path(filename)
+
+    if attachments:
+        email_output_dir = output_path.parent
+        body = fix_attachment_paths_in_body(
+            body, attachments, email_output_dir, verbose
+        )
+
+    console.print(f"[dim]Formatting as {format}...[/dim]")
+    if format == "markdown":
+        content = format_markdown(envelope, body, folder, attachments)
+    elif format == "text":
+        content = format_text(envelope, body, folder, attachments)
+    else:
+        content = format_json(envelope, body, folder)
 
     if output_path.exists() and not overwrite:
         console.print(f"[yellow]File already exists:[/yellow] {output_path}")
