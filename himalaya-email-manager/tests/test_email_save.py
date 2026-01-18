@@ -313,6 +313,147 @@ It contains important information."""
     assert headers.get("subject") == "Important Business Matter"
 
 
+def test_fix_attachment_paths_same_directory():
+    """Test fixing attachment paths when attachments are in same dir as email."""
+    from email_save import fix_attachment_paths_in_body
+    from textwrap import dedent
+
+    body = dedent(
+        """\
+        Email content here.
+        <#part type=image/png filename="/home/akaihola/Lataukset/image003.png"><#/part>
+        More content.
+        <#part type=image/png filename="/home/akaihola/Lataukset/image007.png"><#/part>
+        End."""
+    )
+
+    downloaded_files = [
+        Path("./image003.png"),
+        Path("./image007.png"),
+    ]
+
+    email_output_dir = Path(".")
+    updated_body = fix_attachment_paths_in_body(
+        body, downloaded_files, email_output_dir
+    )
+
+    assert 'filename="image003.png"' in updated_body
+    assert 'filename="image007.png"' in updated_body
+    assert "/home/akaihola/Lataukset" not in updated_body
+
+
+def test_fix_attachment_paths_subdirectory():
+    """Test fixing attachment paths when attachments are in subdirectory."""
+    from email_save import fix_attachment_paths_in_body
+
+    body = 'Some text\n<#part type=image/png filename="/home/akaihola/Lataukset/doc.png"><#/part>'
+
+    downloaded_files = [
+        Path("/home/user/saved-emails/attachments/doc.png"),
+    ]
+
+    email_output_dir = Path("/home/user/saved-emails")
+    updated_body = fix_attachment_paths_in_body(
+        body, downloaded_files, email_output_dir
+    )
+
+    assert 'filename="attachments/doc.png"' in updated_body
+    assert "/home/akaihola/Lataukset" not in updated_body
+
+
+def test_fix_attachment_paths_no_attachments():
+    """Test that body is unchanged when no attachments provided."""
+    from email_save import fix_attachment_paths_in_body
+
+    body = "Some email text without any attachments"
+    downloaded_files = []
+    email_output_dir = Path(".")
+
+    updated_body = fix_attachment_paths_in_body(
+        body, downloaded_files, email_output_dir
+    )
+
+    assert updated_body == body
+
+
+def test_fix_attachment_paths_with_multiple_attachments():
+    """Test fixing paths for multiple attachments including different types."""
+    from email_save import fix_attachment_paths_in_body
+
+    body = (
+        "Beginning\n"
+        '<#part type=image/png filename="/home/akaihola/Lataukset/image003.png"><#/part>\n'
+        "Middle\n"
+        '<#part type=image/png filename="/home/akaihola/Lataukset/image004.png"><#/part>\n'
+        "More\n"
+        '<#part type=image/png filename="/home/akaihola/Lataukset/image005.png"><#/part>\n'
+        '<#part type=image/png filename="/home/akaihola/Lataukset/image007.png"><#/part>\n'
+        "End"
+    )
+
+    downloaded_files = [
+        Path("./attachments/image003.png"),
+        Path("./attachments/image004.png"),
+        Path("./attachments/image005.png"),
+        Path("./attachments/image007.png"),
+    ]
+
+    email_output_dir = Path(".")
+    updated_body = fix_attachment_paths_in_body(
+        body, downloaded_files, email_output_dir
+    )
+
+    for filename in ["image003.png", "image004.png", "image005.png", "image007.png"]:
+        assert f'filename="attachments/{filename}"' in updated_body
+    assert "/home/akaihola/Lataukset" not in updated_body
+
+
+def test_fix_attachment_paths_preserves_other_content():
+    """Test that fixing paths doesn't modify other message content."""
+    from email_save import fix_attachment_paths_in_body
+
+    body = (
+        "From: sender@company.example\n"
+        "To: recipient@company.example\n"
+        "\n"
+        "Important message content\n"
+        '<#part type=image/png filename="/home/akaihola/Lataukset/image.png"><#/part>\n'
+        "More content\n"
+    )
+
+    downloaded_files = [Path("./image.png")]
+    email_output_dir = Path(".")
+    updated_body = fix_attachment_paths_in_body(
+        body, downloaded_files, email_output_dir
+    )
+
+    assert "From: sender@company.example" in updated_body
+    assert "Important message content" in updated_body
+    assert "More content" in updated_body
+    assert 'filename="image.png"' in updated_body
+
+
+def test_fix_attachment_paths_unmapped_attachment():
+    """Test that unmapped attachments in body remain unchanged."""
+    from email_save import fix_attachment_paths_in_body
+
+    body = (
+        "Text\n"
+        '<#part type=image/png filename="/home/akaihola/Lataukset/mapped.png"><#/part>\n'
+        '<#part type=image/png filename="/home/akaihola/Lataukset/unmapped.png"><#/part>\n'
+        "More text"
+    )
+
+    downloaded_files = [Path("./mapped.png")]
+    email_output_dir = Path(".")
+    updated_body = fix_attachment_paths_in_body(
+        body, downloaded_files, email_output_dir
+    )
+
+    assert 'filename="mapped.png"' in updated_body
+    assert 'filename="/home/akaihola/Lataukset/unmapped.png"' in updated_body
+
+
 if __name__ == "__main__":
     import pytest
 
