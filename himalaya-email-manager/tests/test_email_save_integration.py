@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """Integration tests for email_save.py with real functionality."""
 
-import json
 import subprocess
 import sys
 from pathlib import Path
 from textwrap import dedent
-from unittest.mock import MagicMock, call, patch
-
-import pytest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from email_save import _download_attachments_internal, save
@@ -17,7 +14,7 @@ from email_save import _download_attachments_internal, save
 class TestDownloadAttachmentsInternal:
     """Test _download_attachments_internal() function with mocked subprocess."""
 
-    def test_attachments_moved_to_specified_directory(self, tmp_path):
+    def test_attachments_moved_to_specified_directory(self, tmp_path) -> None:
         """Verify attachments are moved to specified directory."""
         message_id = 57039
         folder = "INBOX"
@@ -32,7 +29,7 @@ class TestDownloadAttachmentsInternal:
 
         moved_files = []
 
-        def mock_move(src, dst):
+        def mock_move(src, dst) -> None:
             moved_files.append((Path(src), Path(dst)))
 
         with (
@@ -55,11 +52,11 @@ class TestDownloadAttachmentsInternal:
             assert all(isinstance(f, Path) for f in result)
             assert len(moved_files) == 5
 
-            for src, dst in moved_files:
+            for _src, dst in moved_files:
                 assert dst.parent == tmp_path
                 assert "obf_attachment" in dst.name
 
-    def test_attachments_default_to_current_directory(self, tmp_path):
+    def test_attachments_default_to_current_directory(self, tmp_path) -> None:
         """Verify attachments move to current directory when dir specified."""
         message_id = 57039
         folder = "INBOX"
@@ -72,7 +69,7 @@ class TestDownloadAttachmentsInternal:
 
         moved_files = []
 
-        def mock_move(src, dst):
+        def mock_move(src, dst) -> None:
             moved_files.append((Path(src), Path(dst)))
 
         with (
@@ -92,10 +89,10 @@ class TestDownloadAttachmentsInternal:
             )
 
             assert len(result) == 3
-            for src, dst in moved_files:
+            for _src, dst in moved_files:
                 assert dst.parent == tmp_path
 
-    def test_no_attachments_returns_empty_list(self, tmp_path):
+    def test_no_attachments_returns_empty_list(self, tmp_path) -> None:
         """Verify empty list when no attachments found."""
         message_id = 57039
         folder = "INBOX"
@@ -120,7 +117,7 @@ class TestDownloadAttachmentsInternal:
             assert result == []
             mock_move.assert_not_called()
 
-    def test_attachment_dir_creation(self, tmp_path):
+    def test_attachment_dir_creation(self, tmp_path) -> None:
         """Verify attachment directory is created if it doesn't exist."""
         attachment_dir = tmp_path / "subdir" / "attachments"
         message_id = 57039
@@ -141,13 +138,13 @@ class TestDownloadAttachmentsInternal:
                 stderr=himalaya_output,
             )
 
-            result = _download_attachments_internal(
+            _download_attachments_internal(
                 message_id, folder, attachment_dir, verbose=False
             )
 
             mock_mkdir.assert_called_once()
 
-    def test_attachment_names_preserved(self, tmp_path):
+    def test_attachment_names_preserved(self, tmp_path) -> None:
         """Verify attachment names are preserved from himalaya output."""
         message_id = 57039
         folder = "INBOX"
@@ -159,7 +156,7 @@ class TestDownloadAttachmentsInternal:
 
         moved_files = []
 
-        def mock_move(src, dst):
+        def mock_move(src, dst) -> None:
             moved_files.append((Path(src), Path(dst)))
 
         with (
@@ -186,7 +183,7 @@ class TestDownloadAttachmentsInternal:
 class TestSaveCommandAttachmentBehavior:
     """Test save() command with attachment downloading."""
 
-    def test_effective_attachment_dir_defaults_to_output_parent_when_output_none(self):
+    def test_effective_attachment_dir_defaults_to_output_parent_when_output_none(self) -> None:
         """Verify effective_attachment_dir defaults to output_path.parent.
 
         When output=None and no --attachment-dir specified, attachments should
@@ -240,9 +237,9 @@ class TestSaveCommandAttachmentBehavior:
                 verbose=False,
             )
 
-            assert captured_attachment_dir == Path(".")
+            assert captured_attachment_dir == Path()
 
-    def test_explicit_attachment_dir_respected(self):
+    def test_explicit_attachment_dir_respected(self) -> None:
         """Verify explicit attachment_dir is used when specified."""
         test_envelope = {
             "from": {"name": "Jane", "address": "jane@example.org"},
@@ -291,7 +288,7 @@ class TestSaveCommandAttachmentBehavior:
 
             assert captured_attachment_dir == custom_dir
 
-    def test_no_download_when_flag_false(self):
+    def test_no_download_when_flag_false(self) -> None:
         """Verify attachments are not downloaded when flag is False."""
         test_envelope = {
             "from": {"address": "jane@example.org"},
@@ -329,7 +326,7 @@ class TestSaveCommandAttachmentBehavior:
 
             mock_download.assert_not_called()
 
-    def test_attachments_default_to_output_directory(self):
+    def test_attachments_default_to_output_directory(self) -> None:
         """Verify attachments download to email output directory when --attachment-dir not specified.
 
         Regression test: When saving to a different directory than cwd without
@@ -387,7 +384,7 @@ class TestSaveCommandAttachmentBehavior:
 
             assert captured_attachment_dir == output_dir
 
-    def test_format_markdown_with_attachments(self):
+    def test_format_markdown_with_attachments(self) -> None:
         """Verify markdown formatting includes attachment list."""
         test_envelope = {
             "from": {"name": "Jane", "address": "jane@example.org"},
