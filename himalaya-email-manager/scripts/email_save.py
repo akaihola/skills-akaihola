@@ -1,4 +1,5 @@
 #!/usr/bin/env -S uv run
+# Copyright (c) 2025 Antti Kaihola
 # SPDX-License-Identifier: MIT
 
 """Save emails to files in various formats."""
@@ -502,9 +503,9 @@ def save(
         Path | None,
         typer.Option("--output", "-o", help="Output directory or file path"),
     ] = None,
-    format: Annotated[
+    output_format: Annotated[
         Literal["markdown", "text", "json"],
-        typer.Option(help="Output format (markdown/text/json)"),
+        typer.Option("--format", help="Output format (markdown/text/json)"),
     ] = "markdown",
     overwrite: Annotated[
         bool,
@@ -542,7 +543,7 @@ def save(
     subject = envelope.get("subject", "")
     date = envelope["date"]
     filename = generate_filename(
-        message_id, subject, date, format, date_prefix=date_prefix
+        message_id, subject, date, output_format, date_prefix=date_prefix
     )
 
     # Determine output_path first, before downloading attachments
@@ -584,10 +585,10 @@ def save(
             body, attachments, email_output_dir, verbose=verbose
         )
 
-    console.print(f"[dim]Formatting as {format}...[/dim]")
-    if format == "markdown":
+    console.print(f"[dim]Formatting as {output_format}...[/dim]")
+    if output_format == "markdown":
         content = format_markdown(envelope, body, folder, attachments)
-    elif format == "text":
+    elif output_format == "text":
         content = format_text(envelope, body, folder, attachments)
     else:
         content = format_json(envelope, body, folder)
@@ -602,7 +603,7 @@ def save(
     console.print(
         Panel(
             f"[green]✓[/green] Saved to [cyan]{output_path}[/cyan]\n\n"
-            f"[dim]Format:[/dim] {format}\n"
+            f"[dim]Format:[/dim] {output_format}\n"
             f"[dim]Subject:[/dim] {subject}\n"
             f"[dim]From:[/dim] {envelope['from'].get('address', '')}",
             title="Email Saved",
