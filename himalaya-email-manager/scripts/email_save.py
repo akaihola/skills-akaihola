@@ -1,3 +1,5 @@
+#!/usr/bin/env -S uv run
+
 """Save emails to files in various formats."""
 
 # /// script
@@ -16,7 +18,7 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Literal
+from typing import Annotated, Literal
 
 import typer
 from rich.console import Console
@@ -505,30 +507,44 @@ def format_json(envelope: dict, body: str, folder: str) -> str:
 
 
 @app.command()
-def save(  # noqa: FBT001
-    message_id: int = typer.Argument(..., help="Message ID to save"),
-    folder: str = typer.Option("INBOX", "--folder", "-f", help="Folder to search"),
-    output: Path = typer.Option(
-        None, "--output", "-o", help="Output directory or file path"
-    ),
-    format: Literal["markdown", "text", "json"] = typer.Option(
-        "markdown", "--format", help="Output format (markdown/text/json)"
-    ),
-    date_prefix: bool = typer.Option(
-        default=False, "--overwrite", help="Overwrite existing file without confirmation"
-    ),
-    download_attachments: bool = typer.Option(
-        default=True,
-        "--download-attachments",
-        "--no-download-attachments",
-        help="Download email attachments (default: enabled, use --no-download-attachments to skip)",
-    ),
-    attachment_dir: Path | None = typer.Option(
-        None, "--attachment-dir", help="Directory for attachments"
-    ),
-    verbose: bool = typer.Option(
-        default=False, "-v", "--verbose", help="Show himalaya commands"
-    ),
+def save(
+    message_id: Annotated[int, typer.Argument(..., help="Message ID to save")],
+    folder: Annotated[
+        str, typer.Option("--folder", "-f", help="Folder to search")
+    ] = "INBOX",
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Output directory or file path"),
+    ] = None,
+    format: Annotated[
+        Literal["markdown", "text", "json"],
+        typer.Option(help="Output format (markdown/text/json)"),
+    ] = "markdown",
+    overwrite: Annotated[
+        bool,
+        typer.Option(help="Overwrite existing file without confirmation"),
+    ] = False,
+    download_attachments: Annotated[
+        bool,
+        typer.Option(
+            help=(
+                "Download email attachments "
+                "(default: enabled, use --no-download-attachments to skip)"
+            ),
+        ),
+    ] = True,
+    attachment_dir: Annotated[
+        Path | None,
+        typer.Option(help="Directory for attachments"),
+    ] = None,
+    date_prefix: Annotated[
+        bool,
+        typer.Option(help="Prefix filename with date"),
+    ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Show himalaya commands"),
+    ] = False,
 ) -> None:
     """Save an email to a file."""
     console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
