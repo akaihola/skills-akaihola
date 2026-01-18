@@ -35,8 +35,13 @@ def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.Completed
     if verbose:
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
+    himalaya_path = shutil.which("himalaya")
+    if not himalaya_path:
+        console.print("[red]Error:[/red] himalaya command not found in PATH")
+        raise typer.Exit(1)
+
     result = subprocess.run(
-        ["himalaya", *args],
+        [himalaya_path, *args],
         check=False, capture_output=True,
         text=True,
     )
