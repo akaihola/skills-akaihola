@@ -40,10 +40,12 @@ def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.Completed
         console.print("[red]Error:[/red] himalaya command not found in PATH")
         raise typer.Exit(1)
 
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: S603
         [himalaya_path, *args],
-        check=False, capture_output=True,
+        check=False,
+        capture_output=True,
         text=True,
+        shell=False,
     )
 
     if result.returncode != 0:
