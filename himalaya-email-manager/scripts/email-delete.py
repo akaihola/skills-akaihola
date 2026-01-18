@@ -9,11 +9,10 @@
 # ]
 # ///
 
-import subprocess
 import json
-import sys
 import re
-from typing import Literal
+import subprocess
+import sys
 
 import rich.console
 import rich.panel
@@ -28,12 +27,12 @@ def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.Completed
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
     result = subprocess.run(
-        ["himalaya"] + args,
-        capture_output=True,
+        ["himalaya", *args],
+        check=False, capture_output=True,
         text=True,
     )
 
-    if result.returncode != 0 and not args[0] == "envelope" and args[1] == "delete":
+    if result.returncode != 0 and args[0] != "envelope" and args[1] == "delete":
         console.print(f"[red]Error running himalaya:[/red] {result.stderr}")
         console.print(f"[red]Command:[/red] himalaya {' '.join(args)}")
         raise typer.Exit(1)
@@ -209,7 +208,7 @@ def delete_email(
         console.print()
         console.print("[yellow]⚠️ DRY-RUN MODE[/yellow] - No changes made.")
         console.print()
-        console.print(f"[dim]To actually delete this email, run:[/dim]")
+        console.print("[dim]To actually delete this email, run:[/dim]")
         console.print(
             f"[cyan]uv run scripts/email-delete.py {message_id} --folder {folder} --execute[/cyan]"
         )
@@ -247,7 +246,7 @@ def delete_email(
         console.print("[green]✅ Email deleted successfully[/green]")
     else:
         console.print()
-        console.print(f"[red]❌ Delete failed[/red]")
+        console.print("[red]❌ Delete failed[/red]")
         if result.stderr:
             console.print(f"[dim]{result.stderr}[/dim]")
         sys.exit(1)

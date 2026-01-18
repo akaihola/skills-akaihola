@@ -9,10 +9,8 @@
 # ]
 # ///
 
-import subprocess
 import json
-import sys
-from datetime import date
+import subprocess
 
 import rich.console
 import rich.panel
@@ -28,7 +26,7 @@ UNLIMITED_PAGE_SIZE = 10000
 
 def run_himalaya(args: list[str], page_size: int, verbose: bool = False) -> list[dict]:
     """Run himalaya and return parsed JSON output."""
-    cmd = ["himalaya"] + args
+    cmd = ["himalaya", *args]
 
     if verbose:
         rich.console.Console().print(f"[dim]Running: {' '.join(cmd)}[/dim]")

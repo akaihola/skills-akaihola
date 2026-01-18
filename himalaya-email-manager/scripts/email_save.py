@@ -9,16 +9,15 @@
 # ]
 # ///
 
-from pathlib import Path
 import json
-import subprocess
-import sys
 import re
 import shutil
+import subprocess
 from datetime import datetime
+from email.utils import parsedate_to_datetime
+from pathlib import Path
 from textwrap import dedent
 from typing import Literal
-from email.utils import parsedate_to_datetime
 
 import typer
 from rich.console import Console
@@ -37,8 +36,8 @@ def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.Completed
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
     result = subprocess.run(
-        ["himalaya"] + args,
-        capture_output=True,
+        ["himalaya", *args],
+        check=False, capture_output=True,
         text=True,
     )
 
@@ -394,6 +393,7 @@ def fix_attachment_paths_in_body(
 
     Returns:
         Body with corrected relative paths in <#part> tags
+
     """
     if not downloaded_files:
         return body
@@ -519,9 +519,8 @@ def save(
     verbose: bool = typer.Option(
         False, "-v", "--verbose", help="Show himalaya commands"
     ),
-):
+) -> None:
     """Save an email to a file."""
-
     console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
     message_data = get_message(message_id, folder, verbose)
 
@@ -553,7 +552,7 @@ def save(
 
     attachments: list[Path] | None = None
     if download_attachments:
-        console.print(f"[dim]Downloading attachments...[/dim]")
+        console.print("[dim]Downloading attachments...[/dim]")
         effective_attachment_dir = attachment_dir or output_path.parent
         attachments = _download_attachments_internal(
             message_id, folder, effective_attachment_dir, verbose
