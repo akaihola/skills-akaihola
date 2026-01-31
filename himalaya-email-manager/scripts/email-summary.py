@@ -9,11 +9,9 @@
 # ]
 # ///
 
-import subprocess
 import json
-import sys
+import subprocess
 from datetime import date, timedelta
-from pathlib import Path
 
 import rich.console
 import rich.panel
@@ -24,7 +22,7 @@ ACCOUNT = "akaihola"
 
 def run_himalaya(args: list[str], verbose: bool = False) -> list[dict]:
     """Run himalaya and return parsed JSON output."""
-    cmd = ["himalaya"] + args
+    cmd = ["himalaya", *args]
 
     if verbose:
         rich.console.Console().print(f"[dim]Running: {' '.join(cmd)}[/dim]")
