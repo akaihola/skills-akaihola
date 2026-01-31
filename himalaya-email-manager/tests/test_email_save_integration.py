@@ -36,8 +36,8 @@ class TestDownloadAttachmentsInternal:
             moved_files.append((Path(src), Path(dst)))
 
         with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.move", side_effect=mock_move),
+            patch("email_save.subprocess.run") as mock_run,
+            patch("email_save.shutil.move", side_effect=mock_move),
             patch("pathlib.Path.mkdir"),
         ):
             mock_run.return_value = subprocess.CompletedProcess(
@@ -76,8 +76,8 @@ class TestDownloadAttachmentsInternal:
             moved_files.append((Path(src), Path(dst)))
 
         with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.move", side_effect=mock_move),
+            patch("email_save.subprocess.run") as mock_run,
+            patch("email_save.shutil.move", side_effect=mock_move),
             patch("pathlib.Path.mkdir"),
         ):
             mock_run.return_value = subprocess.CompletedProcess(
@@ -103,8 +103,8 @@ class TestDownloadAttachmentsInternal:
         himalaya_output = ""
 
         with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.move") as mock_move,
+            patch("email_save.subprocess.run") as mock_run,
+            patch("email_save.shutil.move") as mock_move,
         ):
             mock_run.return_value = subprocess.CompletedProcess(
                 args=["himalaya"],
@@ -129,8 +129,8 @@ class TestDownloadAttachmentsInternal:
         himalaya_output = 'Downloading "obf_file.png"…\n'
 
         with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.move"),
+            patch("email_save.subprocess.run") as mock_run,
+            patch("email_save.shutil.move"),
             patch.object(Path, "mkdir") as mock_mkdir,
             patch.object(Path, "exists", return_value=False),
         ):
@@ -141,7 +141,7 @@ class TestDownloadAttachmentsInternal:
                 stderr=himalaya_output,
             )
 
-            result = _download_attachments_internal(
+            _download_attachments_internal(
                 message_id, folder, attachment_dir, verbose=False
             )
 
@@ -163,8 +163,8 @@ class TestDownloadAttachmentsInternal:
             moved_files.append((Path(src), Path(dst)))
 
         with (
-            patch("subprocess.run") as mock_run,
-            patch("shutil.move", side_effect=mock_move),
+            patch("email_save.subprocess.run") as mock_run,
+            patch("email_save.shutil.move", side_effect=mock_move),
             patch("pathlib.Path.mkdir"),
         ):
             mock_run.return_value = subprocess.CompletedProcess(
