@@ -16,11 +16,10 @@ import subprocess
 from textwrap import dedent
 from typing import Literal
 
+import html2text
 import typer
 from rich.console import Console
 from rich.panel import Panel
-
-import html2text
 
 app = typer.Typer(help="Read emails with structured output")
 console = Console()
@@ -34,8 +33,8 @@ def run_himalaya(args: list[str], verbose: bool = False) -> subprocess.Completed
         console.print(f"[dim]Running: himalaya {' '.join(args)}[/dim]")
 
     result = subprocess.run(
-        ["himalaya"] + args,
-        capture_output=True,
+        ["himalaya", *args],
+        check=False, capture_output=True,
         text=True,
     )
 
@@ -194,16 +193,15 @@ def extract_body_content(
 
     if text_plain_part:
         return text_plain_part["content"]
-    elif text_html_part and not preserve_html:
+    if text_html_part and not preserve_html:
         h = html2text.HTML2Text()
         h.ignore_links = False
         h.ignore_images = False
         h.body_width = 0
         return h.handle(text_html_part["content"])
-    elif text_html_part:
+    if text_html_part:
         return text_html_part["content"]
-    else:
-        return ""
+    return ""
 
 
 def format_text_output(envelope: dict, body: str, folder: str) -> str:
@@ -234,7 +232,7 @@ def format_text_output(envelope: dict, body: str, folder: str) -> str:
     subject_str = envelope.get("subject", "")
     message_id = envelope.get("id", "")
 
-    content = dedent(
+    return dedent(
         f"""\
         From: {from_str}
         To: {to_str}
@@ -247,7 +245,6 @@ def format_text_output(envelope: dict, body: str, folder: str) -> str:
         Folder: {folder} (ID: {message_id})
         """
     )
-    return content
 
 
 def format_markdown_output(envelope: dict, body: str, folder: str) -> str:
@@ -278,7 +275,7 @@ def format_markdown_output(envelope: dict, body: str, folder: str) -> str:
     subject_str = envelope.get("subject", "")
     message_id = envelope.get("id", "")
 
-    content = dedent(
+    return dedent(
         f"""\
         # {subject_str}
 
@@ -296,7 +293,6 @@ def format_markdown_output(envelope: dict, body: str, folder: str) -> str:
         *Folder: {folder} (ID: {message_id})*
         """
     )
-    return content
 
 
 def format_json_output(
@@ -328,9 +324,8 @@ def read(
         False, "--preserve-html", help="Keep HTML content (for json/raw formats)"
     ),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show parsing details"),
-):
+) -> None:
     """Read an email with structured output."""
-
     console.print(f"[dim]Fetching message {message_id} from {folder}...[/dim]")
     message_data = get_message(message_id, folder, verbose)
 

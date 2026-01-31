@@ -10,14 +10,14 @@ Manage emails using Himalaya IMAP CLI tool. Search, summarize, and delete emails
 ## Configuration
 
 Himalaya config: ~/.config/himalaya/config.toml
-Invocation: `uv run scripts/<script>.py` (handles Python environment and dependencies)
+Invocation: `uv run {skill_directory}/scripts/<script>.py` (handles Python environment and dependencies, do NOT cd into skill directory)
 
 ## Get Daily Email Summary
 
 Show emails from the past 24 hours in INBOX and Sent folders:
 
 ```bash
-uv run scripts/email-summary.py
+uv run {skill_directory}/scripts/email-summary.py
 ```
 
 **Options:**
@@ -35,7 +35,7 @@ Output includes:
 Find emails by sender, subject, date range, or folder:
 
 ```bash
-uv run scripts/email-search.py [options]
+uv run {skill_directory}/scripts/email-search.py [options]
 ```
 
 **Options:**
@@ -56,22 +56,22 @@ All filters apply with AND logic. Results include message IDs for deletion. Date
 
 ```bash
 # Search by sender
-uv run scripts/email-search.py --from "spotify.com"
+uv run {skill_directory}/scripts/email-search.py --from "spotify.com"
 
 # Search by subject
-uv run scripts/email-search.py --subject "invoice"
+uv run {skill_directory}/scripts/email-search.py --subject "invoice"
 
 # Search by date range
-uv run scripts/email-search.py --date-start "2025-12-17" --date-end "2025-12-31"
+uv run {skill_directory}/scripts/email-search.py --date-start "2025-12-17" --date-end "2025-12-31"
 
 # Search in Sent folder
-uv run scripts/email-search.py --folder Sent --limit 10
+uv run {skill_directory}/scripts/email-search.py --folder Sent --limit 10
 
 # Multiple filters
-uv run scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" --limit 5
+uv run {skill_directory}/scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" --limit 5
 
 # Search with no limit
-uv run scripts/email-search.py --limit 200 --no-limit
+uv run {skill_directory}/scripts/email-search.py --limit 200 --no-limit
 ```
 
 ## Save Emails to File
@@ -79,7 +79,7 @@ uv run scripts/email-search.py --limit 200 --no-limit
 Save email content to a file in various formats:
 
 ```bash
-uv run scripts/email_save.py <message-id> [options]
+uv run {skill_directory}/scripts/email_save.py <message-id> [options]
 ```
 
 **Options:**
@@ -88,11 +88,72 @@ uv run scripts/email_save.py <message-id> [options]
 - `--output PATH` - Output directory or file path (default: current directory)
 - `--format FORMAT` - Output format: markdown, text, or json (default: markdown)
 - `--date-prefix` - Add YYYY-MM-DD date prefix to filename (uses email date)
-- `--download-attachments` - Download email attachments
+- `--no-download-attachments` - Skip downloading email attachments (default: attachments are downloaded)
 - `--attachment-dir PATH` - Directory for attachments (default: current directory, same as email save location)
 - `--overwrite` - Overwrite existing file without confirmation
 - `-v, --verbose` - Show himalaya commands being executed
 - `--help` - Show help message
+
+## Post-Save Attachment Processing
+
+After saving emails with `--download-attachments`, automatically inspect each attachment using vision capabilities:
+
+1. **Use vision to analyze** each image attachment
+2. **Classify** the content type (icon, logo, table, signature, complex image)
+3. **Convert** to text representation where appropriate
+4. **Update** the saved email file with replacements
+5. **Delete** replaced attachment files
+
+### Classification Guidelines
+
+| Content Type              | Characteristics                            | Replacement Format                          |
+| ------------------------- | ------------------------------------------ | ------------------------------------------- |
+| **Icons/Emojis/Symbols**  | Small, single glyph, no text               | Unicode character (e.g., ✓, ★, →)           |
+| **Logos**                 | Company/brand imagery, decorative          | Text description: `[Logo: Company Name]`    |
+| **Signatures**            | Handwritten-style text, often at email end | Text: `[Signature: Name]` or extracted text |
+| **Brief text**            | Very short text content (1-3 words)        | Extracted text verbatim                     |
+| **Simple tables**         | Single-line cells, no images               | Markdown table                              |
+| **Complex tables**        | Multi-line cells, no images                | ASCII table                                 |
+| **Photos/Complex images** | Photographs, screenshots, diagrams         | **Keep unchanged**                          |
+
+### Replacement Process
+
+1. Read the saved email file
+2. For each attachment reference in the file:
+   a. Inspect the image using vision capability
+   b. Determine if it can be replaced with text
+   c. If yes: generate appropriate text representation
+   d. If no: leave the attachment reference unchanged
+3. Write updated content to the email file
+4. Delete successfully replaced attachment files
+
+### Example Conversions
+
+**Icon → Unicode:**
+
+```
+Before: ![](attachments/checkmark.png)
+After: ✓
+```
+
+**Simple table → Markdown:**
+
+```markdown
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Value A  | Value B  |
+```
+
+**Complex table → ASCII:**
+
+```
++------------+-----------+
+| Header 1   | Header 2  |
++------------+-----------+
+| Multi-line | Content   |
+| cell here  | goes here |
++------------+-----------+
+```
 
 **Arguments:**
 
@@ -113,43 +174,88 @@ uv run scripts/email_save.py <message-id> [options]
 **Examples:**
 
 ```bash
-# Save as markdown to current directory
-uv run scripts/email_save.py 56873
+# Save as markdown to current directory (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py 56873
 
-# Save to specific directory
-uv run scripts/email_save.py 56873 --output ~/saved-emails
+# Save to specific directory (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py 56873 --output ~/saved-emails
 
-# Save with date prefix
-uv run scripts/email_save.py 56873 --date-prefix --output /tmp/emails
+# Save with date prefix (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py 56873 --date-prefix --output /tmp/emails
 
-# Save as text format
-uv run scripts/email_save.py 56873 --format text
+# Save as text format (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py 56873 --format text
 
-# Save as JSON
-uv run scripts/email_save.py 56873 --format json
+# Save as JSON (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py 56873 --format json
 
-# Save to specific file path
-uv run scripts/email_save.py 56873 --output ~/important-email.md
+# Save to specific file path (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py 56873 --output ~/important-email.md
 
 # Overwrite existing file without prompt
-uv run scripts/email_save.py 56873 --overwrite --output ~/email.md
+uv run {skill_directory}/scripts/email_save.py 56873 --overwrite --output ~/email.md
 
-# Save from Sent folder
-uv run scripts/email_save.py --folder Sent 12345 --output ~/sent-emails
+# Save from Sent folder (attachments downloaded by default)
+uv run {skill_directory}/scripts/email_save.py --folder Sent 12345 --output ~/sent-emails
 
-# Save with attachments
-uv run scripts/email_save.py 56873 --download-attachments
+# Save without attachments
+uv run {skill_directory}/scripts/email_save.py 56873 --no-download-attachments
 
-# Save with attachments to custom directory
-uv run scripts/email_save.py 56873 --download-attachments --attachment-dir ~/attachments
+# Save with attachments to custom directory (default behavior with custom dir)
+uv run {skill_directory}/scripts/email_save.py 56873 --attachment-dir ~/attachments
 ```
+
+## Save Email Workflow (Agent)
+
+When user asks to save an email (attachments are downloaded by default):
+
+1. Run `uv run {skill_directory}/scripts/email_save.py <id> --output <dir>` (attachments are downloaded automatically)
+2. Read the list of downloaded attachments from output
+3. For each image attachment:
+   - Use `look_at` tool or other vision capabilities to inspect the image
+   - Classify content and determine if it can be replaced with text
+4. If any attachments were replaced:
+   - Update the saved email file with text replacements
+   - Delete the replaced attachment files
+5. Report to user what was saved and what was converted
+
+To skip attachment downloads, use `--no-download-attachments` flag.
+
+### Attachment Classification
+
+- **Replace with Unicode**: Icons, emojis, symbols, checkmarks, arrows
+- **Replace with Markdown table**: Tables with single-line text cells
+- **Replace with ASCII table**: Tables with multi-line text cells
+- **Replace with text**: Very brief text (1-3 words), signatures
+- **Keep unchanged**: Photos, screenshots, complex diagrams, charts
+
+## ASCII Table Format
+
+For complex tables with multi-line content, use this standardized format:
+
+```
++------------+---------------+
+| Column 1   | Column 2      |
++------------+---------------+
+| Line 1     | Multi-line    |
+| continues  | content here  |
++------------+---------------+
+```
+
+Key characteristics:
+
+- Use `+` for corners
+- Use `-` for horizontal lines
+- Use `|` for vertical lines
+- Column widths match content
+- All cells must have aligned pipes
 
 ## Delete Emails
 
 Delete emails by message ID with safety preview:
 
 ```bash
-uv run scripts/email-delete.py <message-id> [options]
+uv run {skill_directory}/scripts/email-delete.py <message-id> [options]
 ```
 
 **Options:**
@@ -171,13 +277,13 @@ When called by OpenCode agent, deletion proceeds immediately with `--execute` fl
 
 ```bash
 # Preview deletion
-uv run scripts/email-delete.py 56838
+uv run {skill_directory}/scripts/email-delete.py 56838
 
 # Actually delete (interactive - will prompt for confirmation)
-uv run scripts/email-delete.py 56838 --execute
+uv run {skill_directory}/scripts/email-delete.py 56838 --execute
 
 # Delete from specific folder
-uv run scripts/email-delete.py --folder Sent 12345 --execute
+uv run {skill_directory}/scripts/email-delete.py --folder Sent 12345 --execute
 ```
 
 ## Translate Natural Language Queries
@@ -201,9 +307,9 @@ Interpret natural language queries as appropriate script calls:
 
 **Save queries:**
 
-- "Save email ID 56873" → email_save.py 56873
-- "Save as JSON" → email_save.py 56873 --format json
-- "Save to ~/emails folder with date prefix" → email_save.py 56873 --output ~/emails --date-prefix
+- "Save email ID 56873" → `uv run {skill_directory}/scripts/email_save.py 56873`
+- "Save as JSON" → `uv run {skill_directory}/scripts/email_save.py 56873 --format json`
+- "Save to ~/emails folder with date prefix" → `uv run {skill_directory}/scripts/email_save.py 56873 --output ~/emails --date-prefix`
 
 **Delete queries:**
 
@@ -214,7 +320,7 @@ Interpret natural language queries as appropriate script calls:
 
 **When calling scripts:**
 
-1. Always invoke with `uv run scripts/<script-name>.py` (handles environment and deps)
+1. Always invoke with `uv run {skill_directory}/scripts/<script-name>.py` (handles environment and deps, do NOT cd into skill directory)
 2. For search by sender or subject, use --from and --subject flags
 3. Date range uses --date-start and --date-end (YYYY-MM-DD format)
 4. Case-insensitive search is automatic - don't worry about capitalization
@@ -252,10 +358,10 @@ Interpret natural language queries as appropriate script calls:
 ## Using the Scripts
 
 All scripts use PEP 723 inline metadata and require Python 3.13+.
-Invoke with `uv run` to automatically handle Python environment and dependencies:
+Invoke with `uv run` using the absolute path to automatically handle Python environment and dependencies:
 
 ```bash
-uv run scripts/<script-name>.py [options]
+uv run {skill_directory}/scripts/<script-name>.py [options]
 ```
 
 **Dependencies** (auto-managed by uv):
