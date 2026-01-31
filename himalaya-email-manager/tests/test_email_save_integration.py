@@ -33,6 +33,7 @@ class TestDownloadAttachmentsInternal:
             moved_files.append((Path(src), Path(dst)))
 
         with (
+            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
             patch("email_save.subprocess.run") as mock_run,
             patch("email_save.shutil.move", side_effect=mock_move),
             patch("pathlib.Path.mkdir"),
@@ -73,6 +74,7 @@ class TestDownloadAttachmentsInternal:
             moved_files.append((Path(src), Path(dst)))
 
         with (
+            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
             patch("email_save.subprocess.run") as mock_run,
             patch("email_save.shutil.move", side_effect=mock_move),
             patch("pathlib.Path.mkdir"),
@@ -100,6 +102,7 @@ class TestDownloadAttachmentsInternal:
         himalaya_output = ""
 
         with (
+            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
             patch("email_save.subprocess.run") as mock_run,
             patch("email_save.shutil.move") as mock_move,
         ):
@@ -126,6 +129,7 @@ class TestDownloadAttachmentsInternal:
         himalaya_output = 'Downloading "obf_file.png"…\n'
 
         with (
+            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
             patch("email_save.subprocess.run") as mock_run,
             patch("email_save.shutil.move"),
             patch.object(Path, "mkdir") as mock_mkdir,
@@ -160,6 +164,7 @@ class TestDownloadAttachmentsInternal:
             moved_files.append((Path(src), Path(dst)))
 
         with (
+            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
             patch("email_save.subprocess.run") as mock_run,
             patch("email_save.shutil.move", side_effect=mock_move),
             patch("pathlib.Path.mkdir"),
@@ -183,7 +188,9 @@ class TestDownloadAttachmentsInternal:
 class TestSaveCommandAttachmentBehavior:
     """Test save() command with attachment downloading."""
 
-    def test_effective_attachment_dir_defaults_to_output_parent_when_output_none(self) -> None:
+    def test_effective_attachment_dir_defaults_to_output_parent_when_output_none(
+        self,
+    ) -> None:
         """Verify effective_attachment_dir defaults to output_path.parent.
 
         When output=None and no --attachment-dir specified, attachments should
