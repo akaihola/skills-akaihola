@@ -8,20 +8,29 @@ description: >-
   or mentions searching the Power store.
 ---
 
-# Power.fi Product Search
+# Power.fi Product Search & Store Stock
 
-Search the Power.fi product catalog using their internal REST API.
-No browser or authentication required.
+Search the Power.fi product catalog and check per-store stock using their
+internal REST API. No browser or authentication required.
 
 ## Quick Start
 
-Run the search script to find products:
+Search for products:
 
 ```bash
 ./scripts/search.py "kahvinkeitin"
 ./scripts/search.py "televisio" --limit 20
 ./scripts/search.py "kuulokkeet" --json
 ./scripts/search.py "pölynimuri" --sort lth
+```
+
+Check store stock for a product:
+
+```bash
+./scripts/store_stock.py 3060434
+./scripts/store_stock.py 3060434 --postal-code 33100
+./scripts/store_stock.py 3060434 --store "Itis"
+./scripts/store_stock.py 3060434 --in-stock --json
 ```
 
 ## How It Works
@@ -111,6 +120,51 @@ https://www.power.fi{basePath}/{filename}
 ```
 
 where `basePath` and `filename` come from the `productImage` field.
+
+## Store Stock Lookup
+
+Check per-store availability for a specific product using its product ID
+(found in search results or product URLs).
+
+### Basic usage
+
+```bash
+./scripts/store_stock.py PRODUCT_ID
+```
+
+Shows all stores sorted by distance from Helsinki (postal code 00100).
+
+### Options
+
+- `--postal-code CODE` — Sort by distance from a postal code (default: 00100)
+- `--store NAME` — Filter by store name (case-insensitive substring)
+- `--in-stock` — Show only stores with stock > 0
+- `--json` — Output raw JSON
+
+### Programmatic use
+
+```python
+from scripts.store_stock import get_store_stock
+
+stores = get_store_stock(3060434, postal_code="33100")
+for s in stores:
+    print(s["name"], s["storeStockCount"])
+```
+
+### Key Store Fields
+
+| Field               | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `storeId`           | Unique store identifier                        |
+| `name`              | Store name (e.g. "POWER Itis Helsinki")        |
+| `address`           | Street address                                 |
+| `city`              | City                                           |
+| `storeStockCount`   | Number of units in stock at this store         |
+| `storeDisplayStock` | Display stock count                            |
+| `storeAvailability` | 0 = not available, 1 = low stock, 2 = in stock |
+| `clickNCollect`     | Whether click & collect is available           |
+| `distance`          | Distance in km from the given postal code      |
+| `workingSchedule`   | Array of opening hours per day                 |
 
 ## API Reference
 
