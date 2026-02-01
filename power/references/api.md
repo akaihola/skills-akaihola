@@ -159,6 +159,52 @@ https://www.power.fi/images/h-b995b5568c0600c95b451ccee324717a/products/3060434/
 Common variant sizes: 150×150, 300×300, 600×600, 900×900, 1200×1200.
 Formats: `.jpg` (opaque), `.webp` (opaque or transparent), `.png` (transparent).
 
+## Store Stock
+
+### Per-Store Availability
+
+**GET** `/api/v2/products/{productId}/stores`
+
+Returns per-store stock information for a product, sorted by distance from the
+given postal code.
+
+**Parameters:**
+
+| Parameter    | Type   | Required | Description                        |
+| ------------ | ------ | -------- | ---------------------------------- |
+| `postalCode` | string | yes      | Postal code for distance sorting   |
+
+**Response:** Array of store objects.
+
+**Example response:**
+
+```json
+[
+  {
+    "storeId": 3789,
+    "name": "POWER Itis Helsinki",
+    "address": "Itäkatu 1",
+    "city": "Helsinki",
+    "storeStockCount": 11,
+    "storeDisplayStock": 0,
+    "storeAvailability": 2,
+    "clickNCollect": true,
+    "distance": 9.4,
+    "workingSchedule": [
+      { "dayOfWeek": "Sunday", "hours": "12 - 18" }
+    ]
+  }
+]
+```
+
+**Store availability values:**
+
+| Value | Meaning       |
+| ----- | ------------- |
+| `0`   | Not available |
+| `1`   | Low stock     |
+| `2`   | In stock      |
+
 ## Authentication
 
 No authentication required. The API is publicly accessible.
