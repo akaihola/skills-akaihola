@@ -38,3 +38,24 @@
 - [ ] Test data uses example domains only
 - [ ] Issue/PR descriptions are generic
 - [ ] No actual message content in documentation
+
+## Skills Organization
+
+Skills are stored in the repository root directory (e.g., `tokmanni/`, `clasohlson/`)
+and symlinked into `.claude/skills/` for Claude discovery:
+
+```
+tokmanni/                          # Source directory at repo root
+├── SKILL.md                        # Skill metadata and documentation
+├── scripts/
+│   └── search.py                   # Executable search script
+└── references/
+    └── api.md                      # API documentation
+
+.claude/skills/tokmanni            # Symlink → ../../tokmanni
+```
+
+This structure allows:
+- Source skills to be versioned at the root level
+- Claude to auto-discover skills via the `.claude/skills/` symlinks
+- Clear separation between skill source and integration points
