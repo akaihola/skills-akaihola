@@ -297,7 +297,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with tempfile.TemporaryDirectory(prefix="vtt2md_") as td:
+    with tempfile.TemporaryDirectory(prefix="yt2md_") as td:
         tmpdir = Path(td)
         vtt_path, info = _download_youtube(args.url, args.lang, tmpdir)
         words = parse_vtt(vtt_path)
