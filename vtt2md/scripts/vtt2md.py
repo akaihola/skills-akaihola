@@ -142,7 +142,7 @@ def words_to_markdown(
 
             # Flush paragraph
             if sentences_in_paragraph:
-                paragraphs.append(" ".join(sentences_in_paragraph))
+                paragraphs.append("\n".join(sentences_in_paragraph))
                 sentences_in_paragraph = []
 
             pending_ts = ts
@@ -174,7 +174,7 @@ def words_to_markdown(
         sentences_in_paragraph.append(sentence)
 
     if sentences_in_paragraph:
-        paragraphs.append(" ".join(sentences_in_paragraph))
+        paragraphs.append("\n".join(sentences_in_paragraph))
 
     return "\n\n".join(paragraphs) + "\n"
 
