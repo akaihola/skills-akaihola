@@ -3,35 +3,22 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""Apply structure hints to sentence-per-line Markdown transcript.
+"""Apply structure and hyperlinks to a sentence-per-line Markdown transcript.
 
-Takes a sentence-per-line Markdown file (from vtt2md.py) and applies:
-- A top-level title heading
-- Section headings (from yt-dlp chapters or LLM-generated hints)
-- Paragraph breaks (from LLM-generated hints)
-- Strips mid-paragraph timestamps, keeping only the first
+Takes a sentence-per-line Markdown file (from vtt2md.py) and a combined hints
+JSON, then applies title, section headings, paragraph breaks, timestamp
+cleanup, and hyperlink enrichment.
 
-Hints JSON format (from LLM):
+Combined hints JSON format:
     {
       "title": "Video Title Here",
-      "sections": [
-        {"line": 6, "title": "Hardware Setup"},
-        {"line": 16, "title": "System Overview"}
-      ],
-      "paragraphs": [5, 15, 25, 30]
+      "sections": [{"line": 6, "title": "Hardware Setup"}],
+      "paragraphs": [5, 15, 25],
+      "links": [{"phrase": "neural networks", "url": "https://example.com/nn"}]
     }
 
-- "title": becomes the # heading at the top
-- "sections": ## headings inserted before the given line number
-- "paragraphs": blank-line paragraph breaks inserted before the given line
-
-When --info-json is provided, chapters from yt-dlp override "sections" from
-the hints file, and the video title is used if "title" is absent from hints.
-
 Usage:
-    apply_structure.py transcript.md --hints hints.json -o output.md
-    apply_structure.py transcript.md --info-json v.info.json --hints hints.json
-    apply_structure.py transcript.md --hints hints.json   # stdout
+    apply_structure.py transcript.md --hints hints.json -o final.md
 """
 
 from __future__ import annotations
@@ -44,70 +31,25 @@ from pathlib import Path
 
 _TIMESTAMP_RE = re.compile(r"^\[(\d+):(\d{2})\]\s*")
 
-
-def _parse_line_timestamp(line: str) -> int | None:
-    """Extract timestamp in total seconds from '[M:SS] ...' prefix."""
-    m = _TIMESTAMP_RE.match(line)
-    if m:
-        return int(m.group(1)) * 60 + int(m.group(2))
-    return None
+# Matches existing Markdown links [text](url) and timestamp markers [M:SS]
+_MD_LINK_OR_TS_RE = re.compile(
+    r"\[([^\]]*)\]\([^)]+\)"  # [text](url)
+    r"|\[\d+:\d{2}\]"  # [M:SS]
+)
 
 
 def _strip_timestamp(line: str) -> str:
-    """Remove the [M:SS] prefix from a line."""
     return _TIMESTAMP_RE.sub("", line)
 
 
-def _chapters_to_sections(
-    chapters: list[dict],
-    lines: list[str],
-) -> dict[int, str]:
-    """Map yt-dlp chapter start_time values to line numbers.
-
-    For each chapter, finds the first line whose [M:SS] timestamp is
-    >= the chapter's start_time (in seconds).  Returns {line_no: title}.
-    """
-    line_ts: list[tuple[int, int]] = []
-    for i, line in enumerate(lines, 1):
-        ts = _parse_line_timestamp(line)
-        if ts is not None:
-            line_ts.append((i, ts))
-
-    sections: dict[int, str] = {}
-    for ch in chapters:
-        start = int(ch.get("start_time", 0))
-        title = ch.get("title", "")
-        if not title:
-            continue
-        for line_no, ts in line_ts:
-            if ts >= start:
-                sections[line_no] = title
-                break
-    return sections
+def _is_heading(line: str) -> bool:
+    return line.startswith("#")
 
 
-def apply_structure(
-    lines: list[str],
-    hints: dict,
-    chapters: list[dict] | None = None,
-) -> str:
-    """Apply headings, paragraph breaks, and timestamp cleanup.
-
-    Args:
-        lines: Raw lines from the sentence-per-line markdown (no newlines).
-        hints: Parsed hints dict (title, sections, paragraphs).
-        chapters: Optional yt-dlp chapters list (overrides hints sections).
-
-    Returns:
-        Fully structured Markdown string.
-    """
+def apply_structure(lines: list[str], hints: dict) -> str:
+    """Apply title, section headings, paragraph breaks, and timestamp cleanup."""
     title: str = hints.get("title", "")
-
-    if chapters:
-        sections = _chapters_to_sections(chapters, lines)
-    else:
-        sections = {s["line"]: s["title"] for s in hints.get("sections", [])}
-
+    sections = {s["line"]: s["title"] for s in hints.get("sections", [])}
     section_lines = set(sections.keys())
     paragraph_breaks = set(hints.get("paragraphs", []))
 
@@ -124,8 +66,17 @@ def apply_structure(
         out.append("")
 
     for i, line in enumerate(lines, 1):
-        line = line.rstrip()
-        if not line:
+        stripped = line.rstrip()
+        if not stripped:
+            continue
+
+        # Preserve existing headings as-is
+        if stripped.startswith("#"):
+            _flush_para()
+            if out and out[-1] != "":
+                out.append("")
+            out.append(stripped)
+            out.append("")
             continue
 
         if i in section_lines:
@@ -140,68 +91,111 @@ def apply_structure(
                 out.append("")
 
         if para:
-            line = _strip_timestamp(line)
+            stripped = _strip_timestamp(stripped)
 
-        para.append(line)
+        para.append(stripped)
 
     _flush_para()
 
     return "\n".join(out) + "\n"
 
 
+def _replace_first(
+    text: str,
+    phrase: str,
+    url: str,
+) -> tuple[str, bool]:
+    """Replace first case-insensitive *phrase* with a Markdown link,
+    skipping protected spans (existing links, timestamps).
+    """
+    pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+
+    protected: list[tuple[int, int]] = []
+    for m in _MD_LINK_OR_TS_RE.finditer(text):
+        protected.append((m.start(), m.end()))
+
+    def _in_protected(start: int, end: int) -> bool:
+        return any(ps <= start < pe or ps < end <= pe for ps, pe in protected)
+
+    for m in pattern.finditer(text):
+        if not _in_protected(m.start(), m.end()):
+            matched_text = m.group()
+            replacement = f"[{matched_text}]({url})"
+            return text[: m.start()] + replacement + text[m.end() :], True
+
+    return text, False
+
+
+def enrich_links(markdown: str, link_map: list[dict[str, str]]) -> str:
+    """Replace first occurrence of each phrase with a Markdown hyperlink.
+
+    Phrases are processed longest-first.  Headings, existing links, and
+    ``[M:SS]`` timestamps are skipped.
+    """
+    sorted_map = sorted(link_map, key=lambda e: -len(e["phrase"]))
+
+    lines = markdown.splitlines(keepends=True)
+    used_phrases: set[str] = set()
+
+    for entry in sorted_map:
+        phrase = entry["phrase"]
+        url = entry["url"]
+        phrase_lower = phrase.lower()
+
+        if phrase_lower in used_phrases:
+            continue
+
+        for i, line in enumerate(lines):
+            if _is_heading(line):
+                continue
+
+            new_line, replaced = _replace_first(line, phrase, url)
+            if replaced:
+                lines[i] = new_line
+                used_phrases.add(phrase_lower)
+                break
+
+    return "".join(lines)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Apply structure hints to sentence-per-line Markdown.",
+        description="Apply structure and links to sentence-per-line Markdown.",
     )
     ap.add_argument("input", type=Path, help="Sentence-per-line .md file")
     ap.add_argument(
         "--hints",
         type=Path,
-        default=None,
-        help="LLM-generated hints JSON file",
-    )
-    ap.add_argument(
-        "--info-json",
-        type=Path,
-        default=None,
-        help="yt-dlp .info.json for chapters & video title",
+        required=True,
+        help="Combined hints JSON file",
     )
     ap.add_argument(
         "-o",
         "--output",
         type=Path,
-        default=None,
-        help="Output .md file (default: stdout)",
+        required=True,
+        help="Output .md file",
     )
     args = ap.parse_args()
 
-    lines = args.input.read_text(encoding="utf-8").splitlines()
+    input_path: Path = args.input
+    output_path: Path = args.output
 
-    hints: dict = {}
-    if args.hints:
-        hints = json.loads(args.hints.read_text(encoding="utf-8"))
+    lines = input_path.read_text(encoding="utf-8").splitlines()
+    hints: dict = json.loads(args.hints.read_text(encoding="utf-8"))
 
-    chapters: list[dict] | None = None
-    if args.info_json:
-        info = json.loads(args.info_json.read_text(encoding="utf-8"))
-        chapters = info.get("chapters") or None
-        if not hints.get("title") and info.get("title"):
-            hints.setdefault("title", info["title"])
+    result = apply_structure(lines, hints)
 
-    if not hints and chapters is None:
-        print(
-            "Error: provide at least --hints or --info-json",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    link_map = hints.get("links", [])
+    if link_map:
+        result = enrich_links(result, link_map)
 
-    result = apply_structure(lines, hints, chapters)
+    output_path.write_text(result, encoding="utf-8")
+    print(f"Wrote {output_path}", file=sys.stderr)
 
-    if args.output:
-        args.output.write_text(result, encoding="utf-8")
-        print(f"Wrote {args.output}", file=sys.stderr)
-    else:
-        sys.stdout.write(result)
+    if input_path.resolve() != output_path.resolve():
+        input_path.unlink()
+        print(f"Deleted {input_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

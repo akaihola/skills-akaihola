@@ -1,82 +1,50 @@
 ---
 name: vtt2md
-description: Convert YouTube video subtitles to readable Markdown with second-accurate timestamps at sentence boundaries. Use when the user asks to "convert VTT to markdown", "transcribe a YouTube video", "get transcript from YouTube URL", provides a .vtt file to convert, or asks to turn subtitles/captions into readable text. Accepts both local .vtt files and YouTube URLs.
+description: Convert YouTube video subtitles to readable Markdown with timestamps. Use when the user asks to "convert YouTube video to markdown", "transcribe a YouTube video", "get transcript from YouTube URL", or asks to turn subtitles/captions into readable text. Accepts YouTube URLs.
 ---
 
 # VTT to Markdown
 
-Convert YouTube auto-generated VTT subtitles into clean, readable Markdown with `[M:SS]` timestamps between sentences and paragraph breaks at natural pauses.
+Convert YouTube auto-generated VTT subtitles into clean, readable Markdown with `[M:SS]` timestamps at sentence boundaries and paragraph breaks at natural pauses.
 
-## Step 1: Convert VTT to sentence-per-line Markdown
-
-```bash
-# YouTube URL (downloads subtitles via yt-dlp, then converts)
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py "https://youtube.com/watch?v=VIDEO_ID" -o output.md
-
-# Local VTT file
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py input.vtt -o output.md
-
-# Stdout (no -o)
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py input.vtt
-
-# Non-English subtitles
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py "https://youtube.com/watch?v=ID" --lang fi
-
-# Adjust paragraph break sensitivity (default: 2.0s pause)
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py input.vtt --pause 3.0
-
-# Plain text without timestamp markers
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py input.vtt --no-timestamps
-```
-
-## Step 2: Add structure (headings and paragraphs)
-
-The sentence-per-line output from step 1 needs structure: a title, section
-headings, and paragraph breaks. Two sources of structure are supported:
-
-- **yt-dlp chapters** (`--info-json`): section headings from YouTube chapter
-  markers (preferred when available)
-- **LLM hints** (`--hints`): a compact JSON with paragraph breaks and
-  optionally section headings when chapters are missing
-
-### Get chapters from YouTube (when available)
+## Step 1: Download and convert
 
 ```bash
-yt-dlp --dump-json "https://youtube.com/watch?v=VIDEO_ID" > video.info.json
+uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py "https://youtube.com/watch?v=VIDEO_ID" -o transcript.md
 ```
 
-Chapters live in `.chapters[]` as `{start_time, end_time, title}`.
+This downloads subtitles and video metadata from YouTube in a single call, then writes sentence-per-line Markdown to the `-o` file. If the video has chapter markers, `## Title` headings are inserted automatically.
 
-### Generate LLM hints
+**Stdout output** (for LLM consumption):
 
-Read the sentence-per-line Markdown file, then output a JSON object with the
-format below. **Each key is optional** — provide only what's needed.
-
-```json
-{
-  "title": "Video Title Here",
-  "sections": [
-    {"line": 6, "title": "Hardware Setup"},
-    {"line": 16, "title": "System Overview"}
-  ],
-  "paragraphs": [5, 15, 25, 30]
-}
+```
+TITLE: Video Title Here
+CHAPTERS: yes
+---
+Description text here...
 ```
 
-| Key          | Meaning                                                     |
-|--------------|-------------------------------------------------------------|
-| `title`      | Becomes the `#` heading at the top of the document          |
-| `sections[]` | `##` headings inserted **before** the given line number     |
-| `paragraphs` | Blank-line paragraph breaks inserted **before** the line    |
+`CHAPTERS: yes` or `CHAPTERS: no` indicates whether chapter headings were embedded. The `---` separator and description are only printed when the description is non-empty.
 
-When `--info-json` is also provided, its chapters override `sections` from
-hints, and the video title is used if `title` is absent from hints.
+**Options:**
 
-#### Prompt template for generating hints
+- `--lang fi` — subtitle language (default: `en`)
+- `--pause 3.0` — pause duration in seconds to trigger paragraph break (default: `2.0`)
+- `--no-timestamps` — omit `[M:SS]` timestamp markers
 
-> You are reading a transcript that has one sentence per line, each prefixed
-> with a `[M:SS]` timestamp. Output **only** a JSON object (no other text)
-> with the following structure:
+## Step 2: Generate combined hints (LLM step)
+
+Read the transcript file and the stdout output from step 1, then generate a single JSON object with all applicable keys.
+
+#### Prompt template
+
+> You are given two inputs:
+>
+> 1. A **sentence-per-line Markdown transcript** of a YouTube video (each sentence
+>    prefixed with `[M:SS]` timestamp). It may contain `##` chapter headings.
+> 2. The **video description** text (which may contain URLs to resources).
+>
+> Output **only** a JSON object (no other text) with this structure:
 >
 > ```json
 > {
@@ -84,111 +52,51 @@ hints, and the video title is used if `title` is absent from hints.
 >   "sections": [
 >     {"line": <N>, "title": "Section title"}
 >   ],
->   "paragraphs": [<line>, <line>, ...]
+>   "paragraphs": [<line>, <line>, ...],
+>   "links": [
+>     {"phrase": "exact words from the transcript", "url": "https://..."}
+>   ]
 > }
 > ```
 >
-> **Rules:**
-> - `"title"`: adapt the topic into a clear, human-readable title.
-> - `"sections"`: insert a section heading **before** line N wherever the
->   topic changes significantly. Use short, descriptive titles.
-> - `"paragraphs"`: insert a paragraph break **before** line N wherever it
->   helps readability — group logically related sentences together.
->   A section heading already implies a paragraph break, so don't duplicate.
-> - Omit `"sections"` entirely if chapter headings will come from yt-dlp.
-> - Line numbers are 1-based and refer to the input file.
+> **Rules for each key (all keys are optional — include only what's needed):**
+>
+> `title`: Adapt the video topic into a clear, human-readable title.
+>
+> `sections`: Insert a `##` heading before line N wherever the topic changes
+> significantly. Use short, descriptive titles. **Omit entirely** if the
+> transcript already contains `##` chapter headings.
+>
+> `paragraphs`: Insert a paragraph break before line N wherever it helps
+> readability — group logically related sentences. A section heading already
+> implies a paragraph break, so don't duplicate. Line numbers are 1-based
+> and refer to the input file.
+>
+> `links`: Match URLs from the video description to short phrases (1–4 words)
+> that appear verbatim in the transcript. Skip social media, subscribe, and
+> non-content URLs. Skip URLs with no related mention in the transcript.
+> If multiple phrases relate to the same URL, pick the most specific one.
 
-### Apply structure
+## Step 3: Apply structure and links
 
 ```bash
-# Chapters + LLM paragraph breaks
 uv run ~/.claude/skills/vtt2md/scripts/apply_structure.py transcript.md \
-  --info-json video.info.json --hints hints.json -o structured.md
-
-# LLM hints only (no chapters available)
-uv run ~/.claude/skills/vtt2md/scripts/apply_structure.py transcript.md \
-  --hints hints.json -o structured.md
+  --hints hints.json -o final.md
 ```
 
-The script:
-1. Inserts `#` title and `##` section headings at the mapped line numbers
-2. Inserts blank-line paragraph breaks
-3. Strips `[M:SS]` timestamps from all lines except the first in each paragraph
-
-## Step 3: Enrich with description links (optional)
-
-YouTube video descriptions often contain links to resources mentioned in the
-video. This step extracts those links and turns matching phrases in the
-transcript into hyperlinks.
-
-### Extract links from the description
-
-```bash
-uv run ~/.claude/skills/vtt2md/scripts/extract_links.py video.info.json -o raw_links.json
-
-# Or directly from a YouTube URL (fetches info.json automatically)
-uv run ~/.claude/skills/vtt2md/scripts/extract_links.py "https://youtube.com/watch?v=ID" -o raw_links.json
-```
-
-Output is a JSON array of `{"url": "...", "title": "..."}` pairs, where
-`title` is the label text found near the URL in the description.
-
-### Generate a link map (LLM step)
-
-The extracted titles are raw description labels — often full sentences or
-generic words like "Website". Read both `raw_links.json` and the structured
-transcript, then produce a **link map** JSON: an array of
-`{"phrase": "...", "url": "..."}` objects where each `phrase` is a short
-term that actually appears in the transcript text.
-
-#### Prompt template for generating the link map
-
-> You are given two inputs:
->
-> 1. A **Markdown transcript** of a video.
-> 2. A **raw links JSON** extracted from the video description — an array of
->    `{"url": "...", "title": "..."}` objects.
->
-> Output **only** a JSON array (no other text) of objects with this shape:
->
-> ```json
-> [
->   {"phrase": "exact words from the transcript", "url": "https://..."}
-> ]
-> ```
->
-> **Rules:**
-> - Each `phrase` must be a substring that appears verbatim in the transcript
->   (case-insensitive match is fine).
-> - Prefer short, specific phrases (1–4 words) over full sentences.
-> - Skip social media links, subscribe links, and other non-content URLs.
-> - Skip links that have no related mention in the transcript.
-> - If multiple transcript phrases relate to the same URL, include the most
->   specific one.
-
-### Apply the link map
-
-```bash
-uv run ~/.claude/skills/vtt2md/scripts/enrich_links.py structured.md \
-  --links link_map.json -o enriched.md
-```
-
-The script replaces the first occurrence of each phrase with a Markdown
-hyperlink. It skips headings, existing links, and `[M:SS]` timestamps.
-Longer phrases are matched first to avoid partial overlaps.
+This applies all structure from the hints JSON (title, sections, paragraphs), enriches matching phrases with hyperlinks, writes the final Markdown to `-o`, and **deletes the intermediate transcript file**.
 
 ## Requirements
 
-- `webvtt-py` is auto-installed by the PEP 723 inline metadata
-- `yt-dlp` must be installed for YouTube URL mode (available via `uvx yt-dlp`
-  or system package)
+- `webvtt-py` — auto-installed by PEP 723 inline metadata
+- `yt-dlp` — must be available (auto-installed by PEP 723 inline metadata, or via `uvx yt-dlp` / system package)
 
 ## How it works
 
-YouTube auto-generated VTT files contain word-level timestamps in inline
-`<HH:MM:SS.mmm><c> word</c>` tags. The `vtt2md.py` script:
+YouTube auto-generated VTT files contain word-level timestamps in inline `<HH:MM:SS.mmm><c> word</c>` tags. The `vtt2md.py` script:
 
 1. Parses these into a `(timestamp, word)` stream using `webvtt-py`
 2. Detects sentence boundaries (`.` `!` `?`)
 3. Inserts `[M:SS]` at the start of each sentence
-4. Outputs one sentence per line, with paragraph breaks at natural pauses
+4. Maps chapter markers from `info.json` to sentence timestamps for `##` headings
+5. Outputs one sentence per line, with paragraph breaks at natural pauses

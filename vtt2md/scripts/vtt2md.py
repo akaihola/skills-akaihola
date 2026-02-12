@@ -3,20 +3,23 @@
 # requires-python = ">=3.11"
 # dependencies = ["webvtt-py", "yt-dlp"]
 # ///
-"""Convert YouTube VTT subtitles to clean Markdown with second-accurate timestamps.
+"""Convert YouTube VTT subtitles to clean Markdown with timestamps.
+
+Downloads subtitles and metadata from a YouTube URL, parses word-level
+timestamps, detects sentences, and writes sentence-per-line Markdown with
+optional chapter headings.
 
 Usage:
-    vtt2md.py input.vtt                          # local VTT file to stdout
-    vtt2md.py https://youtube.com/watch?v=ID     # download subs then convert
-    vtt2md.py input.vtt -o output.md             # write to file
-    vtt2md.py input.vtt --pause 3.0              # 3s pause = new paragraph
-    vtt2md.py input.vtt --no-timestamps          # omit [MM:SS] markers
-    vtt2md.py URL --lang en                      # subtitle language (default: en)
+    vtt2md.py "https://youtube.com/watch?v=ID" -o transcript.md
+    vtt2md.py URL -o out.md --pause 3.0
+    vtt2md.py URL -o out.md --no-timestamps
+    vtt2md.py URL -o out.md --lang fi
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 import tempfile
@@ -103,47 +106,47 @@ def parse_vtt(path: str | Path) -> list[tuple[float, str]]:
 
 
 # ---------------------------------------------------------------------------
-# Markdown formatting
+# Sentence detection and Markdown formatting
 # ---------------------------------------------------------------------------
 
 _SENTENCE_END_RE = re.compile(r"[.!?][\"'\u2019\u201D)]*$")
 
 
-def words_to_markdown(
+def words_to_sentences(
     words: list[tuple[float, str]],
     *,
     pause_threshold: float = 2.0,
     timestamps: bool = True,
-) -> str:
-    """Convert (seconds, word) stream to Markdown with timestamps at sentence
-    boundaries and paragraph breaks at pauses."""
-    if not words:
-        return ""
+) -> list[tuple[float | None, str]]:
+    """Convert (seconds, word) stream to structured sentences.
 
-    paragraphs: list[str] = []
+    Returns a list of ``(sentence_start_seconds, formatted_text)`` tuples.
+    Paragraph breaks (long pauses) are represented as ``(None, "")`` entries.
+    Sentence text includes a ``[M:SS]`` prefix when *timestamps* is True.
+    """
+    if not words:
+        return []
+
+    result: list[tuple[float | None, str]] = []
     current_sentence_words: list[str] = []
-    sentences_in_paragraph: list[str] = []
     prev_ts = words[0][0]
-    pending_ts: float | None = words[0][0]  # timestamp for next sentence start
+    pending_ts: float | None = words[0][0]
 
     for ts, word in words:
         gap = ts - prev_ts
 
         # Detect paragraph break (long pause)
-        if gap > pause_threshold and (current_sentence_words or sentences_in_paragraph):
+        if gap > pause_threshold and (current_sentence_words or result):
             # Flush current sentence
             if current_sentence_words:
                 sentence = " ".join(current_sentence_words)
                 if timestamps and pending_ts is not None:
                     sentence = f"[{_seconds_to_mmss(pending_ts)}] {sentence}"
-                sentences_in_paragraph.append(sentence)
+                result.append((pending_ts, sentence))
                 current_sentence_words = []
 
-            # Flush paragraph
-            if sentences_in_paragraph:
-                paragraphs.append("\n".join(sentences_in_paragraph))
-                sentences_in_paragraph = []
-
+            # Insert paragraph break
+            result.append((None, ""))
             pending_ts = ts
 
         # Add word to current sentence
@@ -155,9 +158,9 @@ def words_to_markdown(
             sentence = " ".join(current_sentence_words)
             if timestamps and pending_ts is not None:
                 sentence = f"[{_seconds_to_mmss(pending_ts)}] {sentence}"
-            sentences_in_paragraph.append(sentence)
+            result.append((pending_ts, sentence))
             current_sentence_words = []
-            pending_ts = None  # will be set by next word
+            pending_ts = None
 
         # Track start of next sentence
         if pending_ts is None and not current_sentence_words:
@@ -170,26 +173,76 @@ def words_to_markdown(
         sentence = " ".join(current_sentence_words)
         if timestamps and pending_ts is not None:
             sentence = f"[{_seconds_to_mmss(pending_ts)}] {sentence}"
-        sentences_in_paragraph.append(sentence)
+        result.append((pending_ts, sentence))
 
-    if sentences_in_paragraph:
-        paragraphs.append("\n".join(sentences_in_paragraph))
-
-    return "\n\n".join(paragraphs) + "\n"
+    return result
 
 
-_URL_RE = re.compile(r"https?://")
+def format_markdown(
+    sentences: list[tuple[float | None, str]],
+    chapters: list[dict] | None = None,
+) -> str:
+    """Format sentences into Markdown with optional chapter headings.
+
+    *chapters* is a list of ``{"start_time": float, "title": str}`` dicts
+    (from yt-dlp info.json).  A ``## Title`` heading is inserted before the
+    first sentence whose timestamp >= the chapter's start_time.
+    """
+    chapter_queue: list[dict] = []
+    if chapters:
+        chapter_queue = sorted(chapters, key=lambda c: c.get("start_time", 0))
+
+    out_lines: list[str] = []
+
+    for start_ts, text in sentences:
+        # Paragraph break
+        if start_ts is None and text == "":
+            # Avoid duplicate blank lines
+            if out_lines and out_lines[-1] != "":
+                out_lines.append("")
+            continue
+
+        # Insert chapter headings whose start_time <= this sentence's timestamp
+        while chapter_queue and start_ts is not None:
+            ch_start = chapter_queue[0].get("start_time", 0)
+            ch_title = chapter_queue[0].get("title", "")
+            if start_ts >= ch_start and ch_title:
+                chapter_queue.pop(0)
+                if out_lines and out_lines[-1] != "":
+                    out_lines.append("")
+                out_lines.append(f"## {ch_title}")
+                out_lines.append("")
+            else:
+                break
+
+        out_lines.append(text)
+
+    # Clean trailing blank lines
+    while out_lines and out_lines[-1] == "":
+        out_lines.pop()
+
+    return "\n".join(out_lines) + "\n"
 
 
-def _is_url(s: str) -> bool:
-    return bool(_URL_RE.match(s))
+# ---------------------------------------------------------------------------
+# YouTube download
+# ---------------------------------------------------------------------------
 
 
-def _download_vtt(url: str, lang: str, tmpdir: Path) -> Path:
+def _download_youtube(
+    url: str,
+    lang: str,
+    tmpdir: Path,
+) -> tuple[Path, dict]:
+    """Download VTT subtitles and info.json from YouTube in a single call.
+
+    Returns ``(vtt_path, info_dict)``.
+    """
     opts = {
         "writeautomaticsub": True,
         "subtitleslangs": [lang],
         "subtitlesformat": "vtt",
+        "writeinfojson": True,
         "skip_download": True,
         "outtmpl": str(tmpdir / "%(id)s"),
         "quiet": True,
@@ -201,7 +254,14 @@ def _download_vtt(url: str, lang: str, tmpdir: Path) -> Path:
     if not vtt_files:
         print("Error: yt-dlp produced no .vtt files", file=sys.stderr)
         sys.exit(1)
-    return vtt_files[0]
+
+    json_files = sorted(tmpdir.glob("*.info.json"))
+    if not json_files:
+        print("Error: yt-dlp produced no .info.json files", file=sys.stderr)
+        sys.exit(1)
+
+    info = json.loads(json_files[0].read_text(encoding="utf-8"))
+    return vtt_files[0], info
 
 
 def main() -> None:
@@ -209,15 +269,15 @@ def main() -> None:
         description="Convert YouTube VTT subtitles to clean Markdown.",
     )
     parser.add_argument(
-        "input",
-        help="Input .vtt file OR YouTube URL",
+        "url",
+        help="YouTube URL",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        default=None,
-        help="Output .md file (default: stdout)",
+        required=True,
+        help="Output .md file",
     )
     parser.add_argument(
         "--pause",
@@ -237,32 +297,36 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if _is_url(args.input):
-        with tempfile.TemporaryDirectory(prefix="vtt2md_") as td:
-            tmpdir = Path(td)
-            vtt_path = _download_vtt(args.input, args.lang, tmpdir)
-            words = parse_vtt(vtt_path)
-    else:
-        vtt_path = Path(args.input)
-        if not vtt_path.exists():
-            print(f"Error: {vtt_path} not found", file=sys.stderr)
-            sys.exit(1)
+    with tempfile.TemporaryDirectory(prefix="vtt2md_") as td:
+        tmpdir = Path(td)
+        vtt_path, info = _download_youtube(args.url, args.lang, tmpdir)
         words = parse_vtt(vtt_path)
 
     if not words:
         print("Warning: no word-level timestamps found in VTT", file=sys.stderr)
 
-    md = words_to_markdown(
+    sentences = words_to_sentences(
         words,
         pause_threshold=args.pause,
         timestamps=not args.no_timestamps,
     )
 
-    if args.output:
-        args.output.write_text(md, encoding="utf-8")
-        print(f"Wrote {args.output}", file=sys.stderr)
-    else:
-        sys.stdout.write(md)
+    chapters = info.get("chapters") or None
+    md = format_markdown(sentences, chapters)
+
+    args.output.write_text(md, encoding="utf-8")
+    print(f"Wrote {args.output}", file=sys.stderr)
+
+    # Print metadata to stdout for LLM consumption
+    title = info.get("title", "")
+    description = info.get("description", "")
+    has_chapters = "yes" if chapters else "no"
+
+    print(f"TITLE: {title}")
+    print(f"CHAPTERS: {has_chapters}")
+    if description:
+        print("---")
+        print(description)
 
 
 if __name__ == "__main__":
