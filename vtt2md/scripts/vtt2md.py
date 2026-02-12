@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["webvtt-py"]
+# dependencies = ["webvtt-py", "yt-dlp"]
 # ///
 """Convert YouTube VTT subtitles to clean Markdown with second-accurate timestamps.
 
@@ -18,13 +18,12 @@ from __future__ import annotations
 
 import argparse
 import re
-import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 import webvtt
+import yt_dlp
 
 
 # <HH:MM:SS.mmm><c> word</c> groups in YouTube VTT raw_text
@@ -186,30 +185,17 @@ def _is_url(s: str) -> bool:
     return bool(_URL_RE.match(s))
 
 
-def _find_yt_dlp() -> str:
-    for name in ("yt-dlp",):
-        path = shutil.which(name)
-        if path:
-            return path
-    return "yt-dlp"
-
-
 def _download_vtt(url: str, lang: str, tmpdir: Path) -> Path:
-    yt_dlp = _find_yt_dlp()
-    cmd = [
-        yt_dlp,
-        "--write-auto-sub",
-        "--sub-lang",
-        lang,
-        "--sub-format",
-        "vtt",
-        "--skip-download",
-        "-o",
-        str(tmpdir / "%(id)s"),
-        url,
-    ]
-    print(f"Downloading subtitles: {' '.join(cmd)}", file=sys.stderr)
-    subprocess.run(cmd, check=True)
+    opts = {
+        "writeautomaticsub": True,
+        "subtitleslangs": [lang],
+        "subtitlesformat": "vtt",
+        "skip_download": True,
+        "outtmpl": str(tmpdir / "%(id)s"),
+        "quiet": True,
+    }
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        ydl.download([url])
 
     vtt_files = sorted(tmpdir.glob("*.vtt"))
     if not vtt_files:
@@ -252,12 +238,10 @@ def main() -> None:
     args = parser.parse_args()
 
     if _is_url(args.input):
-        tmpdir = Path(tempfile.mkdtemp(prefix="vtt2md_"))
-        try:
+        with tempfile.TemporaryDirectory(prefix="vtt2md_") as td:
+            tmpdir = Path(td)
             vtt_path = _download_vtt(args.input, args.lang, tmpdir)
             words = parse_vtt(vtt_path)
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
     else:
         vtt_path = Path(args.input)
         if not vtt_path.exists():
