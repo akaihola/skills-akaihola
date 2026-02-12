@@ -115,6 +115,68 @@ The script:
 2. Inserts blank-line paragraph breaks
 3. Strips `[M:SS]` timestamps from all lines except the first in each paragraph
 
+## Step 3: Enrich with description links (optional)
+
+YouTube video descriptions often contain links to resources mentioned in the
+video. This step extracts those links and turns matching phrases in the
+transcript into hyperlinks.
+
+### Extract links from the description
+
+```bash
+uv run ~/.claude/skills/vtt2md/scripts/extract_links.py video.info.json -o raw_links.json
+
+# Or directly from a YouTube URL (fetches info.json automatically)
+uv run ~/.claude/skills/vtt2md/scripts/extract_links.py "https://youtube.com/watch?v=ID" -o raw_links.json
+```
+
+Output is a JSON array of `{"url": "...", "title": "..."}` pairs, where
+`title` is the label text found near the URL in the description.
+
+### Generate a link map (LLM step)
+
+The extracted titles are raw description labels — often full sentences or
+generic words like "Website". Read both `raw_links.json` and the structured
+transcript, then produce a **link map** JSON: an array of
+`{"phrase": "...", "url": "..."}` objects where each `phrase` is a short
+term that actually appears in the transcript text.
+
+#### Prompt template for generating the link map
+
+> You are given two inputs:
+>
+> 1. A **Markdown transcript** of a video.
+> 2. A **raw links JSON** extracted from the video description — an array of
+>    `{"url": "...", "title": "..."}` objects.
+>
+> Output **only** a JSON array (no other text) of objects with this shape:
+>
+> ```json
+> [
+>   {"phrase": "exact words from the transcript", "url": "https://..."}
+> ]
+> ```
+>
+> **Rules:**
+> - Each `phrase` must be a substring that appears verbatim in the transcript
+>   (case-insensitive match is fine).
+> - Prefer short, specific phrases (1–4 words) over full sentences.
+> - Skip social media links, subscribe links, and other non-content URLs.
+> - Skip links that have no related mention in the transcript.
+> - If multiple transcript phrases relate to the same URL, include the most
+>   specific one.
+
+### Apply the link map
+
+```bash
+uv run ~/.claude/skills/vtt2md/scripts/enrich_links.py structured.md \
+  --links link_map.json -o enriched.md
+```
+
+The script replaces the first occurrence of each phrase with a Markdown
+hyperlink. It skips headings, existing links, and `[M:SS]` timestamps.
+Longer phrases are matched first to avoid partial overlaps.
+
 ## Requirements
 
 - `webvtt-py` is auto-installed by the PEP 723 inline metadata
