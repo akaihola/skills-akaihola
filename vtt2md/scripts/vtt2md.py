@@ -1,0 +1,285 @@
+#!/usr/bin/env -S uv run
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["webvtt-py"]
+# ///
+"""Convert YouTube VTT subtitles to clean Markdown with second-accurate timestamps.
+
+Usage:
+    vtt2md.py input.vtt                          # local VTT file to stdout
+    vtt2md.py https://youtube.com/watch?v=ID     # download subs then convert
+    vtt2md.py input.vtt -o output.md             # write to file
+    vtt2md.py input.vtt --pause 3.0              # 3s pause = new paragraph
+    vtt2md.py input.vtt --no-timestamps          # omit [MM:SS] markers
+    vtt2md.py URL --lang en                      # subtitle language (default: en)
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+import webvtt
+
+
+# <HH:MM:SS.mmm><c> word</c> groups in YouTube VTT raw_text
+_WORD_TAG_RE = re.compile(r"<(\d{2}:\d{2}:\d{2}\.\d{3})><c>\s*(.*?)</c>")
+
+# Leading word on a rolling cue's second line (before the first timestamp tag)
+_LEADING_WORD_RE = re.compile(r"^([^\n<]+?)(?=<\d{2}:\d{2}:\d{2}\.\d{3}>)")
+
+
+def _ts_to_seconds(ts: str) -> float:
+    parts = ts.split(":")
+    return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+
+
+def _seconds_to_mmss(seconds: float) -> str:
+    m, s = divmod(int(seconds), 60)
+    return f"{m}:{s:02d}"
+
+
+def _parse_rolling_cue(cue_start: str, raw: str) -> list[tuple[float, str]]:
+    """Extract (timestamp_seconds, word) pairs from a rolling cue's raw_text.
+
+    A rolling cue has two lines:
+      Line 1: plain text (previous words, already handled)
+      Line 2: leading_word<TS><c> word2</c><TS><c> word3</c>...
+
+    The leading word on line 2 gets the cue start timestamp.
+    Subsequent words get their inline timestamps.
+    """
+    lines = raw.split("\n")
+    if len(lines) < 2:
+        return []
+
+    second_line = lines[1]
+    words: list[tuple[float, str]] = []
+
+    # Leading word (before first <timestamp>)
+    lead = _LEADING_WORD_RE.match(second_line)
+    if lead:
+        word = lead.group(1).strip()
+        if word:
+            words.append((_ts_to_seconds(cue_start), word))
+
+    # Tagged words
+    for m in _WORD_TAG_RE.finditer(second_line):
+        ts = m.group(1)
+        word = m.group(2).strip()
+        if word:
+            words.append((_ts_to_seconds(ts), word))
+
+    return words
+
+
+def parse_vtt(path: str | Path) -> list[tuple[float, str]]:
+    """Parse a YouTube VTT file into a deduplicated stream of (seconds, word).
+
+    Only processes the 2-line rolling cues (which contain inline timestamps).
+    Deduplicates by keeping the *last* occurrence of each word at a given time,
+    since rolling cues repeat the previous line.
+    """
+    all_words: list[tuple[float, str]] = []
+    seen: set[tuple[float, str]] = set()
+
+    for caption in webvtt.read(str(path)):
+        raw = caption.raw_text
+        # Only process cues with inline timing tags (the rolling cues)
+        if "<c>" not in raw:
+            continue
+        pairs = _parse_rolling_cue(caption.start, raw)
+        for pair in pairs:
+            if pair not in seen:
+                seen.add(pair)
+                all_words.append(pair)
+
+    all_words.sort(key=lambda x: x[0])
+    return all_words
+
+
+# ---------------------------------------------------------------------------
+# Markdown formatting
+# ---------------------------------------------------------------------------
+
+_SENTENCE_END_RE = re.compile(r"[.!?][\"'\u2019\u201D)]*$")
+
+
+def words_to_markdown(
+    words: list[tuple[float, str]],
+    *,
+    pause_threshold: float = 2.0,
+    timestamps: bool = True,
+) -> str:
+    """Convert (seconds, word) stream to Markdown with timestamps at sentence
+    boundaries and paragraph breaks at pauses."""
+    if not words:
+        return ""
+
+    paragraphs: list[str] = []
+    current_sentence_words: list[str] = []
+    sentences_in_paragraph: list[str] = []
+    prev_ts = words[0][0]
+    pending_ts: float | None = words[0][0]  # timestamp for next sentence start
+
+    for ts, word in words:
+        gap = ts - prev_ts
+
+        # Detect paragraph break (long pause)
+        if gap > pause_threshold and (current_sentence_words or sentences_in_paragraph):
+            # Flush current sentence
+            if current_sentence_words:
+                sentence = " ".join(current_sentence_words)
+                if timestamps and pending_ts is not None:
+                    sentence = f"[{_seconds_to_mmss(pending_ts)}] {sentence}"
+                sentences_in_paragraph.append(sentence)
+                current_sentence_words = []
+
+            # Flush paragraph
+            if sentences_in_paragraph:
+                paragraphs.append(" ".join(sentences_in_paragraph))
+                sentences_in_paragraph = []
+
+            pending_ts = ts
+
+        # Add word to current sentence
+        current_sentence_words.append(word)
+        prev_ts = ts
+
+        # Detect sentence end
+        if _SENTENCE_END_RE.search(word):
+            sentence = " ".join(current_sentence_words)
+            if timestamps and pending_ts is not None:
+                sentence = f"[{_seconds_to_mmss(pending_ts)}] {sentence}"
+            sentences_in_paragraph.append(sentence)
+            current_sentence_words = []
+            pending_ts = None  # will be set by next word
+
+        # Track start of next sentence
+        if pending_ts is None and not current_sentence_words:
+            pass  # will be set when next word arrives
+        elif pending_ts is None and current_sentence_words:
+            pending_ts = ts  # already started
+
+    # Flush remaining
+    if current_sentence_words:
+        sentence = " ".join(current_sentence_words)
+        if timestamps and pending_ts is not None:
+            sentence = f"[{_seconds_to_mmss(pending_ts)}] {sentence}"
+        sentences_in_paragraph.append(sentence)
+
+    if sentences_in_paragraph:
+        paragraphs.append(" ".join(sentences_in_paragraph))
+
+    return "\n\n".join(paragraphs) + "\n"
+
+
+_URL_RE = re.compile(r"https?://")
+
+
+def _is_url(s: str) -> bool:
+    return bool(_URL_RE.match(s))
+
+
+def _find_yt_dlp() -> str:
+    for name in ("yt-dlp",):
+        path = shutil.which(name)
+        if path:
+            return path
+    return "yt-dlp"
+
+
+def _download_vtt(url: str, lang: str, tmpdir: Path) -> Path:
+    yt_dlp = _find_yt_dlp()
+    cmd = [
+        yt_dlp,
+        "--write-auto-sub",
+        "--sub-lang",
+        lang,
+        "--sub-format",
+        "vtt",
+        "--skip-download",
+        "-o",
+        str(tmpdir / "%(id)s"),
+        url,
+    ]
+    print(f"Downloading subtitles: {' '.join(cmd)}", file=sys.stderr)
+    subprocess.run(cmd, check=True)
+
+    vtt_files = sorted(tmpdir.glob("*.vtt"))
+    if not vtt_files:
+        print("Error: yt-dlp produced no .vtt files", file=sys.stderr)
+        sys.exit(1)
+    return vtt_files[0]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Convert YouTube VTT subtitles to clean Markdown.",
+    )
+    parser.add_argument(
+        "input",
+        help="Input .vtt file OR YouTube URL",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=None,
+        help="Output .md file (default: stdout)",
+    )
+    parser.add_argument(
+        "--pause",
+        type=float,
+        default=2.0,
+        help="Pause duration (seconds) to trigger paragraph break (default: 2.0)",
+    )
+    parser.add_argument(
+        "--no-timestamps",
+        action="store_true",
+        help="Omit [MM:SS] timestamp markers",
+    )
+    parser.add_argument(
+        "--lang",
+        default="en",
+        help="Subtitle language for YouTube downloads (default: en)",
+    )
+    args = parser.parse_args()
+
+    if _is_url(args.input):
+        tmpdir = Path(tempfile.mkdtemp(prefix="vtt2md_"))
+        try:
+            vtt_path = _download_vtt(args.input, args.lang, tmpdir)
+            words = parse_vtt(vtt_path)
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    else:
+        vtt_path = Path(args.input)
+        if not vtt_path.exists():
+            print(f"Error: {vtt_path} not found", file=sys.stderr)
+            sys.exit(1)
+        words = parse_vtt(vtt_path)
+
+    if not words:
+        print("Warning: no word-level timestamps found in VTT", file=sys.stderr)
+
+    md = words_to_markdown(
+        words,
+        pause_threshold=args.pause,
+        timestamps=not args.no_timestamps,
+    )
+
+    if args.output:
+        args.output.write_text(md, encoding="utf-8")
+        print(f"Wrote {args.output}", file=sys.stderr)
+    else:
+        sys.stdout.write(md)
+
+
+if __name__ == "__main__":
+    main()
