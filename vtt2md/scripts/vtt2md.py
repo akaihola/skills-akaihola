@@ -320,9 +320,11 @@ def main() -> None:
     # Print metadata to stdout for LLM consumption
     title = info.get("title", "")
     description = info.get("description", "")
+    video_id = info.get("id", "")
     has_chapters = "yes" if chapters else "no"
 
     print(f"TITLE: {title}")
+    print(f"VIDEO_ID: {video_id}")
     print(f"CHAPTERS: {has_chapters}")
     if description:
         print("---")

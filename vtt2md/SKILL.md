@@ -19,6 +19,7 @@ This downloads subtitles and video metadata from YouTube in a single call, then 
 
 ```
 TITLE: Video Title Here
+VIDEO_ID: dQw4w9WgXcQ
 CHAPTERS: yes
 ---
 Description text here...
@@ -81,10 +82,10 @@ Read the transcript file and the stdout output from step 1, then generate a sing
 
 ```bash
 uv run ~/.claude/skills/vtt2md/scripts/apply_structure.py transcript.md \
-  --hints hints.json -o final.md
+  --hints hints.json --video-id VIDEO_ID -o final.md
 ```
 
-This applies all structure from the hints JSON (title, sections, paragraphs), enriches matching phrases with hyperlinks, writes the final Markdown to `-o`, and **deletes the intermediate transcript file**.
+This applies all structure from the hints JSON (title, sections, paragraphs), enriches matching phrases with hyperlinks, converts `[M:SS]` timestamps to clickable YouTube links (when `--video-id` is provided), writes the final Markdown to `-o`, and **deletes the intermediate transcript file**.
 
 ## Requirements
 
