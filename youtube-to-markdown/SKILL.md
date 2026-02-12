@@ -1,16 +1,16 @@
 ---
-name: vtt2md
-description: Convert YouTube video subtitles to readable Markdown with timestamps. Use when the user asks to "convert YouTube video to markdown", "transcribe a YouTube video", "get transcript from YouTube URL", or asks to turn subtitles/captions into readable text. Accepts YouTube URLs.
+name: youtube-to-markdown
+description: Convert a YouTube video into a clean, easy-to-read Markdown file based on its transcript. Use when the user asks to "convert YouTube video to markdown", "transcribe a YouTube video", "get transcript from YouTube URL", or asks to turn subtitles/captions into readable text. Accepts YouTube URLs.
 ---
 
-# VTT to Markdown
+# YouTube to Markdown
 
-Convert YouTube auto-generated VTT subtitles into clean, readable Markdown with `[M:SS]` timestamps at sentence boundaries and paragraph breaks at natural pauses.
+Convert a YouTube video into clean, readable Markdown with `[M:SS]` timestamps at sentence boundaries and paragraph breaks at natural pauses.
 
 ## Step 1: Download and convert
 
 ```bash
-uv run ~/.claude/skills/vtt2md/scripts/vtt2md.py "https://youtube.com/watch?v=VIDEO_ID" -o transcript.md
+uv run ~/.claude/skills/youtube-to-markdown/scripts/vtt2md.py "https://youtube.com/watch?v=VIDEO_ID" -o transcript.md
 ```
 
 This downloads subtitles and video metadata from YouTube in a single call, then writes sentence-per-line Markdown to the `-o` file. If the video has chapter markers, `## Title` headings are inserted automatically.
@@ -81,7 +81,7 @@ Read the transcript file and the stdout output from step 1, then generate a sing
 ## Step 3: Apply structure and links
 
 ```bash
-uv run ~/.claude/skills/vtt2md/scripts/apply_structure.py transcript.md \
+uv run ~/.claude/skills/youtube-to-markdown/scripts/apply_structure.py transcript.md \
   --hints hints.json --video-id VIDEO_ID -o final.md
 ```
 
