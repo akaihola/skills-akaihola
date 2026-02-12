@@ -112,12 +112,16 @@ def apply_structure(
     paragraph_breaks = set(hints.get("paragraphs", []))
 
     out: list[str] = []
+    para: list[str] = []
+
+    def _flush_para() -> None:
+        if para:
+            out.append(" ".join(para))
+            para.clear()
 
     if title:
         out.append(f"# {title}")
         out.append("")
-
-    is_first_in_para = True
 
     for i, line in enumerate(lines, 1):
         line = line.rstrip()
@@ -125,21 +129,22 @@ def apply_structure(
             continue
 
         if i in section_lines:
+            _flush_para()
             if out and out[-1] != "":
                 out.append("")
             out.append(f"## {sections[i]}")
             out.append("")
-            is_first_in_para = True
         elif i in paragraph_breaks:
+            _flush_para()
             if out and out[-1] != "":
                 out.append("")
-            is_first_in_para = True
 
-        if not is_first_in_para:
+        if para:
             line = _strip_timestamp(line)
 
-        out.append(line)
-        is_first_in_para = False
+        para.append(line)
+
+    _flush_para()
 
     return "\n".join(out) + "\n"
 
