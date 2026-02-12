@@ -158,6 +158,30 @@ def enrich_links(markdown: str, link_map: list[dict[str, str]]) -> str:
     return "".join(lines)
 
 
+def linkify_timestamps(
+    markdown: str,
+    video_id: str,
+    separator: str = "\u25b8",
+) -> str:
+    """Convert ``[M:SS]`` timestamp prefixes to YouTube timestamp links.
+
+    Replaces ``[M:SS] text`` with ``[M:SS](https://youtu.be/ID?t=Ns) ▸ text``
+    at the start of each line.  The rendered Markdown shows the timestamp as
+    a clickable link without square brackets, followed by the separator.
+    """
+    ts_re = re.compile(r"^\[(\d+):(\d{2})\]\s*", re.MULTILINE)
+
+    def _replace(m: re.Match) -> str:
+        minutes = int(m.group(1))
+        seconds = int(m.group(2))
+        total = minutes * 60 + seconds
+        ts_text = f"{minutes}:{seconds:02d}"
+        url = f"https://youtu.be/{video_id}?t={total}"
+        return f"[{ts_text}]({url}) {separator} "
+
+    return ts_re.sub(_replace, markdown)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Apply structure and links to sentence-per-line Markdown.",
@@ -176,6 +200,11 @@ def main() -> None:
         required=True,
         help="Output .md file",
     )
+    ap.add_argument(
+        "--video-id",
+        default=None,
+        help="YouTube video ID for timestamp links (e.g. Q7r--i9lLck)",
+    )
     args = ap.parse_args()
 
     input_path: Path = args.input
@@ -189,6 +218,9 @@ def main() -> None:
     link_map = hints.get("links", [])
     if link_map:
         result = enrich_links(result, link_map)
+
+    if args.video_id:
+        result = linkify_timestamps(result, args.video_id)
 
     output_path.write_text(result, encoding="utf-8")
     print(f"Wrote {output_path}", file=sys.stderr)
