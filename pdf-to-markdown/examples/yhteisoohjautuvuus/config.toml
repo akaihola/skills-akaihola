@@ -1,0 +1,134 @@
+# Example config: Yhteisöohjautuvuuden käsikirja
+# Run from this directory:
+#   GEMINI_API_KEY=... uv run ../../scripts/convert.py config.toml
+
+pdf = "YhteisoohjautuvuudenKasikirja _120x190mm_sisasivut_20240828.pdf"
+output_dir = "."
+images_dir = "kuvat"
+model = "gemini-2.0-flash"
+
+[[sections]]
+slug = "osa-1-johdanto"
+start_page = 10
+end_page = 9   # just the intro pages before 1.1
+heading = "# Osa 1 – Työelämä voi olla toisenlaista"
+output = "luvut/osa-1/00-johdanto.md"
+
+[[sections]]
+slug = "1.1"
+start_page = 10
+end_page = 21
+heading = "## 1.1 Kohti vertaispohjaista toimintatapaa"
+output = "luvut/osa-1/1.1-kohti-vertaispohjaista-toimintatapaa.md"
+
+[[sections]]
+slug = "1.2"
+start_page = 22
+end_page = 29
+heading = "## 1.2 Inhimillisesti kestävä työelämä"
+output = "luvut/osa-1/1.2-inhimillisesti-kestava-tyoelama.md"
+
+[[sections]]
+slug = "1.3"
+start_page = 30
+end_page = 37
+heading = "## 1.3 Epävirallinen verkosto"
+output = "luvut/osa-1/1.3-epavirallinen-verkosto.md"
+
+[[sections]]
+slug = "1.4"
+start_page = 38
+end_page = 47
+heading = "## 1.4 Tilannetaju organisaatiossa"
+output = "luvut/osa-1/1.4-tilannetaju-organisaatiossa.md"
+
+[[sections]]
+slug = "1.5"
+start_page = 48
+end_page = 53
+heading = "## 1.5 Johtajuus kuuluu kaikille"
+output = "luvut/osa-1/1.5-johtajuus-kuuluu-kaikille.md"
+
+[[sections]]
+slug = "liite-1"
+start_page = 54
+end_page = 61
+heading = "# Liite 1 – Testaa osaamisesi"
+output = "liitteet/liite-1/00-testaa-osaamisesi.md"
+
+[[sections]]
+slug = "2.1"
+start_page = 63
+end_page = 80
+heading = "## 2.1 Päätöksenteko"
+output = "luvut/osa-2/2.1-paatoksenteko.md"
+
+[[sections]]
+slug = "2.2"
+start_page = 81
+end_page = 94
+heading = "## 2.2 Parvimalli"
+output = "luvut/osa-2/2.2-parvimalli.md"
+
+[[sections]]
+slug = "2.3"
+start_page = 95
+end_page = 106
+heading = "## 2.3 Orgaaninen työnjako"
+output = "luvut/osa-2/2.3-orgaaninen-tyonjako.md"
+
+[[sections]]
+slug = "2.4"
+start_page = 107
+end_page = 113
+heading = "## 2.4 Tavoitteet ja suorituksen johtaminen"
+output = "luvut/osa-2/2.4-tavoitteet-ja-suorituksen-johtaminen.md"
+
+[[sections]]
+slug = "liite-2"
+start_page = 114
+end_page = 121
+heading = "# Liite 2 – Testaa osaamisesi"
+output = "liitteet/liite-2/00-testaa-osaamisesi.md"
+
+[[sections]]
+slug = "3.1"
+start_page = 124
+end_page = 131
+heading = "## 3.1 Yhteisöjen aika"
+output = "luvut/osa-3/3.1-yhteisojen-aika.md"
+
+[[sections]]
+slug = "3.2"
+start_page = 132
+end_page = 137
+heading = "## 3.2 Ilmapiiriä johdetaan yhdessä"
+output = "luvut/osa-3/3.2-ilmapiiria-johdetaan-yhdessa.md"
+
+[[sections]]
+slug = "3.3"
+start_page = 138
+end_page = 142
+heading = "## 3.3 Valmista mallia ei ole"
+output = "luvut/osa-3/3.3-valmista-mallia-ei-ole.md"
+
+[[sections]]
+slug = "3.4"
+start_page = 143
+end_page = 147
+heading = "## 3.4 Väärinkäsityksiä ja sudenkuoppia"
+output = "luvut/osa-3/3.4-vaarinkasityksia-ja-sudenkuoppia.md"
+
+[[sections]]
+slug = "3.5"
+start_page = 148
+end_page = 157
+heading = "## 3.5 Kriittisen ajattelun tärkeys"
+output = "luvut/osa-3/3.5-kriittisen-ajattelun-tarkeys.md"
+
+[[sections]]
+slug = "lahteet"
+start_page = 158
+end_page = 164
+heading = "## Lisämateriaalit ja lähteet"
+output = "luvut/osa-3/lisamateriaalit-ja-lahteet.md"
