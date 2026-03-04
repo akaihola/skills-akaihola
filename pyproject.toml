@@ -44,3 +44,12 @@ ignore = [
 "test_*.py" = [
     "S101",  # Use of `assert` detected
 ]
+"*/scripts/*.py" = [
+    "T201",    # print() calls are intentional in CLI scripts
+    "CPY001",  # no copyright header needed in skill scripts
+    "DOC201",  # return values not documented (scripts, not library)
+    "C901",    # complexity limits relaxed for single-file scripts
+    "PLR0912", # branch count relaxed for single-file scripts
+    "PLR0914", # local variable count relaxed for single-file scripts
+    "ERA001",  # section-header comments are not commented-out code
+]
