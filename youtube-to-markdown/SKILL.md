@@ -1,6 +1,12 @@
 ---
 name: youtube-to-markdown
-description: Convert a YouTube video into a clean, easy-to-read Markdown file based on its transcript. Use when the user asks to "convert YouTube video to markdown", "transcribe a YouTube video", "get transcript from YouTube URL", or asks to turn subtitles/captions into readable text. Accepts YouTube URLs.
+description: >-
+  Convert a YouTube video into clean, readable Markdown using its free auto-generated
+  captions (no paid API needed). Use when the user asks to "convert YouTube video to
+  markdown", "get transcript from YouTube URL", "summarise this video", or wants to
+  turn YouTube subtitles/captions into readable text. Prefer this over
+  youtube-transcription when the video already has auto-generated subtitles — it's
+  free and faster. Accepts YouTube URLs.
 ---
 
 # YouTube to Markdown
