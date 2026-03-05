@@ -1,6 +1,11 @@
 ---
 name: conventional-committer
-description: Skill for committing changes to this repository using Git, generating a commit message from recent history and current changes.
+description: >-
+  Commit changes to the skills-akaihola Git repository, generating a commit message
+  that matches the existing history style. Use when the user says "commit",
+  "commit staged changes", "commit everything", "commit my changes", or
+  "save these edits as a commit" — in this repository. Inspects recent history,
+  stages changes if requested, and runs git commit automatically.
 ---
 
 # Conventional Committer

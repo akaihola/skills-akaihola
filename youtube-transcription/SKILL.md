@@ -1,6 +1,12 @@
 ---
 name: YouTube Transcription
-description: This skill should be used when the user wants to "transcribe a YouTube video", "get a transcript of a video", "download and transcribe audio", or needs to convert video/audio content to searchable markdown text using AssemblyAI. Supports both YouTube URLs and local audio files.
+description: >-
+  Transcribe a YouTube video or local audio file using AssemblyAI (paid, speech-to-text AI).
+  Choose this skill over youtube-to-markdown when the video has no auto-generated captions,
+  is in a non-English language that needs accurate transcription, or you need a local audio
+  file transcribed. Use when the user says "transcribe this video with AssemblyAI", "get
+  speech-to-text transcript", "transcribe this MP3/WAV/M4A", or "transcribe a video that
+  has no subtitles". Requires ASSEMBLYAI_API_KEY.
 version: 0.1.0
 ---
 
@@ -11,6 +17,7 @@ Convert YouTube videos and audio files to searchable, formatted markdown transcr
 ## When to Use This Skill
 
 Use this skill when you need to:
+
 - Transcribe YouTube videos into markdown documents
 - Convert audio files (MP3, WAV, M4A) to text transcripts
 - Create searchable transcripts with metadata and proper formatting
@@ -106,6 +113,7 @@ done
 YouTube is blocking yt-dlp. This happens with age-restricted or new videos.
 
 **Solution:** Use Firefox cookies with JavaScript runtime:
+
 ```bash
 yt-dlp -x --audio-format mp3 \
     --cookies-from-browser firefox \
@@ -120,6 +128,7 @@ yt-dlp -x --audio-format mp3 \
 Script needs the AssemblyAI package at runtime.
 
 **Solution:** Always use `--with=assemblyai` flag:
+
 ```bash
 uv run --with=assemblyai ./scripts/transcribe_video.py <input>
 ```
@@ -129,11 +138,13 @@ uv run --with=assemblyai ./scripts/transcribe_video.py <input>
 AssemblyAI requires valid API key.
 
 **Solution:** Verify environment variable is set:
+
 ```bash
 echo $ASSEMBLYAI_API_KEY  # Should show your key
 ```
 
 Set it in your shell profile to persist:
+
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
 export ASSEMBLYAI_API_KEY="your_actual_key_here"
@@ -180,6 +191,7 @@ pages/Projects/Second Brain/
 ```
 
 Update the project README to include:
+
 ```markdown
 - `[[Title - Transcript]]` - Full video transcript
 ```
@@ -187,6 +199,7 @@ Update the project README to include:
 ### For Knowledge Base
 
 Create a transcripts folder:
+
 ```
 pages/PKB/Video Transcripts/
 ├── Topic 1/
@@ -205,6 +218,7 @@ pages/PKB/Video Transcripts/
 ## Advanced Options
 
 See `references/assemblyai_options.md` for:
+
 - Language detection
 - Speaker diarization (multiple speakers)
 - Entity detection

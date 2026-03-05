@@ -1,6 +1,11 @@
 ---
 name: brave-search
-description: Structured Brave Search web queries and summarizer workflows for MCP-style agents.
+description: >-
+  Search the web using Brave Search API. Use when the user asks to "search the web",
+  "look up current information", "find news about", "research a topic online",
+  "check prices online", or needs up-to-date facts that may not be in the model's
+  training data. Requires BRAVE_SEARCH_API_KEY. Supports structured web results
+  (pages, FAQs, news, videos) and an optional AI summarizer.
 ---
 
 # Purpose
