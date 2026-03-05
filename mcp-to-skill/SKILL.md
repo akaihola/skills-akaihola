@@ -1,3 +1,4 @@
+---
 name: mcp-to-skill
 description: Convert any MCP server into a Claude Skill with 90% context savings. Use this skill when converting an MCP server to a skill to reduce context usage and improve performance.
 version: 1.0.0
@@ -10,10 +11,12 @@ Convert any MCP (Model Context Protocol) server into a Claude Skill using the pr
 ## Context Efficiency Benefits
 
 Traditional MCP approach:
+
 - All tools loaded at startup (10-50k tokens for 20+ tools)
 - Context available: 85% of total
 
 Skill approach:
+
 - Metadata only: ~100 tokens at startup
 - Full instructions (when used): ~5k tokens
 - Tool execution: 0 tokens (runs externally)
@@ -22,12 +25,14 @@ Skill approach:
 ## When to Use This Skill
 
 Use this converter when:
+
 - Working with 10+ MCP tools
 - Context space is tight
 - Most tools are not used in each conversation
 - Tools are independent
 
 Stick with direct MCP when:
+
 - Working with 1-5 tools
 - Complex OAuth flows are required
 - Persistent connections are needed
@@ -36,6 +41,7 @@ Stick with direct MCP when:
 ## How It Works
 
 Apply the "progressive disclosure" pattern:
+
 1. Read the MCP server configuration
 2. Generate a Skill structure with:
    - SKILL.md - Instructions for Claude
@@ -57,7 +63,7 @@ Create a JSON configuration file for your MCP server:
   "description": "Server description",
   "command": "npx",
   "args": ["-y", "@modelcontextprotocol/server-name"],
-  "env": {"ENV_VAR": "value"}
+  "env": { "ENV_VAR": "value" }
 }
 ```
 
@@ -90,11 +96,13 @@ cp -r ./output-dir ~/.claude/skills/skill-name
 Transform MCP configurations into skills using this main converter script.
 
 Usage:
+
 ```bash
 python scripts/convert_mcp_to_skill.py --mcp-config CONFIG_FILE --output-dir OUTPUT_DIR
 ```
 
 Parameters:
+
 - `--mcp-config`: Path to MCP server configuration JSON file
 - `--output-dir`: Directory where the generated skill will be created
 
@@ -149,13 +157,14 @@ uv pip install mcp
 ### "MCP server not responding"
 
 Verify the config file:
+
 - Command is correct
 - Environment variables are set
 - Server is accessible
 
-### "TypeError: object _AsyncGeneratorContextManager can't be used in 'await' expression"
+### "TypeError: object \_AsyncGeneratorContextManager can't be used in 'await' expression"
 
-This error has been fixed in recent versions. The issue occurred with improper async context manager handling. 
+This error has been fixed in recent versions. The issue occurred with improper async context manager handling.
 
 **Solution:** Ensure you're using the latest version of the converter:
 
@@ -174,6 +183,7 @@ For technical details about this fix, see `references/async_context_manager_fix.
 ## References
 
 Reference these files for additional information:
+
 - `references/mcp_basics.md` - MCP protocol fundamentals
 - `references/converter_details.md` - Technical details about the converter
 - `references/context_optimization.md` - Context optimization strategies
@@ -182,10 +192,10 @@ Reference these files for additional information:
 
 Real example with GitHub MCP server (8 tools):
 
-| Metric | MCP | Skill | Savings |
-|--------|-----|-------|---------|
-| Idle | 8,000 tokens | 100 tokens | 98.75% |
-| Active | 8,000 tokens | 5,000 tokens | 37.5% |
+| Metric | MCP          | Skill        | Savings |
+| ------ | ------------ | ------------ | ------- |
+| Idle   | 8,000 tokens | 100 tokens   | 98.75%  |
+| Active | 8,000 tokens | 5,000 tokens | 37.5%   |
 
 ## Best Practices
 
@@ -204,4 +214,4 @@ Real example with GitHub MCP server (8 tools):
 
 ---
 
-*This skill uses the mcp-to-skill-converter from https://github.com/GBSOSS/-mcp-to-skill-converter*
+_This skill uses the mcp-to-skill-converter from https://github.com/GBSOSS/-mcp-to-skill-converter_

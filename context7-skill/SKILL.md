@@ -1,7 +1,7 @@
+---
 name: context7
-description: This skill should be used when the user asks to "fetch documentation from context7", "get library docs", "resolve a library ID", "use context7 MCP tools", or mentions context7 library documentation. Provides dynamic MCP tool invocation without loading all tool definitions into context.
+description: Fetch up-to-date library documentation using Context7. Use when the user asks to "fetch documentation from context7", "get library docs", "resolve a library ID", "use context7 MCP tools", or mentions context7 library documentation. Provides dynamic MCP tool invocation without loading all tool definitions into context.
 version: 1.0.0
-
 ---
 
 # context7 Skill
