@@ -58,7 +58,7 @@ instructions = "Format all quiz questions as numbered lists."
 ### Step 2: Run the converter
 
 ```bash
-GEMINI_API_KEY=your-key uv run path/to/convert.py config.toml
+GEMINI_API_KEY=your-key uv run ~/.claude/skills/pdf-to-markdown/scripts/convert.py config.toml
 ```
 
 The script:

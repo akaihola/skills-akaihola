@@ -42,7 +42,7 @@ Use this skill when you need to:
 To analyze all configured IMAP accounts:
 
 ```bash
-./email-mailbox-analyzer
+./scripts/email-mailbox-analyzer.sh
 ```
 
 ### Manual Usage
@@ -50,7 +50,7 @@ To analyze all configured IMAP accounts:
 To run a specific analysis command:
 
 ```bash
-uvx git+https://github.com/cpackham/imapdu --user antti16@kaihola.fi --csv --no-human-readable mail.gandi.net | sort -t, -k3 -n
+uvx git+https://github.com/cpackham/imapdu --user sender@example.com --csv --no-human-readable mail.example.com | sort -t, -k3 -n
 ```
 
 ## Output Format
@@ -84,11 +84,10 @@ The skill includes a main script that:
 
 ### Configuration
 
-The script automatically detects Thunderbird's configuration at:
-
-```
-~/.thunderbird/av60ft8s.default-release/prefs.js
-```
+The script automatically detects Thunderbird's configuration by finding the
+first `*.default-release` profile directory under `~/.thunderbird/`. If
+Thunderbird is installed in a non-standard location, pass the path explicitly
+to the script.
 
 ### Error Handling
 
@@ -101,7 +100,8 @@ The script includes error handling for:
 
 ## Troubleshooting
 
-- **Permission errors**: Ensure read access to `~/.thunderbird/av60ft8s.default-release/prefs.js`
+- **Permission errors**: Ensure read access to your Thunderbird profile's `prefs.js`
+  (find it with `ls ~/.thunderbird/*.default-release/prefs.js`)
 - **Connection issues**: Check internet connection and IMAP server availability
 - **Authentication problems**: Ensure Thunderbird passwords are up to date
 - **Missing dependencies**: Install `uvx` before running the script

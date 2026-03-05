@@ -10,14 +10,14 @@ Manage emails using Himalaya IMAP CLI tool. Search, summarize, and delete emails
 ## Configuration
 
 Himalaya config: ~/.config/himalaya/config.toml
-Invocation: `uv run {skill_directory}/scripts/<script>.py` (handles Python environment and dependencies, do NOT cd into skill directory)
+Invocation: `uv run ~/.claude/skills/himalaya-email-manager/scripts/<script>.py` (handles Python environment and dependencies, do NOT cd into skill directory)
 
 ## Get Daily Email Summary
 
 Show emails from the past 24 hours in INBOX and Sent folders:
 
 ```bash
-uv run {skill_directory}/scripts/email-summary.py
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-summary.py
 ```
 
 **Options:**
@@ -35,7 +35,7 @@ Output includes:
 Find emails by sender, subject, date range, or folder:
 
 ```bash
-uv run {skill_directory}/scripts/email-search.py [options]
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py [options]
 ```
 
 **Options:**
@@ -56,22 +56,22 @@ All filters apply with AND logic. Results include message IDs for deletion. Date
 
 ```bash
 # Search by sender
-uv run {skill_directory}/scripts/email-search.py --from "spotify.com"
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py --from "spotify.com"
 
 # Search by subject
-uv run {skill_directory}/scripts/email-search.py --subject "invoice"
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py --subject "invoice"
 
 # Search by date range
-uv run {skill_directory}/scripts/email-search.py --date-start "2025-12-17" --date-end "2025-12-31"
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py --date-start "2025-12-17" --date-end "2025-12-31"
 
 # Search in Sent folder
-uv run {skill_directory}/scripts/email-search.py --folder Sent --limit 10
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py --folder Sent --limit 10
 
 # Multiple filters
-uv run {skill_directory}/scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" --limit 5
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" --limit 5
 
 # Search with no limit
-uv run {skill_directory}/scripts/email-search.py --limit 200 --no-limit
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-search.py --limit 200 --no-limit
 ```
 
 ## Save Emails to File
@@ -79,7 +79,7 @@ uv run {skill_directory}/scripts/email-search.py --limit 200 --no-limit
 Save email content to a file in various formats:
 
 ```bash
-uv run {skill_directory}/scripts/email_save.py <message-id> [options]
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py <message-id> [options]
 ```
 
 **Options:**
@@ -175,41 +175,41 @@ After: ✓
 
 ```bash
 # Save as markdown to current directory (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py 56873
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873
 
 # Save to specific directory (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py 56873 --output ~/saved-emails
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --output ~/saved-emails
 
 # Save with date prefix (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py 56873 --date-prefix --output /tmp/emails
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --date-prefix --output /tmp/emails
 
 # Save as text format (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py 56873 --format text
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --format text
 
 # Save as JSON (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py 56873 --format json
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --format json
 
 # Save to specific file path (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py 56873 --output ~/important-email.md
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --output ~/important-email.md
 
 # Overwrite existing file without prompt
-uv run {skill_directory}/scripts/email_save.py 56873 --overwrite --output ~/email.md
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --overwrite --output ~/email.md
 
 # Save from Sent folder (attachments downloaded by default)
-uv run {skill_directory}/scripts/email_save.py --folder Sent 12345 --output ~/sent-emails
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py --folder Sent 12345 --output ~/sent-emails
 
 # Save without attachments
-uv run {skill_directory}/scripts/email_save.py 56873 --no-download-attachments
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --no-download-attachments
 
 # Save with attachments to custom directory (default behavior with custom dir)
-uv run {skill_directory}/scripts/email_save.py 56873 --attachment-dir ~/attachments
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --attachment-dir ~/attachments
 ```
 
 ## Save Email Workflow (Agent)
 
 When user asks to save an email (attachments are downloaded by default):
 
-1. Run `uv run {skill_directory}/scripts/email_save.py <id> --output <dir>` (attachments are downloaded automatically)
+1. Run `uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py <id> --output <dir>` (attachments are downloaded automatically)
 2. Read the list of downloaded attachments from output
 3. For each image attachment:
    - Use `look_at` tool or other vision capabilities to inspect the image
@@ -250,12 +250,40 @@ Key characteristics:
 - Column widths match content
 - All cells must have aligned pipes
 
+## Read Full Email Content
+
+Fetch and display the full body of a specific email by message ID:
+
+```bash
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-read.py <message-id> [options]
+```
+
+**Options:**
+
+- `--folder FOLDER` - Folder to read from (default: INBOX)
+- `--format FORMAT` - Output format: `text` (default), `json`, `raw`
+- `--preserve-html` - Keep HTML content (for json/raw formats)
+- `-v, --verbose` - Show parsing details
+
+**Examples:**
+
+```bash
+# Read email as plain text
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-read.py 56873
+
+# Read from Sent folder
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-read.py --folder Sent 12345
+
+# Read as JSON (useful for programmatic access)
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-read.py 56873 --format json
+```
+
 ## Delete Emails
 
 Delete emails by message ID with safety preview:
 
 ```bash
-uv run {skill_directory}/scripts/email-delete.py <message-id> [options]
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-delete.py <message-id> [options]
 ```
 
 **Options:**
@@ -277,13 +305,13 @@ When called by OpenCode agent, deletion proceeds immediately with `--execute` fl
 
 ```bash
 # Preview deletion
-uv run {skill_directory}/scripts/email-delete.py 56838
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-delete.py 56838
 
 # Actually delete (interactive - will prompt for confirmation)
-uv run {skill_directory}/scripts/email-delete.py 56838 --execute
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-delete.py 56838 --execute
 
 # Delete from specific folder
-uv run {skill_directory}/scripts/email-delete.py --folder Sent 12345 --execute
+uv run ~/.claude/skills/himalaya-email-manager/scripts/email-delete.py --folder Sent 12345 --execute
 ```
 
 ## Translate Natural Language Queries
@@ -307,9 +335,9 @@ Interpret natural language queries as appropriate script calls:
 
 **Save queries:**
 
-- "Save email ID 56873" → `uv run {skill_directory}/scripts/email_save.py 56873`
-- "Save as JSON" → `uv run {skill_directory}/scripts/email_save.py 56873 --format json`
-- "Save to ~/emails folder with date prefix" → `uv run {skill_directory}/scripts/email_save.py 56873 --output ~/emails --date-prefix`
+- "Save email ID 56873" → `uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873`
+- "Save as JSON" → `uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --format json`
+- "Save to ~/emails folder with date prefix" → `uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py 56873 --output ~/emails --date-prefix`
 
 **Delete queries:**
 
@@ -320,7 +348,7 @@ Interpret natural language queries as appropriate script calls:
 
 **When calling scripts:**
 
-1. Always invoke with `uv run {skill_directory}/scripts/<script-name>.py` (handles environment and deps, do NOT cd into skill directory)
+1. Always invoke with `uv run ~/.claude/skills/himalaya-email-manager/scripts/<script-name>.py` (handles environment and deps, do NOT cd into skill directory)
 2. For search by sender or subject, use --from and --subject flags
 3. Date range uses --date-start and --date-end (YYYY-MM-DD format)
 4. Case-insensitive search is automatic - don't worry about capitalization
@@ -361,7 +389,7 @@ All scripts use PEP 723 inline metadata and require Python 3.13+.
 Invoke with `uv run` using the absolute path to automatically handle Python environment and dependencies:
 
 ```bash
-uv run {skill_directory}/scripts/<script-name>.py [options]
+uv run ~/.claude/skills/himalaya-email-manager/scripts/<script-name>.py [options]
 ```
 
 **Dependencies** (auto-managed by uv):
