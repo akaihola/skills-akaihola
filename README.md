@@ -27,6 +27,7 @@ supporting scripts.
 | `power` | Power management utilities |
 | `tokmanni` | Tokmanni product search |
 | `verkkokauppa` | Verkkokauppa.com product search |
+| `youtube-frame-analysis` | Extract scene-change frames from YouTube videos and analyse visuals with Gemini |
 | `youtube-to-markdown` | YouTube video to Markdown conversion |
 | `youtube-transcription` | YouTube transcript extraction |
 | `zed-threads` | Zed editor thread management |
