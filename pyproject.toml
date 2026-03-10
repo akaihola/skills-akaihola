@@ -10,8 +10,8 @@ dependencies = [
     "httpx>=0.27.0",
     "mcp>=0.1.0",
     "pydantic>=2.0.0",
-    "pyyaml>=6.0",
     "pygments>=2.17.0",
+    "pyyaml>=6.0",
     "rich>=13.7.0",
     "ruamel.yaml>=0.17.0",
     "sqlite-utils>=3.30.0",
@@ -37,13 +37,25 @@ preview = true
 select = ["ALL"]
 ignore = [
     "COM812", # Trailing comma missing
-    "D203", # incorrect-blank-line-before-class
-    "D213", # multi-line-summary-second-line
+    "D203",   # incorrect-blank-line-before-class
+    "D213",   # multi-line-summary-second-line
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "test_*.py" = [
-    "S101",  # Use of `assert` detected
+    "S101",    # Use of `assert` detected
+    "CPY001",  # no copyright header in tests
+    "DOC201",  # return docs not required in tests
+    "PLR2004", # magic values OK in test assertions
+    "INP001",  # implicit namespace package OK in tests
+    "PLC0415", # imports inside functions OK in fixtures
+]
+"__init__.py" = [
+    "D104",   # missing docstring in public package
+    "CPY001", # no copyright header in __init__.py
+]
+"conftest.py" = [
+    "CPY001", # no copyright header in conftest
 ]
 "*/scripts/*.py" = [
     "T201",    # print() calls are intentional in CLI scripts
