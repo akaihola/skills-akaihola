@@ -10,6 +10,7 @@ dependencies = [
     "httpx>=0.27.0",
     "mcp>=0.1.0",
     "pydantic>=2.0.0",
+    "pyyaml>=6.0",
     "pygments>=2.17.0",
     "rich>=13.7.0",
     "ruamel.yaml>=0.17.0",
@@ -52,4 +53,5 @@ ignore = [
     "PLR0912", # branch count relaxed for single-file scripts
     "PLR0914", # local variable count relaxed for single-file scripts
     "ERA001",  # section-header comments are not commented-out code
+    "S101",    # assert is acceptable in scripts
 ]
