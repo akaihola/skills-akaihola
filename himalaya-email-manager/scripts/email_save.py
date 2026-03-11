@@ -1,4 +1,4 @@
-#!/usr/bin/env -S uv run
+#!/usr/bin/env -S uv run --script
 # Copyright (c) 2025 Antti Kaihola
 # SPDX-License-Identifier: MIT
 
