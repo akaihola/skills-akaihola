@@ -1,5 +1,6 @@
 [tool.pyright]
-reportAny = false
+venvPath = "."
+venv = ".venv"
 
 [project]
 name = "skills-akaihola"
@@ -12,6 +13,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "pygments>=2.17.0",
     "pyyaml>=6.0",
+    "playwright==1.57.0",
     "rich>=13.7.0",
     "ruamel.yaml>=0.17.0",
     "sqlite-utils>=3.30.0",
@@ -24,6 +26,7 @@ requires-python = ">=3.13"
 
 [dependency-groups]
 dev = [
+    "pyright>=1.1.0",
     "pytest>=7.0.0",
 ]
 
@@ -61,9 +64,18 @@ ignore = [
     "T201",    # print() calls are intentional in CLI scripts
     "CPY001",  # no copyright header needed in skill scripts
     "DOC201",  # return values not documented (scripts, not library)
+    "DOC501",  # exception docs are noisy in standalone scripts
     "C901",    # complexity limits relaxed for single-file scripts
     "PLR0912", # branch count relaxed for single-file scripts
+    "PLR0913", # arg count relaxed for CLI functions
     "PLR0914", # local variable count relaxed for single-file scripts
+    "PLR0915", # statement count relaxed for single-file scripts
+    "PLR0917", # positional arg count relaxed for CLI functions
     "ERA001",  # section-header comments are not commented-out code
     "S101",    # assert is acceptable in scripts
+    "FBT001",  # boolean positional args are common in CLI wrappers
+    "FBT002",  # boolean default positional args are common in CLI wrappers
+    "PLR6301", # static-method suggestion skipped for scripts
+    "PLW2901", # loop variable overwrite is intentional in chunking
+    "EXE001",  # uv-run shebang scripts are not marked executable in repo
 ]
