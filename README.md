@@ -19,6 +19,7 @@ supporting scripts.
 | `credentials-check` | Credential leak detection |
 | `email-mailbox-analyzer` | Email mailbox analysis |
 | `himalaya-email-manager` | Email management via Himalaya CLI |
+| `hsl` | Helsinki region public transport routes and departures via Digitransit |
 | `markdown-pm` | Obsidian-style project management |
 | `mcp-to-skill` | Convert MCP servers to skills |
 | `motonet` | Motonet product search |
