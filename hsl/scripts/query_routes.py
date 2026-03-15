@@ -13,6 +13,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -257,6 +258,15 @@ def delay_text(leg: dict) -> str:
     return f"rt dep {dep // 60:+d} min, arr {arr // 60:+d} min"
 
 
+def reittiopas_url(payload: dict) -> str:
+    """Build a Reittiopas deep link for the resolved from/to coordinates."""
+    f = payload["resolved"]["from"]
+    t = payload["resolved"]["to"]
+    from_seg = quote(f"{f['label']}::{f['lat']},{f['lon']}", safe="")
+    to_seg = quote(f"{t['label']}::{t['lat']},{t['lon']}", safe="")
+    return f"https://reittiopas.hsl.fi/reitti/{from_seg}/{to_seg}"
+
+
 def format_itineraries(payload: dict, response: dict) -> str:
     itineraries = response.get("data", {}).get("plan", {}).get("itineraries", [])
     if not itineraries:
@@ -265,7 +275,7 @@ def format_itineraries(payload: dict, response: dict) -> str:
     resolved = payload["resolved"]
     lines = [
         f"HSL route: {resolved['from']['label']} -> {resolved['to']['label']}",
-        f"Resolution: {resolved['resolution']}",
+        f"Reittiopas: {reittiopas_url(payload)}",
         "",
     ]
     for idx, itinerary in enumerate(itineraries, 1):
