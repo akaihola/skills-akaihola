@@ -3,13 +3,20 @@
 # requires-python = ">=3.10"
 # dependencies = ["httpx"]
 # ///
-"""Show next departures from an HSL stop via Digitransit GraphQL."""
+"""Show next departures from an HSL stop via Digitransit GraphQL.
+
+The stop argument is auto-detected:
+  - HSL:1040601   → GTFS ID  → direct stop(id: ...) query
+  - H0016, E0006  → stop code → stops(name: ...) filtered by code
+  - Kamppi        → place name → ranked name search
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -40,7 +47,34 @@ MODE_ALIASES = {
     "metro": "SUBWAY",
     "ferry": "FERRY",
 }
-STOP_QUERY = """query($name: String!, $departures: Int!) {
+
+# HSL:1040601
+GTFS_ID_RE = re.compile(r"^[A-Z]+:\d+$")
+# H0016, E0006, H1241 — one or two uppercase letters followed by three or more digits
+STOP_CODE_RE = re.compile(r"^[A-Z]{1,2}\d{3,}$")
+
+STOP_BY_ID_QUERY = """query($id: String!, $departures: Int!) {
+  stop(id: $id) {
+    gtfsId
+    name
+    code
+    vehicleMode
+    lat
+    lon
+    stoptimesWithoutPatterns(numberOfDepartures: $departures) {
+      scheduledDeparture
+      realtimeDeparture
+      serviceDay
+      headsign
+      realtime
+      trip {
+        routeShortName
+      }
+    }
+  }
+}"""
+
+STOPS_BY_NAME_QUERY = """query($name: String!, $departures: Int!) {
   stops(name: $name) {
     gtfsId
     name
@@ -60,6 +94,15 @@ STOP_QUERY = """query($name: String!, $departures: Int!) {
     }
   }
 }"""
+
+
+def classify_stop_arg(arg: str) -> str:
+    """Return 'gtfs_id', 'stop_code', or 'name'."""
+    if GTFS_ID_RE.match(arg):
+        return "gtfs_id"
+    if STOP_CODE_RE.match(arg):
+        return "stop_code"
+    return "name"
 
 
 def load_secret_values() -> dict[str, str]:
@@ -137,18 +180,46 @@ def lookup_place(query: str, limit: int = 8) -> list[dict]:
     return response.json().get("features", [])
 
 
-def fetch_stops(name: str, departures: int) -> list[dict]:
+def resolve_stop_code_to_gtfs_id(code: str) -> str | None:
+    """Resolve a stop code like H0016 to its GTFS ID via the geocoder.
+
+    The geocoder returns IDs like 'GTFS:HSL:1040602#H0016'; we pick the entry
+    whose ID suffix matches the requested code exactly.
+    """
+    features = lookup_place(code, limit=10)
+    code_upper = code.upper()
+    for feature in features:
+        gid = (feature.get("properties") or {}).get("id") or ""
+        # e.g. GTFS:HSL:1040602#H0016 — match on the fragment, return bare GTFS ID
+        if gid.startswith("GTFS:") and "#" in gid:
+            bare, fragment = gid[len("GTFS:"):].split("#", 1)
+            if fragment.upper() == code_upper:
+                return bare  # e.g. HSL:1040602
+    return None
+
+
+def graphql(query: str, variables: dict) -> dict:
     response = request_with_auth(
         "POST",
         HSL_ROUTING_URL,
-        json={
-            "query": STOP_QUERY,
-            "variables": {"name": name, "departures": departures},
-        },
+        json={"query": query, "variables": variables},
         headers={"Content-Type": "application/json"},
         timeout=20,
     )
-    return response.json().get("data", {}).get("stops", [])
+    return response.json()
+
+
+def fetch_by_gtfs_id(gtfs_id: str, departures: int) -> dict:
+    data = graphql(STOP_BY_ID_QUERY, {"id": gtfs_id, "departures": departures})
+    stop = (data.get("data") or {}).get("stop")
+    if not stop:
+        raise SystemExit(f"No stop found with GTFS ID '{gtfs_id}'")
+    return stop
+
+
+def fetch_by_name(name: str, departures: int) -> list[dict]:
+    data = graphql(STOPS_BY_NAME_QUERY, {"name": name, "departures": departures})
+    return (data.get("data") or {}).get("stops") or []
 
 
 def normalize_mode(mode: str | None) -> str | None:
@@ -157,26 +228,36 @@ def normalize_mode(mode: str | None) -> str | None:
     return MODE_ALIASES.get(mode.strip().lower(), mode.strip().upper())
 
 
-def stop_score(stop: dict, query: str, preferred_mode: str | None, place_names: set[str]) -> tuple[int, int, int, int, str]:
+def stop_score(
+    stop: dict, query_norm: str, preferred_mode: str | None, place_names: set[str]
+) -> tuple[int, int, int, int]:
     stop_name = stop.get("name", "").strip().lower()
-    query_norm = query.strip().lower()
     mode = (stop.get("vehicleMode") or "").upper()
-    departures = len(stop.get("stoptimesWithoutPatterns", []))
-
-    exact = 1 if stop_name == query_norm else 0
-    prefix = 1 if stop_name.startswith(query_norm) else 0
+    n_departures = len(stop.get("stoptimesWithoutPatterns", []))
     mode_match = 1 if preferred_mode and mode == preferred_mode else 0
+    exact = 1 if stop_name == query_norm else 0
     place_match = 1 if stop_name in place_names else 0
-    return (mode_match, exact, place_match, departures, stop_name if prefix else "~" + stop_name)
+    return (mode_match, exact, place_match, n_departures)
 
 
 def pick_stop(query: str, departures: int, preferred_mode: str | None) -> dict:
-    stops = fetch_stops(query, departures)
+    arg_type = classify_stop_arg(query)
+
+    if arg_type == "gtfs_id":
+        return fetch_by_gtfs_id(query, departures)
+
+    if arg_type == "stop_code":
+        gtfs_id = resolve_stop_code_to_gtfs_id(query)
+        if gtfs_id:
+            return fetch_by_gtfs_id(gtfs_id, departures)
+        raise SystemExit(f"Stop code '{query}' not found in HSL area.")
+
+    stops = fetch_by_name(query, departures)
     if not stops:
         raise SystemExit(f"No stops found for '{query}'")
 
     if preferred_mode:
-        filtered = [stop for stop in stops if (stop.get("vehicleMode") or "").upper() == preferred_mode]
+        filtered = [s for s in stops if (s.get("vehicleMode") or "").upper() == preferred_mode]
         if filtered:
             stops = filtered
 
@@ -185,18 +266,17 @@ def pick_stop(query: str, departures: int, preferred_mode: str | None) -> dict:
         (feature.get("properties", {}).get("name") or "").strip().lower()
         for feature in places
     }
-
+    query_norm = query.strip().lower()
     ranked = sorted(
         stops,
-        key=lambda stop: stop_score(stop, query, preferred_mode, place_names),
+        key=lambda s: stop_score(s, query_norm, preferred_mode, place_names),
         reverse=True,
     )
     return ranked[0]
 
 
 def format_departure(service_day: int, departure_seconds: int) -> str:
-    ts = service_day + departure_seconds
-    return datetime.fromtimestamp(ts, FINLAND_TZ).strftime("%H:%M")
+    return datetime.fromtimestamp(service_day + departure_seconds, FINLAND_TZ).strftime("%H:%M")
 
 
 def departure_delay_minutes(item: dict) -> int:
@@ -205,7 +285,8 @@ def departure_delay_minutes(item: dict) -> int:
 
 def format_stop(stop: dict) -> str:
     lines = [
-        f"Next departures at {stop.get('name', '?')} ({stop.get('code', '?')}, {stop.get('vehicleMode', '?')})",
+        f"Next departures at {stop.get('name', '?')} "
+        f"({stop.get('code', '?')}, {stop.get('vehicleMode', '?')})",
         f"GTFS ID: {stop.get('gtfsId', '?')}",
         "",
     ]
@@ -229,24 +310,26 @@ def format_stop(stop: dict) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Show next departures from an HSL stop")
-    parser.add_argument("stop", help="Stop or station name")
+    parser = argparse.ArgumentParser(
+        description="Show next departures from an HSL stop",
+        epilog=(
+            "The stop argument is auto-detected: "
+            "HSL:1040601 = GTFS ID, H0016 = stop code, Kamppi = place name"
+        ),
+    )
+    parser.add_argument(
+        "stop",
+        help="Stop name, stop code (e.g. H0016), or GTFS ID (e.g. HSL:1040601)",
+    )
     parser.add_argument("--departures", type=int, default=5, help="Number of departures")
-    parser.add_argument("--mode", choices=sorted(MODE_ALIASES), help="Prefer a vehicle mode")
-    parser.add_argument("--stop-id", help="Exact GTFS ID to use instead of name matching")
+    parser.add_argument("--mode", choices=sorted(MODE_ALIASES), help="Prefer a vehicle mode (for name searches)")
     parser.add_argument("--json", action="store_true", dest="output_json")
     args = parser.parse_args()
 
     preferred_mode = normalize_mode(args.mode)
 
     try:
-        if args.stop_id:
-            stops = fetch_stops(args.stop, args.departures)
-            stop = next((item for item in stops if item.get("gtfsId") == args.stop_id), None)
-            if stop is None:
-                raise SystemExit(f"No stop found with GTFS ID '{args.stop_id}' for '{args.stop}'")
-        else:
-            stop = pick_stop(args.stop, args.departures, preferred_mode)
+        stop = pick_stop(args.stop, args.departures, preferred_mode)
     except httpx.HTTPError as exc:
         print(f"Error querying Digitransit stop data: {exc}", file=sys.stderr)
         explain_auth_failure(exc)
