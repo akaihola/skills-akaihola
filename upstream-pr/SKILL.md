@@ -1,12 +1,7 @@
 ---
 name: upstream-pr
 description: >-
-  Prepare and submit a pull request to an upstream repository from a fork.
-  Creates a clean branch on top of upstream/main, maintains a PULL_REQUEST_DRAFT.md
-  in every commit as live PR documentation, and submits via `gh pr create` after
-  git-removing the draft file. Use when the user says "prepare a PR for upstream",
-  "contribute this fix to upstream", "create a PR branch", "open a PR on the upstream
-  repo", or asks to submit changes from a fork to the original project.
+  Load this skill whenever working in a fork of a third-party project.
 ---
 
 # Upstream PR Workflow
@@ -28,12 +23,15 @@ Format:
 Everything below this line becomes the PR body (`--body`).
 
 ## Problem
+
 …
 
 ## Solution
+
 …
 
 ## Testing
+
 …
 ```
 
@@ -47,27 +45,66 @@ Everything below this line becomes the PR body (`--body`).
 
 In a fork, always name remotes:
 
-| Remote     | Points to                |
-|------------|--------------------------|
-| `origin`   | Your fork (read/write)   |
-| `upstream` | The original project     |
+| Remote     | Points to              |
+| ---------- | ---------------------- |
+| `origin`   | Your fork (read/write) |
+| `upstream` | The original project   |
 
 If `upstream` is not configured:
+
 ```bash
 git remote add upstream https://github.com/OWNER/REPO.git
 git fetch upstream
 ```
+
+## The `akaihola` Working Branch (git-knit)
+
+All unmerged feature branches **must** be stacked into a single working branch
+called `akaihola` using git-knit. This gives a single integration branch that
+combines every in-flight change on top of `upstream/main`.
+
+### Initialize (once per repo)
+
+```bash
+# akaihola = working branch, upstream/main = base, list any existing branches
+git knit init akaihola upstream/main [fix/branch-a fix/branch-b ...]
+```
+
+If `akaihola` already exists in the remote, verify `git knit status` matches
+what is currently checked out before touching it.
+
+### Day-to-day commands
+
+```bash
+git knit status                   # show base, working branch, and all knitted branches
+git knit add fix/new-branch       # add a newly-created feature branch
+git knit remove fix/old-branch    # drop a merged/abandoned branch
+git knit rebuild                  # rebuild akaihola from scratch (after rebases, etc.)
+git knit restack                  # restack feature branches with git-spice
+```
+
+### Rules
+
+- Every new feature/fix branch must be `git knit add`-ed immediately after creation.
+- After rebasing any feature branch onto updated `upstream/main`, run
+  `git knit rebuild` to regenerate `akaihola`.
+- Never commit directly to `akaihola` — it is a derived branch. All real commits
+  go to individual `fix/*` / `feat/*` / `docs/*` branches.
+- When a PR is merged upstream, run `git knit remove <branch>` and
+  `git knit rebuild`.
 
 ## Workflow
 
 ### 1. Identify the change
 
 Determine what needs contributing. Common sources:
+
 - A commit in your fork's `main` not in `upstream/main`
 - A bug fix applied locally but never submitted
 - An enhancement developed in a feature branch
 
 Useful commands:
+
 ```bash
 # Commits in fork's main not in upstream
 git log --oneline upstream/main..main
@@ -97,6 +134,7 @@ git checkout -b <branch-name> upstream/main
 ```
 
 Branch naming convention:
+
 - `fix/<short-description>` for bug fixes
 - `feat/<short-description>` for new features
 - `chore/<short-description>` for non-functional changes
@@ -107,12 +145,14 @@ Branch naming convention:
 Choose the cleanest approach:
 
 **a) Cherry-pick** (when the commit applies cleanly):
+
 ```bash
 git cherry-pick <commit-sha>
 # Resolve any conflicts if needed
 ```
 
 **b) Apply a file diff** (when cherry-pick would drag in unrelated changes):
+
 ```bash
 git diff upstream/main..main -- path/to/file > /tmp/fix.patch
 git apply /tmp/fix.patch
@@ -171,6 +211,7 @@ bash /path/to/skills-akaihola/upstream-pr/scripts/submit-pr.sh [--upstream-repo 
 ```
 
 The script:
+
 1. Reads `PULL_REQUEST_DRAFT.md` and extracts title + body
 2. Shows a preview and asks for confirmation
 3. Runs `git rm PULL_REQUEST_DRAFT.md && git commit -m "chore: remove PR draft before submission"`
@@ -178,6 +219,7 @@ The script:
 5. Runs `gh pr create --repo OWNER/REPO --title "..." --body "..."`
 
 **Manual equivalent** (if not using the script):
+
 ```bash
 TITLE=$(grep -m1 '^# ' PULL_REQUEST_DRAFT.md | sed 's/^# //')
 BODY=$(tail -n +2 PULL_REQUEST_DRAFT.md | sed '1{/^$/d}')
@@ -190,6 +232,7 @@ gh pr create --repo OWNER/REPO --title "$TITLE" --body "$BODY"
 ## Handling Conflicts
 
 When cherry-picking produces conflicts:
+
 1. Inspect the conflict with `git diff` and understand both sides.
 2. Resolve by keeping the most correct version — usually upstream's recent refactors
    plus your new logic on top.
@@ -214,6 +257,7 @@ git show HEAD:PULL_REQUEST_DRAFT.md | head -3
 ## Keeping Branches Updated
 
 If upstream/main advances while your PR is under review:
+
 ```bash
 git fetch upstream
 git rebase upstream/main
