@@ -1,0 +1,50 @@
+version: 1
+
+grouping:
+  buckets:
+    - name: journals
+      paths:
+        - journals/**
+        - memory/HISTORY.md
+      defaultType: docs
+      defaultScope: journal
+
+    - name: projects
+      paths:
+        - pages/Projects/**
+        - pages/PKB/Project dashboard.md
+      defaultType: docs
+      defaultScope: projects
+
+    - name: skills
+      paths:
+        - .claude/skills/**
+      defaultType: feat
+      defaultScope: skills
+
+    - name: scripts
+      paths:
+        - scripts/**
+        - templates/**
+      defaultType: feat
+      defaultScope: scripts
+
+keepSeparate:
+  - deleted-only-cleanups
+  - renames-with-content
+
+# Patterns listed here are used during Phase 0 triage:
+# - files matching these globs are flagged as "safe to ignore"
+# - tracked files matching them are candidates for git rm --cached
+# - new files matching them are candidates for .gitignore additions
+ignore:
+  - sessions/**
+  - outputs/**
+  - tmp/**
+  - downloads/**
+
+naming:
+  journals: "docs(journal)"
+  projects: "docs(projects)"
+  skills: "feat(skills)"
+  scripts: "feat(scripts)"
