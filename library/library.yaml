@@ -1,0 +1,188 @@
+default_dirs:
+  skills:
+    - default: .claude/skills/
+    - global: ~/.claude/skills/
+  agents:
+    - default: .claude/agents/
+    - global: ~/.claude/agents/
+  prompts:
+    - default: .claude/commands/
+    - global: ~/.claude/commands/
+
+library:
+  skills:
+    - name: asana
+      description: Manage Asana tasks and projects
+      source: ~/prg/skills-akaihola/asana/SKILL.md
+
+    - name: bauhaus
+      description: Search products on the Bauhaus webshop (bauhaus.fi) via Algolia
+      source: ~/prg/skills-akaihola/bauhaus/SKILL.md
+
+    - name: brave-search
+      description: Search the web using Brave Search API
+      source: ~/prg/skills-akaihola/brave-search/SKILL.md
+
+    - name: browser-youtube-history
+      description: Find videos in a user's YouTube watch history by driving a logged-in browser session
+      source: ~/prg/skills-akaihola/browser-youtube-history/SKILL.md
+
+    - name: clasohlson
+      description: Search products on the Clas Ohlson Finland webshop via Voyado Elevate API
+      source: ~/prg/skills-akaihola/clasohlson/SKILL.md
+
+    - name: claude-session-logs
+      description: Search and analyze Claude Code session logs stored as JSONL files
+      source: ~/prg/skills-akaihola/claude-session-logs/SKILL.md
+
+    - name: context7-skill
+      description: Fetch up-to-date library documentation using Context7
+      source: ~/prg/skills-akaihola/context7-skill/SKILL.md
+
+    - name: conventional-committer
+      description: Commit changes to skills-akaihola using conventional commit messages
+      source: ~/prg/skills-akaihola/conventional-committer/SKILL.md
+
+    - name: dev-workflow
+      description: Manage isolated development environments for pykoclaw/Mitto using git worktrees and non-production ports
+      source: ~/.claude/skills/dev-workflow/SKILL.md
+
+    - name: email-mailbox-analyzer
+      description: Analyze email mailbox usage via IMAP and imapdu
+      source: ~/prg/skills-akaihola/email-mailbox-analyzer/SKILL.md
+
+    - name: fonecta-lookup
+      description: Reverse-lookup Finnish phone numbers via Fonecta Caller
+      source: ~/prg/skills-akaihola/fonecta-lookup/SKILL.md
+
+    - name: gemini-vision
+      description: Analyse images with Gemini vision model — describe, OCR, compare, or answer questions
+      source: ~/prg/skills-akaihola/gemini-vision/SKILL.md
+
+    - name: himalaya-email-manager
+      description: Email management using Himalaya CLI (IMAP) — search, summarize, delete
+      source: ~/prg/skills-akaihola/himalaya-email-manager/SKILL.md
+
+    - name: hsl
+      description: Query Helsinki region public transport routes and departures via HSL/Digitransit
+      source: ~/prg/skills-akaihola/hsl/SKILL.md
+
+    - name: investigate-stuck
+      description: Quickly investigate and diagnose stuck pykoclaw/mitto conversations
+      source: ~/.claude/skills/investigate-stuck/SKILL.md
+
+    - name: k-rauta
+      description: Search products on the K-Rauta webshop (k-rauta.fi) via backend search API
+      source: ~/prg/skills-akaihola/k-rauta/SKILL.md
+
+    - name: kernel-audit
+      description: Audit and prune always-on context files (MEMORY.md, AGENTS.md, CLAUDE.md) for bloat
+      source: ~/.claude/skills/kernel-audit/SKILL.md
+
+    - name: library
+      description: Meta-skill for private skill distribution — manage the catalog of skills, agents, and prompts
+      source: ~/prg/skills-akaihola/library/SKILL.md
+
+    - name: markdown-pm
+      description: Project management in Obsidian-style markdown with YAML frontmatter — query, update, dashboard
+      source: ~/prg/skills-akaihola/markdown-pm/SKILL.md
+
+    - name: mcp-to-skill
+      description: Convert any MCP server into a Claude Skill with 90% context savings
+      source: ~/prg/skills-akaihola/mcp-to-skill/SKILL.md
+
+    - name: motonet
+      description: Search products on the Motonet webshop (motonet.fi) via Motonet search API
+      source: ~/prg/skills-akaihola/motonet/SKILL.md
+
+    - name: nano-banana-image
+      description: Generate images using nano-banana (local Flux model)
+      source: ~/prg/skills-akaihola/nano-banana-image/SKILL.md
+
+    - name: netrauta
+      description: Search products on the Netrauta webshop (netrauta.fi) via Loop54 API
+      source: ~/prg/skills-akaihola/netrauta/SKILL.md
+
+    - name: notebooklm
+      description: Full API access to Google NotebookLM including programmatic features
+      source: ~/prg/skills-akaihola/notebooklm/SKILL.md
+
+    - name: pdf-to-markdown
+      description: Convert a PDF book or document into clean structured Markdown split by chapter
+      source: ~/prg/skills-akaihola/pdf-to-markdown/SKILL.md
+
+    - name: power
+      description: Search products on the Power webshop (power.fi) via REST API
+      source: ~/prg/skills-akaihola/power/SKILL.md
+
+    - name: prompting-guide
+      description: Apply Anthropic's Claude prompting best practices — XML tags, chain-of-thought, output formatting
+      source: ~/.claude/skills/prompting-guide/SKILL.md
+
+    - name: puuilo
+      description: Search products on the Puuilo webshop (puuilo.fi) via Algolia
+      source: ~/prg/skills-akaihola/puuilo/SKILL.md
+
+    - name: read-as-markdown
+      description: Convert PDF, DOCX, or EPUB files to cached Markdown for reading
+      source: ~/prg/skills-akaihola/read-as-markdown/SKILL.md
+
+    - name: schedule-channel-report
+      description: Schedule recurring reports and summaries to be delivered to channels
+      source: ~/.claude/skills/schedule-channel-report/SKILL.md
+
+    - name: sci-papers-downloder
+      description: Search papers from Scopus and download PDFs by DOI via Unpaywall or scihub-cli
+      source: ~/repos/ai/sci-papers-downloder/SKILL.md
+
+    - name: secrets-scan
+      description: Scan a git repository for leaked credentials, API keys, and tokens
+      source: ~/prg/skills-akaihola/secrets-scan/SKILL.md
+
+    - name: taloon
+      description: Search products on the Taloon.com webshop via Loop54 API
+      source: ~/prg/skills-akaihola/taloon/SKILL.md
+
+    - name: tokmanni
+      description: Search products on the Tokmanni webshop (tokmanni.fi) via Klevu API
+      source: ~/prg/skills-akaihola/tokmanni/SKILL.md
+
+    - name: upstream-pr
+      description: Manage pull requests when working in a fork of a third-party project
+      source: ~/prg/skills-akaihola/upstream-pr/SKILL.md
+
+    - name: usage-analyzer
+      description: Analyze Claude API usage and costs from logs
+      source: ~/.claude/skills/usage-analyzer/SKILL.md
+
+    - name: vault-index
+      description: Build, query, and traverse the vault knowledge graph — structure, links, orphans, search
+      source: ~/prg/skills-akaihola/vault-index/SKILL.md
+
+    - name: verkkokauppa
+      description: Search products on the Verkkokauppa.com Finnish webshop via search API
+      source: ~/prg/skills-akaihola/verkkokauppa/SKILL.md
+
+    - name: vr
+      description: Query Finnish train schedules from VR/Digitraffic — departures, arrivals, routes
+      source: ~/.claude/skills/vr/SKILL.md
+
+    - name: youtube-frame-analysis
+      description: Analyse YouTube video visuals by extracting frames and describing them with Gemini
+      source: ~/prg/skills-akaihola/youtube-frame-analysis/SKILL.md
+
+    - name: youtube-to-markdown
+      description: Convert a YouTube video into clean Markdown using auto-generated captions (free, no API)
+      source: ~/prg/skills-akaihola/youtube-to-markdown/SKILL.md
+
+    - name: youtube-transcription
+      description: Transcribe YouTube video or local audio using AssemblyAI (paid speech-to-text)
+      source: ~/prg/skills-akaihola/youtube-transcription/SKILL.md
+
+    - name: zed-threads
+      description: Read and inspect Zed AI conversation threads from the local SQLite database
+      source: ~/prg/skills-akaihola/zed-threads/SKILL.md
+
+  agents: []
+
+  prompts: []
