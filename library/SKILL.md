@@ -8,7 +8,15 @@ argument-hint: [command] [name or details]
 
 A meta-skill for private-first distribution of agentics (skills, agents, and prompts) across workspaces, agents, and devices.
 
-> Adapted from [disler/the-library](https://github.com/disler/the-library) for our symlink-based multi-workspace setup.
+## Inspiration
+
+This skill was adopted after watching Dan Dubiel's video
+[**The Library Meta-Skill: How I Distribute PRIVATE Skills, Agents and Prompts**](https://youtu.be/_vpNQ6IwP9w)
+(Agentic Engineer, 2026).
+
+The original template repository is [disler/the-library](https://github.com/disler/the-library) on GitHub.
+Our version is adapted for a symlink-based multi-workspace setup (see *Install Mechanism* below)
+rather than the copy-based approach in the original.
 
 ## Variables
 
