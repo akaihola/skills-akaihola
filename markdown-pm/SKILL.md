@@ -191,3 +191,42 @@ This skill integrates with existing repository patterns:
 - Maintains compatibility with your existing `Project rotation.md` (can be deprecated in favor of auto-generated dashboards)
 
 After dashboard generation, update `Start page.md` to link to the new dashboard location if desired.
+
+---
+
+## Working on a Project — Full Workflow
+
+### 1. Completeness check before diving in
+
+- Does the project have `structure:`, one `mission/*` tag, and all required body sections? If not, add them.
+- Does the project have a clear **purpose/motivation**? If not, ask.
+- Is there a defined **expected outcome** (what does "done" look like)? If not, ask.
+- These belong in the project file — add them once clarified.
+
+### 2. Do the work, then always update
+
+1. Query project to understand current state
+2. Read the full project file for context
+3. Perform the requested work
+4. **ALWAYS update the project** after significant work:
+   - Use `update_project.py` to update status/priority/tags
+   - Run `lint_projects.py` on the file to verify it passes
+   - Regenerate dashboard automatically
+5. Do not ask the user whether to update — this happens automatically
+
+### Creating new projects
+
+Always use `templates/Project.md` as the starting point. Fill in all placeholder fields. Every new project must pass `lint_projects.py` before it is considered complete.
+
+---
+
+## Local Code Checkouts (Repo Discovery)
+
+Development happens on two machines with different users and repo locations:
+
+| Machine | User       | Repos location |
+| ------- | ---------- | -------------- |
+| gogo    | `agent`    | `/home/agent/prg/pykoclaw-dev/` (pykoclaw mono-repo), `/home/agent/repos/ai/mitto/` (Mitto web client), `/home/agent/my-knowledge/` |
+| atom    | `akaihola` | `/home/akaihola/prg/` (aka `~/prg/`) |
+
+Always use `$HOME` or detect the current user rather than hardcoding paths. To find the GitHub remote for a local checkout, use `git remote -v` in that directory.
