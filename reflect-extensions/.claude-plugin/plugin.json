@@ -1,0 +1,16 @@
+{
+  "name": "reflect-extensions",
+  "description": "Session retrospective that extracts reusable learnings and maps each onto the right Claude Code extension surface (skills, MCP servers, slash commands, subagents, hooks, plugins), proposing new or updated extensions with human approval. Ships a /reflect-extensions command plus a debounced end-of-session reminder hook.",
+  "version": "0.1.0",
+  "author": {
+    "name": "akaihola"
+  },
+  "keywords": [
+    "claude-code",
+    "retrospective",
+    "self-improvement",
+    "skills",
+    "hooks"
+  ],
+  "license": "See repository"
+}

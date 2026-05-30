@@ -33,6 +33,22 @@ supporting scripts.
 | `youtube-transcription` | YouTube transcript extraction |
 | `zed-threads` | Zed editor thread management |
 
+## Plugins
+
+This repo also doubles as a Claude Code plugin marketplace
+(see `.claude-plugin/marketplace.json`).
+
+| Plugin | Description |
+|--------|-------------|
+| `reflect-extensions` | Session retrospective: extracts learnings and maps them onto the right extension surface (skills, MCP, commands, subagents, hooks, plugins); ships a `/reflect-extensions` command and an end-of-session reminder hook. |
+
+Install a plugin with:
+
+```bash
+claude plugin marketplace add akaihola/skills-akaihola
+claude plugin install reflect-extensions@skills-akaihola
+```
+
 ## Installation
 
 Clone and symlink individual skills into your `.claude/skills/` directory:

@@ -1,0 +1,17 @@
+{
+  "name": "skills-akaihola",
+  "owner": {
+    "name": "akaihola"
+  },
+  "metadata": {
+    "description": "Personal Claude Code skills and plugins by akaihola.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "reflect-extensions",
+      "source": "./reflect-extensions",
+      "description": "Session retrospective that maps learnings onto the right Claude Code extension surface (skills, MCP, commands, subagents, hooks, plugins), with an end-of-session reminder hook."
+    }
+  ]
+}
