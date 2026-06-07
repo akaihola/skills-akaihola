@@ -1,6 +1,6 @@
 ---
 description: Audit the current session for reusable learnings and map each one onto the right Claude Code extension surface — skills, MCP servers, slash commands, subagents, hooks, or plugins — then propose new or updated extensions with human approval. Extends /reflect-skills.
-argument-hint: "[--dry-run] [--scope project|global|both] [--session <id|current>] [--days N]"
+argument-hint: "[--dry-run] [--scope project|global|both]"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
@@ -23,20 +23,12 @@ invoked during the session so it can improve them, not just create new ones.
 - `--scope project|global|both` — where proposed extensions should live.
   `project` = `.claude/...`, `global` = `~/.claude/...`. Default: `both`
   (decide per item; project conventions stay local, generic learnings go global).
-- `--session <id|current>` — which session transcript to analyze. Default:
-  `current`.
-- `--days N` — when scanning beyond the current session, look back N days.
-  Default: current session only.
-
 ## Phase 0 — Gather context
 
 Establish what extensions exist and where they live before judging what was used.
 
-Locate the session transcript(s). Claude Code stores sessions as JSONL under
-`~/.claude/projects/<sanitized-cwd>/<session-uuid>.jsonl`. For `current`, use the
-active session; the conversation is also already in context, so use both the
-in-context history and the transcript file (the transcript is the source of truth
-for tool calls).
+Use the current conversation context as the source of truth for what happened this
+session. Do not locate or read session transcript files from disk.
 
 Enumerate every installed extension across all six surfaces and note its config
 path. Run these and read the results:
@@ -58,8 +50,8 @@ Build an inventory table: `surface | name | scope | config path`.
 
 ## Phase 1 — Usage audit (which extensions were used this session)
 
-Parse the transcript to determine which of the inventoried extensions were
-actually invoked, and how each performed. Detection signals:
+Review the in-context conversation history to determine which of the inventoried
+extensions were actually invoked, and how each performed. Detection signals:
 
 - Skill / slash command → `Skill` tool calls and slash-command invocations.
   Plugin items appear namespaced as `plugin-name:command`.
