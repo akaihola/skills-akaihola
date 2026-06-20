@@ -39,9 +39,9 @@ in-context history and the transcript file (the transcript is the source of trut
 for tool calls).
 
 Enumerate every installed extension across all six surfaces and note its config
-path. The inspection commands below are pre-run via the `` !`…` `` syntax, so their
-output is already injected here before your first turn — read these results rather
-than re-running the commands yourself.
+path. The inspection commands below are pre-run via Claude Code's bang-backtick
+command-injection syntax, so their output is already injected here before your
+first turn — read these results rather than re-running the commands yourself.
 
 **Skills** (project, global, and plugin):
 
