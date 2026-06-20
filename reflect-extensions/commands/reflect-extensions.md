@@ -57,7 +57,7 @@ than re-running the commands yourself.
 
 **Hooks** (the `hooks` key from project, global, and plugin settings):
 
-!`for f in .claude/settings.json ~/.claude/settings.json ~/.claude/plugins/cache/*/*/*/hooks/hooks.json; do [ -f "$f" ] && { echo "== $f =="; jq '.hooks // .' "$f" 2>/dev/null || cat "$f"; }; done 2>/dev/null`
+!`for f in .claude/settings.json ~/.claude/settings.json ~/.claude/plugins/cache/*/*/*/hooks/hooks.json(N); do [ -f "$f" ] && { echo "== $f =="; jq '.hooks // .' "$f" 2>/dev/null || cat "$f"; }; done 2>/dev/null`
 
 **MCP servers** (resolved set, project config, and user-scope server names):
 
