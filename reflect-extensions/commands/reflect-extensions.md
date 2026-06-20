@@ -1,6 +1,6 @@
 ---
 description: Audit the current session for reusable learnings and map each one onto the right Claude Code extension surface — skills, MCP servers, slash commands, subagents, hooks, or plugins — then propose new or updated extensions with human approval. Extends /reflect-skills.
-argument-hint: "[--dry-run] [--scope project|global|both]"
+argument-hint: "[--dry-run] [--scope project|global|both] [--session <id|current>] [--days N]"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
@@ -23,35 +23,56 @@ invoked during the session so it can improve them, not just create new ones.
 - `--scope project|global|both` — where proposed extensions should live.
   `project` = `.claude/...`, `global` = `~/.claude/...`. Default: `both`
   (decide per item; project conventions stay local, generic learnings go global).
+- `--session <id|current>` — which session transcript to analyze. Default:
+  `current`.
+- `--days N` — when scanning beyond the current session, look back N days.
+  Default: current session only.
+
 ## Phase 0 — Gather context
 
 Establish what extensions exist and where they live before judging what was used.
 
-Use the current conversation context as the source of truth for what happened this
-session. Do not locate or read session transcript files from disk.
+Locate the session transcript(s). Claude Code stores sessions as JSONL under
+`~/.claude/projects/<sanitized-cwd>/<session-uuid>.jsonl`. For `current`, use the
+active session; the conversation is also already in context, so use both the
+in-context history and the transcript file (the transcript is the source of truth
+for tool calls).
 
 Enumerate every installed extension across all six surfaces and note its config
-path. Run these and read the results:
+path. The inspection commands below are pre-run via the `` !`…` `` syntax, so their
+output is already injected here before your first turn — read these results rather
+than re-running the commands yourself.
 
-- Skills: `!ls -1 .claude/skills/ ~/.claude/skills/ 2>/dev/null` plus any plugin
-  skills under `~/.claude/plugins/*/skills/`.
-- Slash commands: `!ls -1 .claude/commands/ ~/.claude/commands/ 2>/dev/null` plus
-  plugin commands under `~/.claude/plugins/*/commands/`.
-- Subagents: `!ls -1 .claude/agents/ ~/.claude/agents/ 2>/dev/null` plus plugin
-  agents.
-- Hooks: read the `hooks` key from `.claude/settings.json`,
-  `~/.claude/settings.json`, and any `~/.claude/plugins/*/hooks/hooks.json`.
-- MCP servers: read `.mcp.json` (project) and run `!claude mcp list 2>/dev/null`
-  for the resolved set; note user-scope servers from `~/.claude.json`.
-- Plugins: `!ls -1 ~/.claude/plugins/ 2>/dev/null` and read installed marketplace
-  manifests.
+**Skills** (project, global, and plugin):
 
-Build an inventory table: `surface | name | scope | config path`.
+!`ls -1d .claude/skills/*/(N) ~/.claude/skills/*/(N) ~/.claude/plugins/cache/*/*/*/skills/*/(N) 2>/dev/null`
+
+**Slash commands** (project, global, and plugin):
+
+!`ls -1 .claude/commands/(N) ~/.claude/commands/(N) ~/.claude/plugins/cache/*/*/*/commands/(N) 2>/dev/null`
+
+**Subagents** (project, global, and plugin):
+
+!`ls -1 .claude/agents/(N) ~/.claude/agents/(N) ~/.claude/plugins/cache/*/*/*/agents/(N) 2>/dev/null`
+
+**Hooks** (the `hooks` key from project, global, and plugin settings):
+
+!`for f in .claude/settings.json ~/.claude/settings.json ~/.claude/plugins/cache/*/*/*/hooks/hooks.json; do [ -f "$f" ] && { echo "== $f =="; jq '.hooks // .' "$f" 2>/dev/null || cat "$f"; }; done 2>/dev/null`
+
+**MCP servers** (resolved set, project config, and user-scope server names):
+
+!`claude mcp list 2>/dev/null; echo "== .mcp.json =="; cat .mcp.json 2>/dev/null; echo "== ~/.claude.json mcpServers =="; jq '.mcpServers | keys' ~/.claude.json 2>/dev/null`
+
+**Plugins** (installed plugins and marketplace manifests):
+
+!`ls -1 ~/.claude/plugins/ 2>/dev/null; for m in ~/.claude/plugins/cache/*/*/*/.claude-plugin/marketplace.json ~/.claude/plugins/marketplaces/*/marketplace.json; do [ -f "$m" ] && { echo "== $m =="; cat "$m"; }; done 2>/dev/null`
+
+Build an inventory table from the above: `surface | name | scope | config path`.
 
 ## Phase 1 — Usage audit (which extensions were used this session)
 
-Review the in-context conversation history to determine which of the inventoried
-extensions were actually invoked, and how each performed. Detection signals:
+Parse the transcript to determine which of the inventoried extensions were
+actually invoked, and how each performed. Detection signals:
 
 - Skill / slash command → `Skill` tool calls and slash-command invocations.
   Plugin items appear namespaced as `plugin-name:command`.
