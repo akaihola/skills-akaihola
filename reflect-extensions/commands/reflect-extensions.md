@@ -45,19 +45,19 @@ than re-running the commands yourself.
 
 **Skills** (project, global, and plugin):
 
-!`ls -1d .claude/skills/*/(N) ~/.claude/skills/*/(N) ~/.claude/plugins/cache/*/*/*/skills/*/(N) 2>/dev/null`
+!`ls -1 .claude/skills/ ~/.claude/skills/ 2>/dev/null; find ~/.claude/plugins/cache -mindepth 5 -maxdepth 5 -type d -path '*/skills/*' 2>/dev/null`
 
 **Slash commands** (project, global, and plugin):
 
-!`ls -1 .claude/commands/(N) ~/.claude/commands/(N) ~/.claude/plugins/cache/*/*/*/commands/(N) 2>/dev/null`
+!`ls -1 .claude/commands/ ~/.claude/commands/ 2>/dev/null; find ~/.claude/plugins/cache -mindepth 4 -maxdepth 4 -type d -name commands -exec ls -1 {} \; 2>/dev/null`
 
 **Subagents** (project, global, and plugin):
 
-!`ls -1 .claude/agents/(N) ~/.claude/agents/(N) ~/.claude/plugins/cache/*/*/*/agents/(N) 2>/dev/null`
+!`ls -1 .claude/agents/ ~/.claude/agents/ 2>/dev/null; find ~/.claude/plugins/cache -mindepth 4 -maxdepth 4 -type d -name agents -exec ls -1 {} \; 2>/dev/null`
 
 **Hooks** (the `hooks` key from project, global, and plugin settings):
 
-!`for f in .claude/settings.json ~/.claude/settings.json ~/.claude/plugins/cache/*/*/*/hooks/hooks.json(N); do [ -f "$f" ] && { echo "== $f =="; jq '.hooks // .' "$f" 2>/dev/null || cat "$f"; }; done 2>/dev/null`
+!`for f in .claude/settings.json ~/.claude/settings.json $(find ~/.claude/plugins/cache -maxdepth 5 -name hooks.json -path '*/hooks/*' 2>/dev/null); do [ -f "$f" ] && { echo "== $f =="; jq '.hooks // .' "$f" 2>/dev/null || cat "$f"; }; done 2>/dev/null`
 
 **MCP servers** (resolved set, project config, and user-scope server names):
 
@@ -65,7 +65,7 @@ than re-running the commands yourself.
 
 **Plugins** (installed plugins and marketplace manifests):
 
-!`ls -1 ~/.claude/plugins/ 2>/dev/null; for m in ~/.claude/plugins/cache/*/*/*/.claude-plugin/marketplace.json ~/.claude/plugins/marketplaces/*/marketplace.json; do [ -f "$m" ] && { echo "== $m =="; cat "$m"; }; done 2>/dev/null`
+!`ls -1 ~/.claude/plugins/ 2>/dev/null; for m in $(find ~/.claude/plugins/cache -maxdepth 5 -name marketplace.json -path '*/.claude-plugin/*' 2>/dev/null) $(find ~/.claude/plugins/marketplaces -maxdepth 2 -name marketplace.json 2>/dev/null); do [ -f "$m" ] && { echo "== $m =="; cat "$m"; }; done 2>/dev/null`
 
 Build an inventory table from the above: `surface | name | scope | config path`.
 
