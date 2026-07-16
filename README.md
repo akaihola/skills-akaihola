@@ -26,7 +26,6 @@ supporting scripts.
 | `nano-banana-image` | Image generation via nano-banana |
 | `notebooklm` | NotebookLM integration |
 | `power` | Power management utilities |
-| `project-tracking-scan` | Incremental scan of agent session logs for project activity, and vault tracking-note upkeep |
 | `tokmanni` | Tokmanni product search |
 | `verkkokauppa` | Verkkokauppa.com product search |
 | `youtube-frame-analysis` | Extract scene-change frames from YouTube videos and analyse visuals with Gemini |
