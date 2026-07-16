@@ -1,9 +1,14 @@
 ---
 name: claude-session-logs
-description: Search and analyze Claude Code session logs stored as JSONL files under ~/.claude/. Use when investigating why an agent didn't reply, reconstructing what happened in a past session, finding a specific message across all sessions, or diagnosing tool-call failures. Covers searching by text, timeline inspection, full transcript reconstruction, and tool-call auditing.
+description: Search and analyze Claude Code session logs stored as JSONL files under ~/.claude/. Use when investigating why an agent didn't reply, reconstructing what happened in a past session, finding a specific message across all sessions or agent histories, recalling when or how something was done previously, or diagnosing tool-call failures. Covers searching by text, timeline inspection, full transcript reconstruction, and tool-call auditing. For Pi agent sessions use pi-session-logs; when the ask spans "all sessions" or "all agents", use both.
 ---
 
 # Claude Session Logs
+
+> **Searching across agents?** Pi's sessions live under `~/.pi/agent/sessions/` and are covered by
+> the **`pi-session-logs`** skill. A request like *"find when we did X in any past session"* means
+> **both** skills — Claude Code and Pi are separate log trees, and searching only one silently
+> misses half the history.
 
 Claude Code records every session as a JSONL file. Each line is a JSON object
 representing one event: a user message, a streaming assistant token, a tool
