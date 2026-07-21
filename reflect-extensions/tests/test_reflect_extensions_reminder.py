@@ -20,14 +20,19 @@ import pytest
 # Add parent scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
+import capture_learning as cl  # noqa: E402
 import reflect_extensions_reminder as rer  # noqa: E402
 
 
 @pytest.fixture
 def state_dir(tmp_path, monkeypatch):
-    """Redirect the module's marker directory into a temp dir."""
+    """Redirect the module's marker directory into a temp dir.
+
+    capture_learning too: the reminder reads the queue through it.
+    """
     d = tmp_path / "state"
     monkeypatch.setattr(rer, "STATE_DIR", d)
+    monkeypatch.setattr(cl, "STATE_DIR", d)
     return d
 
 

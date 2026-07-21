@@ -87,7 +87,7 @@ def test_reminder_reports_the_queue_depth(
     for prompt in ("no, use uv", "don't use pip", "from now on always run nextest"):
         _capture(monkeypatch, prompt)
     assert "3 queued learning(s)" in _remind(monkeypatch, capsys)
-    assert rer._queue_depth("s1") == 3  # noqa: SLF001
+    assert cl.queue_depth("s1") == 3
 
 
 def test_queues_survive_session_end(

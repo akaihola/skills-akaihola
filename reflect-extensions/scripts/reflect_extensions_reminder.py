@@ -29,6 +29,8 @@ import sys
 import time
 from pathlib import Path
 
+import capture_learning
+
 STATE_DIR = Path("~/.claude/reflect-extensions").expanduser()
 
 # Tool names that signal a session worth reflecting on.
@@ -98,16 +100,6 @@ def _mark_reminded(session_id: str) -> None:
         _marker(session_id).write_text("1", encoding="utf-8")
     except OSError:
         pass  # never block on state-write failure
-
-
-def _queue_depth(session_id: str) -> int:
-    """Count candidate learnings queued by capture_learning.py for this session."""
-    path = STATE_DIR / "queue" / f"{session_id}.jsonl"
-    try:
-        with path.open(encoding="utf-8", errors="ignore") as fh:
-            return sum(1 for line in fh if line.strip())
-    except OSError:
-        return 0
 
 
 def _prune_stale(directory: Path, patterns: tuple[str, ...], ttl_days: int) -> None:
@@ -181,7 +173,7 @@ def main() -> int:
 
     min_actions = int(os.environ.get("REFLECT_EXT_MIN_ACTIONS", "3"))
     actions = _count_meaningful_actions(transcript_path)
-    queued = _queue_depth(session_id)
+    queued = capture_learning.queue_depth(session_id)
 
     # PreCompact is rare and naturally marks a long session, so relax the gate.
     gate = 1 if event == "PreCompact" else min_actions
