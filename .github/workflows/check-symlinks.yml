@@ -1,0 +1,23 @@
+name: Check symlinks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  symlinks:
+    name: Committed symlinks are relative
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check symlinks
+        run: python3 .github/scripts/check_symlinks.py

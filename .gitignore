@@ -1,2 +1,6 @@
 uv.lock
 __pycache__/
+
+# Local-only data links into other checkouts (machine-specific, never commit)
+/notebooklm
+/.claude/skills/notebooklm
