@@ -116,6 +116,53 @@ def test_secrets_are_redacted(state_dir: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "[REDACTED]" in record["excerpt"]
 
 
+def test_complete_pem_private_key_block_is_redacted(
+    state_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A multiline PEM private-key block is removed from the queued excerpt."""
+    pem_body = "SYNTHETIC-PEM-BODY-DO-NOT-LEAK"
+    prompt = (
+        "no, use the secure setting instead; before the key;\n"
+        "-----BEGIN PRIVATE KEY-----\n"
+        f"{pem_body}\n"
+        "-----END PRIVATE KEY-----\n"
+        "after the key"
+    )
+    _run(monkeypatch, {"prompt": prompt, "session_id": "s1"})
+    (record,) = _records(state_dir)
+
+    assert "before the key" in record["excerpt"]
+    assert "after the key" in record["excerpt"]
+    assert "[REDACTED]" in record["excerpt"]
+    assert record["excerpt"].count("[REDACTED]") == 1
+    assert pem_body not in record["excerpt"]
+    assert "-----BEGIN PRIVATE KEY-----" not in record["excerpt"]
+    assert "-----END PRIVATE KEY-----" not in record["excerpt"]
+
+
+def test_pem_redaction_does_not_cross_an_unrelated_pem_delimiter(
+    state_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A malformed key candidate does not consume an unrelated PEM block."""
+    unrelated_body = "SYNTHETIC-CERTIFICATE-BODY-MUST-REMAIN"
+    prompt = (
+        "no, use the secure setting instead;\n"
+        "-----BEGIN PRIVATE KEY-----\n"
+        "SYNTHETIC-KEY-BODY\n"
+        "-----BEGIN X9.42 DH PARAMETERS-----\n"
+        f"{unrelated_body}\n"
+        "-----END X9.42 DH PARAMETERS-----\n"
+        "-----END PRIVATE KEY-----"
+    )
+    _run(monkeypatch, {"prompt": prompt, "session_id": "s1"})
+    (record,) = _records(state_dir)
+
+    assert unrelated_body in record["excerpt"]
+    assert "[REDACTED]" not in record["excerpt"]
+
+
 def test_excerpt_is_truncated(state_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Long prompts are stored truncated, not in full."""
     monkeypatch.setenv("REFLECT_EXT_EXCERPT_LEN", "40")

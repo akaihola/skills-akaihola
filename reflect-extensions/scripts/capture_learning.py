@@ -68,7 +68,10 @@ SIGNALS: list[tuple[str, float, str]] = [
 # potentially in a proposed extension file.
 SECRET_PATTERNS: list[str] = [
     r"(sk-|ghp_|gho_|github_pat_|xox[baprs]-|AKIA|AIza)[A-Za-z0-9_\-]{8,}",
-    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+    (
+        r"-----BEGIN ([A-Z ]*PRIVATE KEY)-----\s+"
+        r"(?:(?!-----BEGIN |-----END ).)*?\s+-----END \1-----"
+    ),
     r"(?i)\b(authorization|bearer)\b\s*:?\s*\S+",
     r"(?i)\b(token|password|passwd|secret|api[_-]?key)\b\s*[:=]\s*\S+",
 ]
