@@ -23,13 +23,13 @@ Config via env vars:
   REFLECT_EXT_PLAINTEXT        "1" = print plain text instead of JSON systemMessage
   REFLECT_EXT_MARKER_TTL_DAYS  Prune markers older than N days (default 7)
 """
-import sys
-import os
 import json
+import os
+import sys
 import time
 from pathlib import Path
 
-STATE_DIR = Path(os.path.expanduser("~/.claude/reflect-extensions"))
+STATE_DIR = Path("~/.claude/reflect-extensions").expanduser()
 
 # Tool names that signal a session worth reflecting on.
 MUTATING_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
@@ -46,42 +46,42 @@ def _read_input() -> dict:
         return {}
 
 
+def _count_block(block: dict) -> int:
+    """Return 1 if a content block is a meaningful tool call, else 0."""
+    if block.get("type") != "tool_use":
+        return 0
+    name = block.get("name", "")
+    if name in MUTATING_TOOLS or name in EXTENSION_TOOLS or name.startswith("mcp__"):
+        return 1
+    if name == "Bash" and "git commit" in (block.get("input") or {}).get("command", ""):
+        return 1
+    return 0
+
+
+def _count_line(line: str) -> int:
+    """Count meaningful tool_use blocks in one transcript JSONL line."""
+    if not line.strip():
+        return 0
+    try:
+        rec = json.loads(line)
+    except json.JSONDecodeError:
+        return 0
+    msg = rec.get("message", rec)
+    content = msg.get("content") if isinstance(msg, dict) else None
+    if not isinstance(content, list):
+        return 0
+    return sum(_count_block(b) for b in content if isinstance(b, dict))
+
+
 def _count_meaningful_actions(transcript_path: str) -> int:
     """Scan the JSONL transcript and count meaningful tool actions."""
-    if not transcript_path or not os.path.exists(transcript_path):
+    if not transcript_path or not Path(transcript_path).exists():
         return 0
-    count = 0
     try:
-        with open(transcript_path, "r", encoding="utf-8", errors="ignore") as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    rec = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                msg = rec.get("message", rec)
-                content = msg.get("content") if isinstance(msg, dict) else None
-                if not isinstance(content, list):
-                    continue
-                for block in content:
-                    if not isinstance(block, dict) or block.get("type") != "tool_use":
-                        continue
-                    name = block.get("name", "")
-                    if (
-                        name in MUTATING_TOOLS
-                        or name in EXTENSION_TOOLS
-                        or name.startswith("mcp__")
-                    ):
-                        count += 1
-                    elif name == "Bash":
-                        cmd = (block.get("input") or {}).get("command", "")
-                        if "git commit" in cmd:
-                            count += 1
+        with Path(transcript_path).open(encoding="utf-8", errors="ignore") as fh:
+            return sum(_count_line(line) for line in fh)
     except OSError:
         return 0
-    return count
 
 
 def _marker(session_id: str) -> Path:
@@ -137,6 +137,7 @@ def _emit(message: str) -> None:
 
 
 def main() -> int:
+    """Route the hook event to a reminder or to state cleanup."""
     data = _read_input()
     event = data.get("hook_event_name", "")
     session_id = data.get("session_id", "unknown")
@@ -183,6 +184,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except Exception as e:  # never block on errors
+    except Exception as e:  # noqa: BLE001 - a hook must never break the session
         print(f"Warning: reflect_extensions_reminder.py error: {e}", file=sys.stderr)
         sys.exit(0)
