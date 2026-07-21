@@ -99,9 +99,9 @@ def test_count_skips_malformed_lines(tmp_path) -> None:
 # --- markers, debounce, prune, cleanup ----------------------------------------
 
 def test_mark_and_already_reminded(state_dir) -> None:
-    assert rer._already_reminded("s1") is False
+    assert rer._marker("s1").exists() is False
     rer._mark_reminded("s1")
-    assert rer._already_reminded("s1") is True
+    assert rer._marker("s1").exists() is True
 
 
 def test_prune_stale_markers_removes_old_keeps_new(state_dir) -> None:
@@ -122,9 +122,9 @@ def test_prune_stale_markers_removes_old_keeps_new(state_dir) -> None:
 
 def test_cleanup_removes_session_marker(state_dir) -> None:
     rer._mark_reminded("s2")
-    assert rer._already_reminded("s2") is True
+    assert rer._marker("s2").exists() is True
     rer._cleanup("s2", ttl_days=7)
-    assert rer._already_reminded("s2") is False
+    assert rer._marker("s2").exists() is False
 
 
 # --- main() dispatch -----------------------------------------------------------
@@ -145,7 +145,7 @@ def test_main_stop_above_threshold_emits_and_marks(
     assert _run_main(monkeypatch, payload) == 0
     out = capsys.readouterr().out
     assert "/reflect-extensions" in out
-    assert rer._already_reminded("live1") is True
+    assert rer._marker("live1").exists() is True
 
 
 def test_main_stop_debounced_on_second_call(
@@ -180,7 +180,7 @@ def test_main_stop_below_threshold_silent(
     }
     _run_main(monkeypatch, payload)
     assert capsys.readouterr().out.strip() == ""
-    assert rer._already_reminded("live3") is False
+    assert rer._marker("live3").exists() is False
 
 
 def test_main_precompact_relaxed_gate_fires_on_one_action(
@@ -222,4 +222,4 @@ def test_main_session_end_cleans_marker(state_dir, monkeypatch, capsys) -> None:
     }
     assert _run_main(monkeypatch, payload) == 0
     assert capsys.readouterr().out.strip() == ""
-    assert rer._already_reminded("live6") is False
+    assert rer._marker("live6").exists() is False
