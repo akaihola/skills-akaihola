@@ -138,12 +138,13 @@ def _prune_stale_queues(ttl_days: int) -> None:
         return
     cutoff = time.time() - ttl_days * 86400
     try:
-        for queue in queue_dir.glob("*.jsonl"):
-            try:
-                if queue.stat().st_mtime < cutoff:
-                    queue.unlink()
-            except OSError:
-                continue
+        for pattern in ("*.jsonl", "*.jsonl.done"):
+            for queue in queue_dir.glob(pattern):
+                try:
+                    if queue.stat().st_mtime < cutoff:
+                        queue.unlink()
+                except OSError:
+                    continue
     except OSError:
         pass
 
