@@ -90,10 +90,6 @@ def _marker(session_id: str) -> Path:
     return STATE_DIR / f"reminded-{session_id}.flag"
 
 
-def _already_reminded(session_id: str) -> bool:
-    return _marker(session_id).exists()
-
-
 def _mark_reminded(session_id: str) -> None:
     try:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -168,7 +164,7 @@ def main() -> int:
         return 0
 
     remind_once = os.environ.get("REFLECT_EXT_REMIND_ONCE", "1") == "1"
-    if remind_once and _already_reminded(session_id):
+    if remind_once and _marker(session_id).exists():
         return 0
 
     min_actions = int(os.environ.get("REFLECT_EXT_MIN_ACTIONS", "3"))
