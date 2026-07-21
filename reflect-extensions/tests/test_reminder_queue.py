@@ -111,3 +111,22 @@ def test_stale_queues_are_pruned(
     os.utime(queue, (old, old))
     rer._cleanup("s1", ttl_days=7)  # noqa: SLF001
     assert not queue.exists()
+
+
+def test_stale_drained_queues_are_pruned(
+    state_dir: Path,
+) -> None:
+    """A drained queue is pruned after it exceeds the TTL."""
+    queue_dir = state_dir / "queue"
+    queue_dir.mkdir(parents=True)
+    old_queue = queue_dir / "s1.jsonl.done"
+    fresh_queue = queue_dir / "s2.jsonl.done"
+    old_queue.write_text("drained\n", encoding="utf-8")
+    fresh_queue.write_text("drained\n", encoding="utf-8")
+    old = time.time() - 30 * 86400
+    os.utime(old_queue, (old, old))
+
+    rer._cleanup("s1", ttl_days=7)  # noqa: SLF001
+
+    assert not old_queue.exists()
+    assert fresh_queue.exists()
