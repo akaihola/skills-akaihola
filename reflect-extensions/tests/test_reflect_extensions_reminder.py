@@ -110,7 +110,7 @@ def test_prune_stale_markers_removes_old_keeps_new(state_dir) -> None:
     import os
 
     os.utime(old, (ten_days_ago, ten_days_ago))
-    rer._prune_stale_markers(ttl_days=7)
+    rer._prune_stale_state(ttl_days=7)
     assert not old.exists()
     assert new.exists()
 
