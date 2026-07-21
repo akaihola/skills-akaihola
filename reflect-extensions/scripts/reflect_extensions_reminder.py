@@ -110,43 +110,32 @@ def _queue_depth(session_id: str) -> int:
         return 0
 
 
-def _prune_stale_markers(ttl_days: int) -> None:
-    """Delete marker files older than ttl_days. Defensive: ignore all errors."""
-    if not STATE_DIR.exists():
+def _prune_stale(directory: Path, patterns: tuple[str, ...], ttl_days: int) -> None:
+    """Delete matching files older than ttl_days. Defensive: ignore all errors."""
+    if not directory.exists():
         return
     cutoff = time.time() - ttl_days * 86400
     try:
-        for flag in STATE_DIR.glob("reminded-*.flag"):
-            try:
-                if flag.stat().st_mtime < cutoff:
-                    flag.unlink()
-            except OSError:
-                continue
+        for pattern in patterns:
+            for path in directory.glob(pattern):
+                try:
+                    if path.stat().st_mtime < cutoff:
+                        path.unlink()
+                except OSError:
+                    continue
     except OSError:
         pass
 
 
-def _prune_stale_queues(ttl_days: int) -> None:
-    """Delete capture queues older than ttl_days.
+def _prune_stale_state(ttl_days: int) -> None:
+    """Prune expired reminder markers and capture queues.
 
     Queues deliberately outlive the session that produced them: /reflect-extensions
     can be run later against an earlier session. They are only dropped once they are
     older than the marker TTL, at which point nobody is going to reflect on them.
     """
-    queue_dir = STATE_DIR / "queue"
-    if not queue_dir.exists():
-        return
-    cutoff = time.time() - ttl_days * 86400
-    try:
-        for pattern in ("*.jsonl", "*.jsonl.done"):
-            for queue in queue_dir.glob(pattern):
-                try:
-                    if queue.stat().st_mtime < cutoff:
-                        queue.unlink()
-                except OSError:
-                    continue
-    except OSError:
-        pass
+    _prune_stale(STATE_DIR, ("reminded-*.flag",), ttl_days)
+    _prune_stale(STATE_DIR / "queue", ("*.jsonl", "*.jsonl.done"), ttl_days)
 
 
 def _cleanup(session_id: str, ttl_days: int) -> None:
@@ -157,8 +146,7 @@ def _cleanup(session_id: str, ttl_days: int) -> None:
             m.unlink()
     except OSError:
         pass
-    _prune_stale_markers(ttl_days)
-    _prune_stale_queues(ttl_days)
+    _prune_stale_state(ttl_days)
 
 
 def _emit(message: str) -> None:
@@ -214,8 +202,7 @@ def main() -> int:
     if remind_once:
         _mark_reminded(session_id)
     # Opportunistic prune so the state dir stays tidy even without SessionEnd.
-    _prune_stale_markers(ttl_days)
-    _prune_stale_queues(ttl_days)
+    _prune_stale_state(ttl_days)
     return 0
 
 
