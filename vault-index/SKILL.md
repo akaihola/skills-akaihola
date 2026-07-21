@@ -13,102 +13,223 @@ description: >-
 # vault-index skill
 
 Tools for indexing an Obsidian-style markdown vault into a SQLite database and
-querying it as a knowledge graph.
+querying it as a knowledge graph. **All milestones through Phase 4.5 are
+complete:** FTS5 + embeddings, entity extraction, MCP server, rich suggestions,
+co-access logging, reports, temporal scoring, watched topics, weekly review, and
+proactive suggestions.
 
 ## Environment
 
 Set `VAULT_ROOT` to the vault directory, or pass `--vault PATH` to every
-command. The default falls back to `VAULT_ROOT` env var, then the current
-working directory.
+command.
 
 ```bash
 export VAULT_ROOT=~/my-knowledge   # or pass --vault each time
 ```
 
-## Commands
+**Package location:** `~/prg/vault-index/`  
+**Run commands:** `uv run --project ~/prg/vault-index vault-index <cmd>`
 
-All commands live in `scripts/vault-index.py` and are PEP 723 standalone
-scripts (run with `uv run` or directly if `uv` is on `PATH`).
-
-### build – rebuild the index
-
-Parse every `.md` file, extract wiki-links, frontmatter relationships, tags,
-and (when enabled) chunk text for FTS5 / embeddings.
+## Quick reference
 
 ```bash
-uv run vault-index/scripts/vault-index.py build
-uv run vault-index/scripts/vault-index.py build --vault ~/my-knowledge
-VAULT_ROOT=~/my-knowledge python vault-index/scripts/vault-index.py build
+vault-index build                              # rebuild index
+vault-index search "query" --mode hybrid      # best general search
+vault-index search "query" --mode fts         # exact keyword
+vault-index search "query" --mode semantic    # fuzzy/conceptual
+vault-index search "query" --entity "CCM"     # filter by entity mention
+vault-index traverse "Note Title" --json      # graph traversal (JSON)
+vault-index gaps --json                       # orphans + broken links
+vault-index entities --type project           # list entities
+vault-index suggest "Note Title"              # related-note suggestions
+vault-index report health                      # vault health check
+vault-index report stale                      # structurally important but stale files
+vault-index report watched                    # matches for configured watched topics
+vault-index weekly-review                     # full weekly health review
+vault-index proactive [--limit 10]            # proactive maintenance suggestions
+vault-index watched-topics set pykoclaw MCP  # configure watched topics
+vault-index watched-topics list              # see current watched topics
+vault-index serve                             # start MCP server (stdio)
+vault-index serve --transport sse             # MCP over HTTP/SSE
 ```
 
-Run after any significant batch of vault edits, or hook it into a git
-post-commit.
+## Commands in detail
 
-### traverse – graph traversal from a note
+### build
 
-Walk outgoing and incoming edges from a starting file and print a tree.
+Parse every `.md` file: extract wiki-links, frontmatter relationships, tags,
+chunk text for FTS5, and embed chunks with Gemini `gemini-embedding-001` (when
+`GEMINI_API_KEY` is set). Unchanged chunks reuse cached embeddings.
 
 ```bash
-uv run vault-index/scripts/vault-index.py traverse "Vault Knowledge Graph"
-uv run vault-index/scripts/vault-index.py traverse "Second Brain" --depth 3
+vault-index build
+vault-index build --vault ~/other-vault
 ```
 
-Use this when the user asks "what's related to X?" or wants to see how a note
-connects to the rest of the vault.
+Run after significant batch edits, or hook into git post-commit.
 
-### gaps – orphan and broken-link report
-
-Find project files with no connections, broken wiki-links, and link distribution
-statistics.
+### search
 
 ```bash
-uv run vault-index/scripts/vault-index.py gaps
+# FTS5 keyword search (always available)
+vault-index search "tool search" --mode fts
+
+# Semantic (requires GEMINI_API_KEY + built index with embeddings)
+vault-index search "what note explains deferred loading of MCP tools" --mode semantic
+
+# Hybrid: FTS5 + semantic (default for best recall)
+vault-index search "knowledge graph" --mode hybrid
+
+# Filter options (all combinable across all modes)
+vault-index search "query" --type project          # file type filter
+vault-index search "query" --tag MCP               # frontmatter tag filter
+vault-index search "query" --path pages/Projects   # path prefix filter
+vault-index search "query" --since 2026-03-01      # recency (YYYY-MM-DD)
+vault-index search "query" --entity "Agent Commons" # entity mention filter
+vault-index search "query" --json                  # JSON output
+vault-index search "query" --limit 5               # result cap
 ```
 
-Use for vault maintenance: after major edits, or when preparing a health report.
+JSON result schema (stable):
 
-### search – full-text and semantic search _(Phase 2b)_
+```json
+[
+  {
+    "file_path": "/abs/path/to/file.md",
+    "file_title": "Note Title",
+    "file_type": "project|note|journal",
+    "chunk_heading": "Section Heading",
+    "snippet": "...matched text...",
+    "score": 0.85,
+    "match_reasons": ["fts", "semantic"]
+  }
+]
+```
+
+### traverse
+
+Walk outgoing and incoming edges from a starting file.
 
 ```bash
-uv run vault-index/scripts/vault-index.py search "semantic search" --mode fts
-uv run vault-index/scripts/vault-index.py search "MCP tool discovery" --mode hybrid
-uv run vault-index/scripts/vault-index.py search "pykoclaw" --entity
+vault-index traverse "Vault Knowledge Graph"
+vault-index traverse "Second Brain" --depth 3 --include-inline
+vault-index traverse "Agent Commons" --json   # machine-readable
 ```
 
-### suggest – related note suggestions _(Phase 3)_
+**JSON output:** list of `{file_path, file_title, depth, rel_type, edge_type}`.
+
+Use when user asks "what's related to X?" or needs graph-based navigation.
+
+### gaps
+
+Orphans, broken links, and link-distribution statistics.
 
 ```bash
-uv run vault-index/scripts/vault-index.py suggest "Vault Knowledge Graph"
+vault-index gaps
+vault-index gaps --inline-relations
+vault-index gaps --json
 ```
 
-## Database
+**JSON output:** `{orphans: [...], broken_links: N, isolated_files: [...]}`.
 
-The index is stored in `<vault>/.vault-index.db` (SQLite). It is fully
-disposable and rebuildable from the markdown source files. Add it to
-`.gitignore`.
+### entities
 
-### Core schema (Phase 2a)
+List all indexed entities (auto-registered files + frontmatter explicit).
 
-| Table   | Contents                                                  |
-| ------- | --------------------------------------------------------- |
-| `files` | One row per `.md` file – path, title, type, status, dates |
-| `tags`  | Frontmatter tags per file                                 |
-| `edges` | Wiki-links and typed frontmatter relationships            |
+```bash
+vault-index entities
+vault-index entities --type project
+vault-index entities --type tool
+vault-index entities --json
+```
 
-### Extended schema (Phase 2b+)
+### suggest
 
-| Table              | Contents                                          |
-| ------------------ | ------------------------------------------------- |
-| `content_chunks`   | Heading-split chunks with heading path            |
-| `fts_chunks`       | FTS5 virtual table for keyword search             |
-| `embeddings`       | Per-chunk embedding vectors (sqlite-vec)          |
-| `entities`         | Named entities (projects, tools, people, …)       |
-| `entity_mentions`  | Where each entity is mentioned                    |
-| `inline_relations` | Typed body-level relations (`- depends_on [[X]]`) |
+Suggest related notes using four signals:
+
+- **link_candidate** — depth-2 structural neighbors
+- **related_reading** — FTS content similarity
+- **orphan_rescue** — isolated files with topical overlap
+- **semantic_neighbor** — embedding cosine similarity ≥ 0.7
+- **shared_entity** — files mentioning the same entity
+
+```bash
+vault-index suggest "Vault Knowledge Graph"
+vault-index suggest "Second Brain" --json
+```
+
+### serve
+
+Start the read-only MCP server exposing: `search`, `traverse`, `gaps`,
+`entities`, `suggest` as MCP tools.
+
+```bash
+vault-index serve                      # stdio (Claude Desktop / Pi)
+vault-index serve --transport sse      # HTTP/SSE
+```
+
+**Claude Desktop config** (`~/.config/claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "vault-index": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "/home/agent/prg/vault-index",
+        "vault-index",
+        "serve"
+      ],
+      "env": { "VAULT_ROOT": "/home/agent/my-knowledge" }
+    }
+  }
+}
+```
+
+**Pi config** — add to agent MCP config or tool list.
+
+## Agent behavioral guide
+
+| User intent                       | Use                       |
+| --------------------------------- | ------------------------- |
+| "what's related to X?"            | `traverse X`              |
+| "find notes about Y" (fuzzy)      | `search Y --mode hybrid`  |
+| "find notes mentioning Z entity"  | `search Q --entity Z`     |
+| vault hygiene / orphan check      | `gaps`                    |
+| after editing a file, check links | `suggest <file>`          |
+| list all project entities         | `entities --type project` |
+
+### Index freshness
+
+Before answering retrieval questions, check if the index is stale:
+
+```bash
+stat -c %Y /home/agent/my-knowledge/.vault-index.db
+find /home/agent/my-knowledge -name "*.md" -newer .vault-index.db | head -5
+```
+
+If `.md` files are newer than the index, warn the user and offer to rebuild.
+
+### When to use which search mode
+
+- **`fts`** — exact terminology matters (`"pykoclaw"`, `"CCM"`, `"gemini-embedding-001"`)
+- **`semantic`** — conceptual recall, paraphrased queries, "what was that note about…"
+- **`hybrid`** — default for most queries (combines both signals)
+
+## Database schema
+
+**Core (Phase 2a):** `files`, `tags`, `edges`  
+**Extended (Phase 2b+):** `content_chunks`, `fts_chunks`, `embeddings`,
+`entities`, `entity_mentions`, `inline_relations`
+
+The database is fully disposable — always rebuildable from markdown.  
+Add `.vault-index.db` to `.gitignore`.
 
 ## Relationship vocabulary
 
-Used in frontmatter fields and body-level inline relations:
+Frontmatter fields and inline body relations:
 
 | Relation      | Meaning                                        |
 | ------------- | ---------------------------------------------- |
@@ -119,28 +240,11 @@ Used in frontmatter fields and body-level inline relations:
 | `similar_to`  | Different angle on the same subject            |
 | `contradicts` | This note disagrees with the target            |
 
-### Inline relation format (body text)
-
-```markdown
-- depends_on [[pykoclaw plugin system]]
-- related_to [[Agent Commons]]
-- builds_on [[Second Brain]]
-```
-
-## Agent behaviour guide
-
-| User intent                        | Preferred tool         |
-| ---------------------------------- | ---------------------- |
-| "what's related to X?"             | `traverse`             |
-| fuzzy recall / "that note about Y" | `search --mode hybrid` |
-| vault maintenance, orphans         | `gaps`                 |
-| after editing a file               | `suggest`              |
-
-When the index may be stale (vault files newer than `.vault-index.db`), warn the
-user and offer to rebuild before answering retrieval questions.
+Inline format: `- depends_on [[pykoclaw plugin system]]`
 
 ## Development notes
 
-- Tests live in `vault-index/tests/`; run with `uv run pytest vault-index/tests/`
-- The index is always rebuildable from markdown — never treat it as canonical
-- Phase roadmap: 2a (structural, ✅) → 2b (FTS5 + embeddings) → 3 (MCP) → 4 (proactive)
+- **Package:** `~/prg/vault-index/` (editable install via `uv sync`)
+- **Tests:** `cd ~/prg/vault-index && uv run pytest tests/ -v`
+- **Current test count:** 87 passing
+- **Phase status:** 2a ✅ · 2b.1 ✅ · 2b.2 ✅ · 2b.3 ✅ · 2b.4 ✅ · 2b.5 ✅ · 3.1 ✅ · 3.2 ✅ · 3.3 ✅ · 3.4 ✅ · 3.5 ✅ · 4.1 ✅ · 4.2 ✅ · 4.3 ✅ · 4.4 ✅ · 4.5 ✅
