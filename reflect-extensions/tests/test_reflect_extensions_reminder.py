@@ -20,14 +20,19 @@ import pytest
 # Add parent scripts directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
+import capture_learning as cl  # noqa: E402
 import reflect_extensions_reminder as rer  # noqa: E402
 
 
 @pytest.fixture
 def state_dir(tmp_path, monkeypatch):
-    """Redirect the module's marker directory into a temp dir."""
+    """Redirect the module's marker directory into a temp dir.
+
+    capture_learning too: the reminder reads the queue through it.
+    """
     d = tmp_path / "state"
     monkeypatch.setattr(rer, "STATE_DIR", d)
+    monkeypatch.setattr(cl, "STATE_DIR", d)
     return d
 
 
@@ -94,9 +99,9 @@ def test_count_skips_malformed_lines(tmp_path) -> None:
 # --- markers, debounce, prune, cleanup ----------------------------------------
 
 def test_mark_and_already_reminded(state_dir) -> None:
-    assert rer._already_reminded("s1") is False
+    assert rer._marker("s1").exists() is False
     rer._mark_reminded("s1")
-    assert rer._already_reminded("s1") is True
+    assert rer._marker("s1").exists() is True
 
 
 def test_prune_stale_markers_removes_old_keeps_new(state_dir) -> None:
@@ -110,16 +115,16 @@ def test_prune_stale_markers_removes_old_keeps_new(state_dir) -> None:
     import os
 
     os.utime(old, (ten_days_ago, ten_days_ago))
-    rer._prune_stale_markers(ttl_days=7)
+    rer._prune_stale_state(ttl_days=7)
     assert not old.exists()
     assert new.exists()
 
 
 def test_cleanup_removes_session_marker(state_dir) -> None:
     rer._mark_reminded("s2")
-    assert rer._already_reminded("s2") is True
+    assert rer._marker("s2").exists() is True
     rer._cleanup("s2", ttl_days=7)
-    assert rer._already_reminded("s2") is False
+    assert rer._marker("s2").exists() is False
 
 
 # --- main() dispatch -----------------------------------------------------------
@@ -140,7 +145,7 @@ def test_main_stop_above_threshold_emits_and_marks(
     assert _run_main(monkeypatch, payload) == 0
     out = capsys.readouterr().out
     assert "/reflect-extensions" in out
-    assert rer._already_reminded("live1") is True
+    assert rer._marker("live1").exists() is True
 
 
 def test_main_stop_debounced_on_second_call(
@@ -175,7 +180,7 @@ def test_main_stop_below_threshold_silent(
     }
     _run_main(monkeypatch, payload)
     assert capsys.readouterr().out.strip() == ""
-    assert rer._already_reminded("live3") is False
+    assert rer._marker("live3").exists() is False
 
 
 def test_main_precompact_relaxed_gate_fires_on_one_action(
@@ -217,4 +222,4 @@ def test_main_session_end_cleans_marker(state_dir, monkeypatch, capsys) -> None:
     }
     assert _run_main(monkeypatch, payload) == 0
     assert capsys.readouterr().out.strip() == ""
-    assert rer._already_reminded("live6") is False
+    assert rer._marker("live6").exists() is False
