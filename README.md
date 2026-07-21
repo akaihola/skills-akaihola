@@ -24,7 +24,6 @@ supporting scripts.
 | `mcp-to-skill` | Convert MCP servers to skills |
 | `motonet` | Motonet product search |
 | `nano-banana-image` | Image generation via nano-banana |
-| `notebooklm` | NotebookLM integration |
 | `power` | Power management utilities |
 | `tokmanni` | Tokmanni product search |
 | `verkkokauppa` | Verkkokauppa.com product search |

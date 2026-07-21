@@ -1,0 +1,58 @@
+# Example fleet definition for fleet-audit.
+#
+# Copy this somewhere PRIVATE — it names your accounts and hosts, so it does not
+# belong in a public skills repo. A good home is alongside your other
+# environment/topology notes, e.g. a machine-config repo.
+
+[repo]
+# Canonical checkout of the skills repo, on the machine running the audit.
+path = "~/prg/skills-example"
+
+# Substring matched against each checkout's `remote.origin.url` to recognise
+# clones of this repo (including plugin/marketplace caches).
+slug = "skills-example"
+
+# The revision every deployment is expected to match.
+ref = "origin/main"
+
+[scan]
+# Directories agent harnesses read skills from, matched anywhere under $HOME.
+# Add a surface here when you adopt a new harness — that is the whole fix for
+# "we forgot to check Codex".
+surfaces = [
+    ".claude/skills",
+    ".codex/skills",
+    ".hermes/skills",
+]
+
+# How deep to search below $HOME. Raise for deeply nested project trees.
+max_depth = 8
+
+# Path substrings that mark dead trees — backups, scratch dirs, trash. Matched
+# on the target before anything is sent back, so excluded trees cost nothing.
+exclude = [
+    "/.trash/",
+    "/node_modules/",
+    ".backup/",
+    "-backup",
+    "/scratch/",
+]
+
+# Absolute symlink targets that are legitimately outside $HOME. A config manager
+# that materialises skills into an immutable store is the usual case: those
+# links are absolute by design and identical on every account.
+allow_link_prefixes = ["/nix/store/"]
+
+# One entry per account. Omit `host` (or leave it empty) for the local account;
+# anything else is passed straight to ssh, so use whatever your ssh config
+# understands.
+[[targets]]
+
+[[targets]]
+host = "user@host-a.example"
+
+[[targets]]
+host = "someone-else@host-a.example"
+
+[[targets]]
+host = "user@host-b.example"
