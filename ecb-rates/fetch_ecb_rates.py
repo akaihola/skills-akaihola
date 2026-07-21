@@ -47,13 +47,11 @@ def fetch_ecb_rates(year: int = 2025, output_file: str | None = None) -> list[di
             continue
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=UTC)
 
-        # Filter for requested year
         if date_obj.year != year:
             continue
 
         date_formatted = date_obj.strftime("%d.%m.%Y")
 
-        # Find USD rate
         for rate_cube in cube:
             if rate_cube.get("currency") == "USD":
                 rate = float(rate_cube.get("rate"))
@@ -64,10 +62,8 @@ def fetch_ecb_rates(year: int = 2025, output_file: str | None = None) -> list[di
                 })
                 break
 
-    # Sort by date
     rates.sort(key=operator.itemgetter("date_obj"))
 
-    # Save to CSV using Path
     output_path = Path(output_file)
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -79,8 +75,6 @@ def fetch_ecb_rates(year: int = 2025, output_file: str | None = None) -> list[di
 
 
 if __name__ == "__main__":
-    MIN_ARGS_YEAR = 1
-    MIN_ARGS_OUTPUT = 2
-    year = int(sys.argv[1]) if len(sys.argv) > MIN_ARGS_YEAR else 2025
-    output = sys.argv[2] if len(sys.argv) > MIN_ARGS_OUTPUT else None
+    year = int(sys.argv[1]) if len(sys.argv) > 1 else 2025
+    output = sys.argv[2] if len(sys.argv) > 2 else None  # noqa: PLR2004
     fetch_ecb_rates(year, output)
