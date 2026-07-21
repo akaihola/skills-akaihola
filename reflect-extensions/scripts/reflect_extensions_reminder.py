@@ -100,6 +100,16 @@ def _mark_reminded(session_id: str) -> None:
         pass  # never block on state-write failure
 
 
+def _queue_depth(session_id: str) -> int:
+    """Count candidate learnings queued by capture_learning.py for this session."""
+    path = STATE_DIR / "queue" / f"{session_id}.jsonl"
+    try:
+        with path.open(encoding="utf-8", errors="ignore") as fh:
+            return sum(1 for line in fh if line.strip())
+    except OSError:
+        return 0
+
+
 def _prune_stale_markers(ttl_days: int) -> None:
     """Delete marker files older than ttl_days. Defensive: ignore all errors."""
     if not STATE_DIR.exists():
@@ -116,8 +126,30 @@ def _prune_stale_markers(ttl_days: int) -> None:
         pass
 
 
+def _prune_stale_queues(ttl_days: int) -> None:
+    """Delete capture queues older than ttl_days.
+
+    Queues deliberately outlive the session that produced them: /reflect-extensions
+    can be run later against an earlier session. They are only dropped once they are
+    older than the marker TTL, at which point nobody is going to reflect on them.
+    """
+    queue_dir = STATE_DIR / "queue"
+    if not queue_dir.exists():
+        return
+    cutoff = time.time() - ttl_days * 86400
+    try:
+        for queue in queue_dir.glob("*.jsonl"):
+            try:
+                if queue.stat().st_mtime < cutoff:
+                    queue.unlink()
+            except OSError:
+                continue
+    except OSError:
+        pass
+
+
 def _cleanup(session_id: str, ttl_days: int) -> None:
-    """SessionEnd: remove this session's marker, then prune stale ones."""
+    """SessionEnd: remove this session's marker, then prune stale state."""
     try:
         m = _marker(session_id)
         if m.exists():
@@ -125,6 +157,7 @@ def _cleanup(session_id: str, ttl_days: int) -> None:
     except OSError:
         pass
     _prune_stale_markers(ttl_days)
+    _prune_stale_queues(ttl_days)
 
 
 def _emit(message: str) -> None:
@@ -159,14 +192,17 @@ def main() -> int:
 
     min_actions = int(os.environ.get("REFLECT_EXT_MIN_ACTIONS", "3"))
     actions = _count_meaningful_actions(transcript_path)
+    queued = _queue_depth(session_id)
 
     # PreCompact is rare and naturally marks a long session, so relax the gate.
     gate = 1 if event == "PreCompact" else min_actions
-    if actions < gate:
+    # A queued correction is worth reflecting on even in an otherwise quiet session.
+    if actions < gate and queued == 0:
         return 0
 
+    queued_note = f", {queued} queued learning(s)" if queued else ""
     msg = (
-        f"End of a working session ({actions} meaningful actions). "
+        f"End of a working session ({actions} meaningful actions{queued_note}). "
         "Run /reflect-extensions to capture learnings (trial-and-error fixes, "
         "reusable scripts, new workflows) and audit which skills, MCP servers, "
         "slash commands, subagents, hooks, and plugins were used \u2014 so they can "
@@ -178,6 +214,7 @@ def main() -> int:
         _mark_reminded(session_id)
     # Opportunistic prune so the state dir stays tidy even without SessionEnd.
     _prune_stale_markers(ttl_days)
+    _prune_stale_queues(ttl_days)
     return 0
 
 
