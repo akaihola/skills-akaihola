@@ -85,7 +85,7 @@ library:
 
     - name: markdown-pm
       description: Project management in Obsidian-style markdown with YAML frontmatter — query, update, dashboard
-      source: ~/prg/skills-akaihola/markdown-pm/SKILL.md
+      source: ~/.claude/skills/markdown-pm/SKILL.md
 
     - name: mcp-to-skill
       description: Convert any MCP server into a Claude Skill with 90% context savings
@@ -157,7 +157,7 @@ library:
 
     - name: vault-index
       description: Build, query, and traverse the vault knowledge graph — structure, links, orphans, search
-      source: ~/prg/skills-akaihola/vault-index/SKILL.md
+      source: ~/.claude/skills/vault-index/SKILL.md
 
     - name: verkkokauppa
       description: Search products on the Verkkokauppa.com Finnish webshop via search API
