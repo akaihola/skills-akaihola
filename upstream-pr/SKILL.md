@@ -198,7 +198,7 @@ reflect the PR's current intended title and description.
 git push origin <branch-name>
 ```
 
-Note: the agent cannot push to GitHub. Remind the user to run `ghpp` on atom
+Note: the agent cannot push to GitHub. Remind the user to run `ghpp` on the desktop machine
 or use `git push` from a machine with push access.
 
 ### 7. Submit the PR (submission step)
@@ -290,7 +290,7 @@ git add PULL_REQUEST_DRAFT.md
 git commit --amend --no-edit
 
 git push origin fix/my-bug-fix
-# Then ask the user to push with `ghpp` on atom, or run the submit script
+# Then ask the user to push with `ghpp` on the desktop machine, or run the submit script
 ```
 
 ## Notes

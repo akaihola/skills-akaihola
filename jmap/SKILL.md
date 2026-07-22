@@ -7,7 +7,7 @@ description: Generic JMAP email utilities. Use when syncing emails from any send
 
 ## Infrastructure
 
-- JMAP proxy runs on `akaihola@gogo`; accessed locally via **reverse SSH tunnel on port 8895**
+- JMAP proxy runs on the remote host; accessed locally via **reverse SSH tunnel on port 8895**
 - Base URL: `http://127.0.0.1:8895`
 - Primary account: `example-account`
 
@@ -15,7 +15,7 @@ Verify the tunnel is up before any JMAP operation:
 ```bash
 xh GET http://127.0.0.1:8895/.well-known/jmap
 ```
-If that fails with "Connection refused", ask the user to bring up the tunnel from `akaihola@gogo`.
+If that fails with "Connection refused", ask the user to bring up the tunnel from the remote host.
 
 ## Email Sync Script
 

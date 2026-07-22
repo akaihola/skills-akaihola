@@ -30,7 +30,7 @@ def _iter_session_files(root: Path) -> list[Path]:
 
 
 def _project_label(path: Path) -> str:
-    """Decode the -home-agent-foo directory convention back to /home/agent/foo."""
+    """Decode the -home-user-foo directory convention back to /home/user/foo."""
     parent = path.parent.name.removeprefix("-")
     return "/" + parent.replace("-", "/")
 

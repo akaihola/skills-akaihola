@@ -17,7 +17,7 @@ every significant visual change.
 ## Requirements
 
 - `GEMINI_API_KEY` environment variable set
-- `ffmpeg` in PATH (available on gogo)
+- `ffmpeg` in PATH
 - `uvx` in PATH (used to run `yt-dlp` without a persistent install)
 
 ## Quick usage

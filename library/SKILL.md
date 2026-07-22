@@ -69,7 +69,7 @@ Each command has a detailed step-by-step guide. **Read the relevant cookbook fil
 The `source` field in `library.yaml` supports these formats (auto-detected):
 
 - `/absolute/path/to/SKILL.md` — local filesystem path
-- `~/relative/path/to/SKILL.md` — home-relative path (expand `~` → `/home/agent`)
+- `~/relative/path/to/SKILL.md` — home-relative path (expand `~` → `/home/user`)
 - `https://github.com/org/repo/blob/main/path/to/SKILL.md` — GitHub browser URL
 - `https://raw.githubusercontent.com/org/repo/main/path/to/SKILL.md` — GitHub raw URL
 
