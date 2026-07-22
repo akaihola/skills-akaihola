@@ -20,7 +20,6 @@ supporting scripts.
 | `email-mailbox-analyzer` | Email mailbox analysis |
 | `himalaya-email-manager` | Email management via Himalaya CLI |
 | `hsl` | Helsinki region public transport routes and departures via Digitransit |
-| `markdown-pm` | Obsidian-style project management |
 | `mcp-to-skill` | Convert MCP servers to skills |
 | `motonet` | Motonet product search |
 | `nano-banana-image` | Image generation via nano-banana |
@@ -54,7 +53,7 @@ Clone and symlink individual skills into your `.claude/skills/` directory:
 
 ```bash
 git clone https://github.com/akaihola/skills-akaihola.git
-ln -s /path/to/skills-akaihola/markdown-pm ~/.claude/skills/markdown-pm
+ln -s /path/to/skills-akaihola/tokmanni ~/.claude/skills/tokmanni
 ```
 
 ## License
