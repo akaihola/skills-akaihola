@@ -14,12 +14,15 @@ supporting scripts.
 |-------|-------------|
 | `brave-search` | Web search via Brave Search API |
 | `clasohlson` | Clas Ohlson product search |
+| `commit` | Stage and commit logical changes with conventional commit messages |
+| `commit-organizer` | Organize a messy working tree into cohesive commits, ordered by mtime |
 | `context7-skill` | Context7 integration |
 | `conventional-committer` | Conventional commit message generation |
 | `credentials-check` | Credential leak detection |
 | `email-mailbox-analyzer` | Email mailbox analysis |
 | `himalaya-email-manager` | Email management via Himalaya CLI |
 | `hsl` | Helsinki region public transport routes and departures via Digitransit |
+| `learn` | Extract actionable learnings from a conversation and persist them |
 | `mcp-to-skill` | Convert MCP servers to skills |
 | `motonet` | Motonet product search |
 | `nano-banana-image` | Image generation via nano-banana |

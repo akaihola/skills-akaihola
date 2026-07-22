@@ -2,49 +2,46 @@ version: 1
 
 grouping:
   buckets:
-    - name: journals
+    - name: docs
       paths:
-        - journals/**
-        - memory/HISTORY.md
+        - docs/**
+        - README.md
       defaultType: docs
-      defaultScope: journal
 
-    - name: projects
+    - name: source
       paths:
-        - pages/Projects/**
-        - pages/PKB/Project dashboard.md
-      defaultType: docs
-      defaultScope: projects
-
-    - name: skills
-      paths:
-        - .claude/skills/**
+        - src/**
       defaultType: feat
-      defaultScope: skills
+      defaultScope: core
 
-    - name: scripts
+    - name: tests
+      paths:
+        - tests/**
+      defaultType: test
+
+    - name: tooling
       paths:
         - scripts/**
-        - templates/**
-      defaultType: feat
-      defaultScope: scripts
+        - .github/**
+      defaultType: chore
+      defaultScope: ci
 
 keepSeparate:
   - deleted-only-cleanups
   - renames-with-content
 
-# Patterns listed here are used during Phase 0 triage:
+# Patterns listed here are used during triage:
 # - files matching these globs are flagged as "safe to ignore"
 # - tracked files matching them are candidates for git rm --cached
 # - new files matching them are candidates for .gitignore additions
 ignore:
-  - sessions/**
   - outputs/**
   - tmp/**
   - downloads/**
+  - "**/*.log"
 
 naming:
-  journals: "docs(journal)"
-  projects: "docs(projects)"
-  skills: "feat(skills)"
-  scripts: "feat(scripts)"
+  docs: "docs"
+  source: "feat(core)"
+  tests: "test"
+  tooling: "chore(ci)"
