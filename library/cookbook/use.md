@@ -37,7 +37,7 @@ If the entry has a `requires` field, recursively install each dependency first (
 ### 5. Resolve Source Path
 
 **If source starts with `~/` or `/` (local path):**
-- Expand `~` → `/home/agent`
+- Expand `~` → `/home/user`
 - Get the parent directory of the referenced file (e.g., `~/prg/skills-akaihola/hsl/SKILL.md` → `~/prg/skills-akaihola/hsl/`)
 - Create symlink:
   ```bash

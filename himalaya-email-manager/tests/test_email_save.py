@@ -320,9 +320,9 @@ def test_fix_attachment_paths_same_directory() -> None:
     body = dedent(
         """\
         Email content here.
-        <#part type=image/png filename="/home/akaihola/Lataukset/image003.png"><#/part>
+        <#part type=image/png filename="/home/user/Downloads/image003.png"><#/part>
         More content.
-        <#part type=image/png filename="/home/akaihola/Lataukset/image007.png"><#/part>
+        <#part type=image/png filename="/home/user/Downloads/image007.png"><#/part>
         End."""
     )
 
@@ -338,14 +338,14 @@ def test_fix_attachment_paths_same_directory() -> None:
 
     assert 'filename="image003.png"' in updated_body
     assert 'filename="image007.png"' in updated_body
-    assert "/home/akaihola/Lataukset" not in updated_body
+    assert "/home/user/Downloads" not in updated_body
 
 
 def test_fix_attachment_paths_subdirectory() -> None:
     """Test fixing attachment paths when attachments are in subdirectory."""
     from email_save import fix_attachment_paths_in_body
 
-    body = 'Some text\n<#part type=image/png filename="/home/akaihola/Lataukset/doc.png"><#/part>'
+    body = 'Some text\n<#part type=image/png filename="/home/user/Downloads/doc.png"><#/part>'
 
     downloaded_files = [
         Path("/home/user/saved-emails/attachments/doc.png"),
@@ -357,7 +357,7 @@ def test_fix_attachment_paths_subdirectory() -> None:
     )
 
     assert 'filename="attachments/doc.png"' in updated_body
-    assert "/home/akaihola/Lataukset" not in updated_body
+    assert "/home/user/Downloads" not in updated_body
 
 
 def test_fix_attachment_paths_no_attachments() -> None:
@@ -381,12 +381,12 @@ def test_fix_attachment_paths_with_multiple_attachments() -> None:
 
     body = (
         "Beginning\n"
-        '<#part type=image/png filename="/home/akaihola/Lataukset/image003.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/image003.png"><#/part>\n'
         "Middle\n"
-        '<#part type=image/png filename="/home/akaihola/Lataukset/image004.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/image004.png"><#/part>\n'
         "More\n"
-        '<#part type=image/png filename="/home/akaihola/Lataukset/image005.png"><#/part>\n'
-        '<#part type=image/png filename="/home/akaihola/Lataukset/image007.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/image005.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/image007.png"><#/part>\n'
         "End"
     )
 
@@ -404,7 +404,7 @@ def test_fix_attachment_paths_with_multiple_attachments() -> None:
 
     for filename in ["image003.png", "image004.png", "image005.png", "image007.png"]:
         assert f'filename="attachments/{filename}"' in updated_body
-    assert "/home/akaihola/Lataukset" not in updated_body
+    assert "/home/user/Downloads" not in updated_body
 
 
 def test_fix_attachment_paths_preserves_other_content() -> None:
@@ -416,7 +416,7 @@ def test_fix_attachment_paths_preserves_other_content() -> None:
         "To: recipient@company.example\n"
         "\n"
         "Important message content\n"
-        '<#part type=image/png filename="/home/akaihola/Lataukset/image.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/image.png"><#/part>\n'
         "More content\n"
     )
 
@@ -438,8 +438,8 @@ def test_fix_attachment_paths_unmapped_attachment() -> None:
 
     body = (
         "Text\n"
-        '<#part type=image/png filename="/home/akaihola/Lataukset/mapped.png"><#/part>\n'
-        '<#part type=image/png filename="/home/akaihola/Lataukset/unmapped.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/mapped.png"><#/part>\n'
+        '<#part type=image/png filename="/home/user/Downloads/unmapped.png"><#/part>\n'
         "More text"
     )
 
@@ -450,7 +450,7 @@ def test_fix_attachment_paths_unmapped_attachment() -> None:
     )
 
     assert 'filename="mapped.png"' in updated_body
-    assert 'filename="/home/akaihola/Lataukset/unmapped.png"' in updated_body
+    assert 'filename="/home/user/Downloads/unmapped.png"' in updated_body
 
 
 if __name__ == "__main__":

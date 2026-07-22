@@ -1,0 +1,32 @@
+name: Check topology
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  topology:
+    name: No account or host names committed
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for leaked account and host names
+        run: |
+          # This repo is public. Account names, host names and absolute home
+          # paths belong in the private nixos-config repo, not here — a path
+          # into another account's 0700 home is dead for everyone else anyway.
+          # Matches account/host names only, not the shape of a path, so
+          # documentation that explains the ~ -> /home/user expansion passes.
+          pattern='/home/(agent|akaihola)|\b(gogo|atom)\b'
+          if git grep -nIE "$pattern" -- . ':!.github/workflows/check-topology.yml'; then
+            echo
+            echo "::error::Leaked account or host name (see matches above)."
+            echo "Use ~, \$HOME or /home/user instead of an absolute home path,"
+            echo "and describe machines by role rather than by host name."
+            exit 1
+          fi
+          echo "No account or host names found."

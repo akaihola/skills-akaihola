@@ -33,7 +33,7 @@ def _decode_cwd(session_file: Path) -> str:
     """Best-effort decode of encoded directory name back to a path.
 
     Pi encodes the cwd by replacing each '/' with '-' and wrapping in '--'.
-    Example: --home-agent-repos-ai-pi-pi-mono-- → /home/agent/repos/ai/pi/pi-mono
+    Example: --home-user-repos-ai-pi-pi-mono-- → /home/user/repos/ai/pi/pi-mono
     """
     name = session_file.parent.name
     # Strip leading/trailing '--' or '-'

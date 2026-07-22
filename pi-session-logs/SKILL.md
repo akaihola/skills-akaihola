@@ -16,7 +16,7 @@ are available via `journalctl --user -u ccm`.
 
 The directory name encodes the working directory: each `/` becomes `-` and the
 whole string is wrapped in `--`. For example:
-`/home/agent/repos/ai/pi/pi-mono` → `--home-agent-repos-ai-pi-pi-mono--`
+`/home/user/repos/ai/pi/pi-mono` → `--home-user-repos-ai-pi-pi-mono--`
 
 Session filenames: `2026-03-07T10-58-20-235Z_<uuid>.jsonl`
 
@@ -63,8 +63,8 @@ Sample output:
 ```
 ========================================================================
 Session : 2026-03-07T08-49-47-276Z_225c45fc-...
-File    : /home/agent/.pi/agent/sessions/--home-agent-repos-ai-claude-code-mux--/...
-CWD     : /home/agent/repos/ai/claude-code-mux
+File    : /home/user/.pi/agent/sessions/--home-user-repos-ai-claude-code-mux--/...
+CWD     : /home/user/repos/ai/claude-code-mux
 Name    : ChatGPT Plus OAuth streaming fix
 Started : 2026-03-07 08-49
 Matches : 7
@@ -83,7 +83,7 @@ cd ~/prg/skills-kaihola/pi-session-logs
 uv run scripts/analyze-pi-session.py 225c45fc-7dfb-4752-97dc-be57fd9a6c32
 
 # Full path also works
-uv run scripts/analyze-pi-session.py ~/.pi/agent/sessions/--home-agent-repos-ai-claude-code-mux--/2026-03-07T08-49-47-276Z_225c45fc-...jsonl
+uv run scripts/analyze-pi-session.py ~/.pi/agent/sessions/--home-user-repos-ai-claude-code-mux--/2026-03-07T08-49-47-276Z_225c45fc-...jsonl
 
 # Timestamp prefix
 uv run scripts/analyze-pi-session.py "2026-03-07T08-49"
@@ -118,8 +118,8 @@ journalctl --user -u ccm --since "2026-03-07 08:00" --no-pager | rg "cargo-build
 Each line:
 
 ```
-maalis 07 09:11:34 gogo ccm[PID]: 2026-03-07T07:11:34.123Z  INFO ccm::server: [profile:stream] model-alias → provider/actual-model
-maalis 07 09:13:37 gogo ccm[PID]: 2026-03-07T07:13:37.456Z  INFO ccm::providers::streaming: 📊 provider:model Nms ttft:Xms Y.Zt/s out:N in:M cache:P%
+maalis 07 09:11:34 HOST ccm[PID]: 2026-03-07T07:11:34.123Z  INFO ccm::server: [profile:stream] model-alias → provider/actual-model
+maalis 07 09:13:37 HOST ccm[PID]: 2026-03-07T07:13:37.456Z  INFO ccm::providers::streaming: 📊 provider:model Nms ttft:Xms Y.Zt/s out:N in:M cache:P%
 ```
 
 Key fields in `📊` lines:

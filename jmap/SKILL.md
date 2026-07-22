@@ -7,7 +7,7 @@ description: Generic JMAP email utilities. Use when syncing emails from any send
 
 ## Infrastructure
 
-- JMAP proxy runs on `akaihola@gogo`; accessed locally via **reverse SSH tunnel on port 8895**
+- JMAP proxy runs on the remote host; accessed locally via **reverse SSH tunnel on port 8895**
 - Base URL: `http://127.0.0.1:8895`
 - Primary account: `kaihola`
 
@@ -15,7 +15,7 @@ Verify the tunnel is up before any JMAP operation:
 ```bash
 xh GET http://127.0.0.1:8895/.well-known/jmap
 ```
-If that fails with "Connection refused", ask the user to bring up the tunnel from `akaihola@gogo`.
+If that fails with "Connection refused", ask the user to bring up the tunnel from the remote host.
 
 ## Email Sync Script
 
@@ -37,15 +37,15 @@ Optional flags:
 ### Examples
 
 ```bash
-# Krisos investor emails
+# All mail from one sender domain
 python3 ~/.claude/skills/jmap/sync_emails.py \
-  --from-filter krisos.eu \
-  --output-dir "/home/akaihola/Dropbox/raha/sijoittaminen/Atomikettu Oy/Krisos/emails"
+  --from-filter example.com \
+  --output-dir ~/documents/archive/example-com/emails
 
-# Wave Ventures investor emails
+# A second sender, archived separately
 python3 ~/.claude/skills/jmap/sync_emails.py \
-  --from-filter wave.ventures \
-  --output-dir "/home/akaihola/Dropbox/raha/sijoittaminen/Atomikettu Oy/Wave III Ky/emails"
+  --from-filter example.org \
+  --output-dir ~/documents/archive/example-org/emails
 ```
 
 The script is idempotent: existing `email.md` files and attachments are skipped.
@@ -64,7 +64,7 @@ Characters illegal in filenames (`< > : " / \ | ? *`) are replaced with `_`.
 
 | Operation | Filter field | Example value |
 |-----------|-------------|---------------|
-| By sender domain | `"from"` | `"krisos.eu"` |
+| By sender domain | `"from"` | `"example.com"` |
 | By mailbox | `"inMailbox"` | `"INBOX"` |
 | Full-text search | `"text"` | `"capital call"` |
 | Date range | `"after"` / `"before"` | `"2026-01-01T00:00:00Z"` |

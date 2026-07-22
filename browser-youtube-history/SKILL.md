@@ -78,7 +78,7 @@ This reuses the existing logged-in browser profile instead of trying to recreate
 When you mainly need to identify the watched video title, use the helper script in `scripts/find_youtube_history.py`. It connects to the logged-in browser over CDP, opens the YouTube history page, scrolls a few times, and writes the visible text dump to a file.
 
 ```bash
-uv run /home/agent/prg/skills-akaihola/browser-youtube-history/scripts/find_youtube_history.py \
+uv run ~/prg/skills-akaihola/browser-youtube-history/scripts/find_youtube_history.py \
   --cdp-url http://127.0.0.1:9222 \
   --output /tmp/youtube_history_dump.txt \
   --metadata-output /tmp/youtube_history_dump.json
@@ -102,7 +102,7 @@ After you identify the video, you have two good paths:
 Browser path:
 
 ```bash
-uv run /home/agent/prg/skills-akaihola/browser-youtube-history/scripts/find_video_details.py \
+uv run ~/prg/skills-akaihola/browser-youtube-history/scripts/find_video_details.py \
   "https://youtu.be/VIDEO_ID" \
   --cdp-url http://127.0.0.1:9222 \
   --expand-description \
@@ -119,7 +119,7 @@ uvx yt-dlp --get-id --get-title --get-description "https://youtu.be/VIDEO_ID"
 Transcript path:
 
 ```bash
-uv run /home/agent/.claude/skills/youtube-to-markdown/scripts/vtt2md.py \
+uv run ~/.claude/skills/youtube-to-markdown/scripts/vtt2md.py \
   "https://youtu.be/VIDEO_ID" -o /tmp/video-transcript.md
 ```
 

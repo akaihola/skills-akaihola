@@ -25,7 +25,7 @@ DEFAULTS = {
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--from-filter", default=None,
-                   help="Sender domain or address fragment to filter on (e.g. 'krisos.eu')")
+                   help="Sender domain or address fragment to filter on (e.g. 'example.com')")
     p.add_argument("--subject-filter", default=None,
                    help="Subject fragment to filter on (e.g. 'gothoni')")
     p.add_argument("--to-filter", default=None,

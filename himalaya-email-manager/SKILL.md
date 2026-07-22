@@ -328,7 +328,7 @@ Interpret natural language queries as appropriate script calls:
 
 - "Find emails from Spotify" → email-search.py --from "spotify.com"
 - "Show me emails about invoices" → email-search.py --subject "invoice"
-- "Search for Atomikettu emails from the past two weeks" → email-search.py --from "atomikettu" --date-start "2025-12-17" --date-end "2025-12-31"
+- "Search for emails from a given company from the past two weeks" → email-search.py --from "example-company" --date-start "2025-12-17" --date-end "2025-12-31"
 - "What did I send yesterday?" → email-search.py --folder Sent --date-start "2025-12-30" --date-end "2025-12-30"
 - "Search INBOX for emails from john@example.com" → email-search.py --from "john@example.com"
 - "Find emails with 'newsletter' in subject" → email-search.py --subject "newsletter"

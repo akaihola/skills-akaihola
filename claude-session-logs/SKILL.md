@@ -25,8 +25,8 @@ for finding and dissecting those logs.
 
 The project directory name encodes the working directory path: leading `/` is
 stripped and every `/` is replaced with `-`. For example the project at
-`/home/agent/coleaders/conversations/slack-C0AJ5JEJH3P` becomes the directory
-`-home-agent-coleaders-conversations-slack-C0AJ5JEJH3P`.
+`/home/user/projects/notes/slack-CXXXXXXXX` becomes the directory
+`-home-user-projects-notes-slack-CXXXXXXXX`.
 
 ## JSONL entry types
 
@@ -59,8 +59,8 @@ Sample output:
 ```
 ========================================================================
 Session : a01cdfa4-5944-48da-8b2d-15bffab0c923
-File    : /home/agent/.claude/projects/…/a01cdfa4-….jsonl
-Project : /home/agent/coleaders/conversations/slack-C0AJ5JEJH3P
+File    : /home/user/.claude/projects/…/a01cdfa4-….jsonl
+Project : /home/user/projects/notes/slack-CXXXXXXXX
 Matches : 2
 ========================================================================
    [ 175] 2026-03-04T12:56 assistant/assistant   Yritän uudelleen yksinkertaisemmin: …

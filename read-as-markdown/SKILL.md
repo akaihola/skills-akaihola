@@ -18,7 +18,7 @@ stored in a per-workspace cache so repeated reads are instant.
 ## Quick start
 
 ```bash
-uv run ~/.claude/skills/read-as-markdown/scripts/read_as_markdown.py ~/paivi/downloads/paper.pdf
+uv run ~/.claude/skills/read-as-markdown/scripts/read_as_markdown.py ~/documents/paper.pdf
 ```
 
 Returns JSON with the cache path, total line count, and the first 200 lines of
@@ -56,10 +56,10 @@ options:
 
 ```json
 {
-  "cache_path": "/home/agent/paivi/.cache/markdown/downloads/paper.md",
+  "cache_path": "/home/user/.cache/markdown/downloads/paper.md",
   "total_lines": 847,
   "content": "first 200 lines...",
-  "source": "/home/agent/paivi/downloads/paper.pdf",
+  "source": "/home/user/documents/paper.pdf",
   "format": "pdf",
   "backend": "pdftotext",
   "cached": false

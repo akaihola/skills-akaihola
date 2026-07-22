@@ -12,7 +12,7 @@ Find videos in a user's YouTube watch history by driving a logged-in browser ses
 ## Dump visible YouTube history
 
 ```bash
-uv run /home/agent/prg/skills-akaihola/browser-youtube-history/scripts/find_youtube_history.py \
+uv run ~/prg/skills-akaihola/browser-youtube-history/scripts/find_youtube_history.py \
   --cdp-url http://127.0.0.1:9222 \
   --output /tmp/youtube_history_dump.txt \
   --metadata-output /tmp/youtube_history_dump.json
@@ -23,7 +23,7 @@ Then inspect `/tmp/youtube_history_dump.txt` to identify the likely video title 
 ## Dump visible details for a known video
 
 ```bash
-uv run /home/agent/prg/skills-akaihola/browser-youtube-history/scripts/find_video_details.py \
+uv run ~/prg/skills-akaihola/browser-youtube-history/scripts/find_video_details.py \
   "https://youtu.be/VIDEO_ID" \
   --cdp-url http://127.0.0.1:9222 \
   --expand-description \
@@ -35,6 +35,6 @@ Then inspect `/tmp/video-details.txt` for the expanded description and visible p
 
 ## Notes
 
-- The scripts use the current repo virtualenv, so run them from `/home/agent/prg/skills-akaihola` or with `uv run` from anywhere.
+- The scripts use the current repo virtualenv, so run them from `~/prg/skills-akaihola` or with `uv run` from anywhere.
 - Default outputs go under `~/.cache/browser-youtube-history/` if you omit `--output`.
 - Public metadata and transcript fetches still work better with `yt-dlp` and the existing YouTube transcript skills once you know the exact video.

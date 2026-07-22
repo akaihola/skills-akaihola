@@ -46,7 +46,7 @@ When the agent is already inside a skill directory (CWD contains `SKILL.md`), `/
 ### Multi-workspace install in one command
 **Status:** idea
 
-`/library use <name> --all-workspaces` could walk all known workspaces (`my-knowledge`, `pipsa`, `paivi`, `coleaders`, `testi`) and create symlinks in each. Useful when adding a new skill to `skills-akaihola` and wanting it available everywhere immediately.
+`/library use <name> --all-workspaces` could walk all known workspaces (one per vault or project) and create symlinks in each. Useful when adding a new skill to `skills-akaihola` and wanting it available everywhere immediately.
 
 ---
 
