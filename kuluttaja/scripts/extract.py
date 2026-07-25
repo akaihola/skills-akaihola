@@ -1,487 +1,407 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["playwright==1.57.0", "markdownify"]
+# dependencies = ["httpx", "beautifulsoup4", "lxml"]
 # ///
-"""Extract articles from kuluttaja.fi with optional login for paywalled content.
+"""Search and extract articles from kuluttaja.fi via WordPress REST API.
+
+Uses the built-in WP REST API instead of browser automation,
+making it fast and dependency-light.
 
 Usage:
-    # Single URL (public)
-    ./extract.py https://kuluttaja.fi/fi/artikkeli/bauhausin-grilli-polttaa-napit
+    # Search articles
+    ./extract.py --search "kaasugrilli"
 
-    # Single URL (with login)
-    KULUTTAJA_EMAIL=user@example.com KULUTTAJA_PASSWORD=secret \\
-        ./extract.py https://kuluttaja.fi/fi/artikkeli/herkullista-grilliruokaa
+    # Extract by post ID or slug
+    ./extract.py --id 249062
+    ./extract.py --slug puhdista-grillin-ritilat-lampimana-helpot-ohjeet-grillin-kunnossapitoon
 
-    # Multiple URLs from a newline-delimited file
-    KULUTTAJA_EMAIL=... KULUTTAJA_PASSWORD=secret \\
-        ./extract.py --file urls.txt
+    # Search with limit
+    ./extract.py --search "grilli" --limit 5
 
-    # Search for a term and extract top results
-    KULUTTAJA_EMAIL=... KULUTTAJA_PASSWORD=secret \\
-        ./extract.py --search "kaasugrilli" --limit 3
+    # JSON output
+    ./extract.py --search "kaasugrilli" --json
 
-    # Specify output directory
-    ./extract.py --search "kaasugrilli" --output-dir ./articles
+    # List latest tests
+    ./extract.py --latest-tests
 
-    # Output as JSON instead of markdown files
-    ./extract.py --search "grilli" --json
+    # List magazine issues
+    ./extract.py --magazines
 """
 from __future__ import annotations
 
 import argparse
 import json
-import os
-import sys
-import time
 import re
+import sys
 from pathlib import Path
-from urllib.parse import urljoin
+from html import unescape
+from urllib.parse import urlencode
 
-try:
-    from playwright.sync_api import sync_playwright
-except ImportError:
-    print("Error: playwright is required. Install with:")
-    print("  uv pip install playwright")
-    print("  uv run playwright install chromium")
-    sys.exit(1)
+import httpx
+from bs4 import BeautifulSoup
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+BASE = "https://kuluttaja.fi"
+WP_API = f"{BASE}/wp-json"
+CUSTOM_API = f"{WP_API}/kuluttaja/v1"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+}
 
-BASE_URL = "https://kuluttaja.fi"
-LOGIN_URL = "https://kuluttaja.fi/fi/login"  # reached via Kirjaudu link
-USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-)
+# ── API calls ─────────────────────────────────────────────────────────────────
 
-
-def _nix_browser_executable() -> str | None:
-    """Find the Playwright Chromium binary installed via Nix."""
-    import glob
-    candidates = glob.glob(
-        "/nix/store/*-playwright-chromium/chrome-linux64/chrome"
-    )
-    return candidates[0] if candidates else None
+def _client(auth: tuple | None = None) -> httpx.Client:
+    c = httpx.Client(headers=HEADERS, timeout=30)
+    if auth:
+        c.auth = auth
+    return c
 
 
-def _find_nix_headless_shell() -> str | None:
-    """Find the Playwright Chromium headless shell installed via Nix."""
-    import glob
-    candidates = glob.glob(
-        "/nix/store/*-playwright-chromium-headless-shell"
-        "/chrome-headless-shell-linux64/chrome-headless-shell"
-    )
-    return candidates[0] if candidates else None
-
-# ── Browser helpers ───────────────────────────────────────────────────────────
-
-
-def dismiss_cookies(page) -> None:
-    """Dismiss the cookie consent banner if present."""
-    for text in ["Hyväksy kaikki", "Vain välttämättömät"]:
-        try:
-            el = page.get_by_text(text).first
-            if el.count():
-                el.click(timeout=3_000)
-                page.wait_for_timeout(500)
-                return
-        except Exception:
-            pass
-
-
-def login(page, email: str, password: str) -> None:
-    """Log in to kuluttaja.fi.
-
-    Flow observed via agent-browser:
-    1. Go to homepage → click "KIRJAUDU" in the header
-    2. Form has email and password textboxes plus a "PIDÄ MINUT KIRJAUTUNEENA" checkbox
-    3. Click "Kirjaudu sisään" button
-    4. After successful login, "KIRJAUDU ULOS" and "Oma tili" appear in header.
+def search_posts(query: str, *, limit: int = 10, offset: int = 0,
+                 auth: tuple | None = None) -> list[dict]:
+    """Search posts via WP REST API.
+    
+    Full post data including content.rendered (HTML), yoast_head_json,
+    categories, tags, writer, and meta fields are returned.
     """
-    page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
-    dismiss_cookies(page)
-
-    # Click the Kirjaudu link in the header
-    page.get_by_text("KIRJAUDU").first.click(timeout=5_000)
-    page.wait_for_timeout(1_000)
-
-    # The login form has labelled textboxes for email and password
-    # Sähköpostiosoite textbox
-    email_box = page.get_by_role("textbox", name="SÄHKÖPOSTIOSOITE")
-    password_box = page.get_by_role("textbox", name="SALASANA")
-
-    email_box.fill(email, timeout=5_000)
-    password_box.fill(password, timeout=5_000)
-
-    # Optionally check "PIDÄ MINUT KIRJAUTUNEENA"
-    try:
-        page.get_by_text("PIDÄ MINUT KIRJAUTUNEENA").first.click(timeout=2_000)
-    except Exception:
-        pass
-
-    # Click submit
-    page.get_by_role("button", name="Kirjaudu sisään").first.click(timeout=5_000)
-    page.wait_for_timeout(3_000)
-
-    # Verify login succeeded
-    body_text = page.inner_text("body")
-    if "Kirjaudu ulos" not in body_text and "Oma tili" not in body_text:
-        raise RuntimeError("Login failed — check KULUTTAJA_EMAIL / KULUTTAJA_PASSWORD")
+    params = {
+        "search": query,
+        "per_page": min(limit, 100),
+        "offset": offset,
+    }
+    # Include embedded author and term data
+    r = httpx.get(f"{WP_API}/wp/v2/posts", params=params, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
 
 
-def search(page, query: str, *, limit: int = 10) -> list[dict]:
-    """Search kuluttaja.fi and return article results.
+def get_post(post_id: int, *, auth: tuple | None = None) -> dict:
+    """Get a single post by ID."""
+    params = {"_embed": "true"}
+    r = httpx.get(f"{WP_API}/wp/v2/posts/{post_id}", params=params,
+                  headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
 
-    Returns a list of dicts with keys: title, url, date, snippet.
-    The search uses the site's built-in search box: ``input[name="s"]``
-    (placeholder "Mitä etsit?", aria-label "Haku").
+
+def get_post_by_slug(slug: str) -> dict:
+    """Get post by slug."""
+    params = {"slug": slug, "per_page": 1}
+    r = httpx.get(f"{WP_API}/wp/v2/posts", params=params, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    if not data:
+        raise ValueError(f"No post found with slug: {slug}")
+    return data[0]
+
+
+def product_reviews_search(query: str, *, limit: int = 10) -> list[dict]:
+    """Search product reviews via custom API.
+    
+    Endpoints discovered from site's WP REST index:
+    - /kuluttaja/v1/product-reviews/search?search=<q>&per_page=<N>
     """
-    page.goto(BASE_URL, wait_until="domcontentloaded", timeout=20_000)
-    dismiss_cookies(page)
-
-    # Fill the search box and submit
-    # The search input has placeholder="Mitä etsit?" name="s" aria-label="Haku"
-    searchbox = page.locator("input[name='s'][type='search']").first
-    searchbox.fill(query, timeout=5_000)
-    searchbox.press("Enter", timeout=5_000)
-    page.wait_for_timeout(3_000)
-
-    # Parse results — each result is in an <article> with a heading and link
-    results = []
-    articles = page.locator("article").all()
-    for art in articles:
-        try:
-            heading = art.locator("h4, h3, h2, [class*='heading']").first
-            title = heading.inner_text(timeout=2_000).strip()
-        except Exception:
-            title = ""
-
-        try:
-            link = art.locator("a").first
-            href = link.get_attribute("href", timeout=2_000)
-        except Exception:
-            href = ""
-
-        try:
-            date_el = art.locator("text=/\\d{1,2}\\.\\d{2}\\.\\d{4}/").first
-            date_str = date_el.inner_text(timeout=2_000).strip()
-        except Exception:
-            # Generic text that looks like a date
-            date_str = ""
-
-        try:
-            snippet_el = art.locator("p, div[class*='excerpt']").first
-            snippet = snippet_el.inner_text(timeout=2_000).strip()[:200]
-        except Exception:
-            snippet = ""
-
-        if href:
-            full_url = href if href.startswith("http") else urljoin(BASE_URL, href)
-        else:
-            full_url = ""
-
-        if title:
-            results.append({
-                "title": title,
-                "url": full_url,
-                "date": date_str,
-                "snippet": snippet,
-            })
-
-        if len(results) >= limit:
-            break
-
-    return results
+    params = {"search": query, "per_page": limit}
+    r = httpx.get(f"{CUSTOM_API}/product-reviews/search", params=params,
+                  headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
 
 
-def extract_article(page, url: str, *, logged_in: bool = False) -> dict:
-    """Navigate to an article URL and extract its content as markdown.
+def latest_test_winners(*, limit: int = 3) -> list[dict]:
+    """Get latest test winners."""
+    params = {"limit": limit}
+    r = httpx.get(f"{CUSTOM_API}/product-reviews/latest-test-winners",
+                  params=params, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
 
-    Structure observed: the article body is in <main> with:
-    - h1 title
-    - "JULKAISTU: DD.MM.YYYY" label
-    - "KIRJOITTAJA: Name" label
-    - Content paragraphs with "Näytä lisää" expand buttons
-    - Tags at the bottom
-    """
-    page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-    dismiss_cookies(page)
-    page.wait_for_timeout(2_000)
 
-    # Expand "Näytä lisää" / "NÄYTÄ LISÄÄ" buttons to reveal hidden content
-    for btn_text in ["Näytä lisää", "NÄYTÄ LISÄÄ"]:
-        try:
-            while True:
-                btn = page.get_by_text(btn_text).first
-                if btn.count():
-                    btn.click(timeout=3_000)
-                    page.wait_for_timeout(800)
-                else:
-                    break
-        except Exception:
-            break
+def latest_tests_posts() -> list[dict]:
+    """Get latest test posts."""
+    r = httpx.get(f"{CUSTOM_API}/test-category-navigation/latest-tests-posts",
+                  headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json()
 
-    # If behind paywall and not logged in, detect it
-    paywalled = False
-    body_text = page.inner_text("body")
-    if "Jatka lukemista" in body_text or "Osta pääsy" in body_text:
-        paywalled = True
 
-    # Extract article metadata and content
-    title = ""
-    author = ""
-    published = ""
-    content_lines = []
+def magazine_issues() -> list[dict]:
+    """List magazine issues."""
+    r = httpx.get(f"{CUSTOM_API}/magazine/latest", headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    return r.json().get("magazines", [])
 
-    # Title from h1
-    try:
-        h1 = page.locator("h1").first
-        title = h1.inner_text(timeout=2_000).strip()
-    except Exception:
-        pass
 
-    # Published date — look for "JULKAISTU:" in the page text
-    # It appears as a span/text like "JULKAISTU: 19.06.2025"
-    for text_pattern in ["JULKAISTU:", "Julkaistu:"]:
-        try:
-            date_el = page.get_by_text(text_pattern).first
-            if date_el.count():
-                raw = date_el.inner_text(timeout=2_000).strip()
-                published = raw.replace(text_pattern, "").strip()
+# ── Content extraction ───────────────────────────────────────────────────────
+
+def extract_metadata(post: dict) -> dict:
+    """Extract clean metadata from a WP REST API post object."""
+    yoast = post.get("yoast_head_json", {})
+    meta = post.get("meta", {})
+    author_info = ""
+    
+    # Author from embedded data or yoast
+    if "_embedded" in post:
+        authors = post["_embedded"].get("author", [])
+        if authors:
+            author_info = authors[0].get("name", "")
+    if not author_info:
+        twitter_misc = yoast.get("twitter_misc", {})
+        author_info = twitter_misc.get("Kirjoittanut", "")
+    
+    # Date from yoast schema
+    published = None
+    schema = yoast.get("schema", {})
+    if schema:
+        graph = schema.get("@graph", [])
+        for item in graph:
+            if item.get("@type") == "Article":
+                published = item.get("datePublished")
                 break
-        except Exception:
-            pass
-
-    # Author — look for "KIRJOITTAJA:" label
-    for text_pattern in ["KIRJOITTAJA:", "Kirjoittaja:"]:
-        try:
-            author_el = page.get_by_text(text_pattern).first
-            if author_el.count():
-                # Get the full text, take the part after the label
-                raw = author_el.inner_text(timeout=2_000).strip()
-                author = raw.replace(text_pattern, "").strip()
-                break
-        except Exception:
-            pass
-
-    # If the author is still not clean, try to extract more precisely
-    # The author line is often "KIRJOITTAJA: ALEKSI VÄHIMAA"
-    # But behind paywall it might just show as "KIRJOITTAJA: ALEKSI VÄHIMAA"
-    # in the body. Let's parse it properly.
-    if author and ":" in author:
-        author = author.split(":", 1)[-1].strip()
-
-    # Extract main content from the article body
-    # Skip paywall section, sidebar, footer
-    main_el = page.locator("main").first
-    article_body_done = False
-    if main_el.count():
-        # Get all text content elements
-        elements = main_el.locator("p, h2, h3, h4, h5, li").all()
-        for el in elements:
-            tag = el.evaluate("el => el.tagName.toLowerCase()")
-            text = el.inner_text().strip()
-            if not text:
-                continue
-
-            # Paywall section — stop extracting
-            if "Jatka lukemista" in text or "Osta pääsy" in text:
-                article_body_done = True
-                continue
-            if article_body_done:
-                # After paywall we get metadata labels and tags — skip them
-                if tag == "h2" and "Saatat pitää" in text:
-                    break
-                continue
-
-            # Skip repetitive footer/sidebar
-            if "Saatat pitää" in text:
-                break
-            if text.startswith("Lue artikkeli:"):
-                continue
-
-            # Skip metadata labels (author, images, publish date, tags)
-            if (text.startswith("KIRJOITTAJA:") or text.startswith("KIRJOITTAJA ") or
-                    text.startswith("KUVAT:") or text.startswith("KUVAT ") or
-                    text.startswith("JULKAISTU:")):
-                continue
-            if text.startswith("Linkki kopioitu"):
-                continue
-
-            # Tags appear as short ALL-CAPS single words near the bottom of main.
-            # Skip paragraphs that are short uppercase-only words (tags).
-            if tag == "p" and len(text) < 30 and text.isupper() and " " not in text:
-                # Likely a tag like "GRILLAUS", "GRILLI", etc.
-                continue
-
-            if tag in ("h2", "h3", "h4"):
-                content_lines.append(f"\n## {text}")
-            elif tag == "p":
-                content_lines.append(f"\n{text}")
-            elif tag == "li":
-                content_lines.append(f"  - {text}")
-
-    body = "\n".join(content_lines).strip()
-
-    # Remove "Linkki kopioitu" and similar UI noise
-    body = body.replace("Linkki kopioitu\n\n", "")
-
+    
+    # Tags
+    tags = []
+    if "_embedded" in post:
+        tag_list = post["_embedded"].get("wp:term", [])
+        if tag_list and len(tag_list) > 1:
+            tags = [t["name"] for t in tag_list[1]]  # second taxonomy is post_tag
+    
     return {
-        "url": url,
-        "title": title,
-        "author": author,
-        "published": published,
-        "paywalled": paywalled,
-        "body": body,
+        "id": post.get("id"),
+        "title": post.get("title", {}).get("rendered", ""),
+        "slug": post.get("slug", ""),
+        "link": post.get("link", ""),
+        "date": post.get("date", "").split("T")[0] if post.get("date") else "",
+        "date_gmt": post.get("date_gmt", ""),
+        "published": published.split("T")[0] if published else "",
+        "author": author_info,
+        "excerpt": post.get("excerpt", {}).get("rendered", ""),
+        "tags": tags,
+        "categories": post.get("categories", []),
+        "featured_media": post.get("featured_media"),
+        "is_paywalled": "access-restricted" in post.get("class_list", []),
     }
 
 
-def article_to_markdown(article: dict) -> str:
-    """Convert an extracted article dict to a markdown string."""
+def extract_body(content_html: str) -> str:
+    """Extract clean article body from content.rendered HTML.
+    
+    Strategy:
+    - Remove paywall section (div#paywall-section)
+    - Convert remaining HTML to text
+    - Strip WooCommerce/social sharing buttons
+    """
+    soup = BeautifulSoup(content_html, "lxml")
+    
+    # Remove paywall sections
+    for paywall in soup.select("#paywall-section, #paywall-product-selection"):
+        paywall.decompose()
+    
+    # Remove WooCommerce share buttons, scripts, style tags
+    for el in soup.select("script, style, [class*='share-buttons'], [class*='woocommerce'], iframe"):
+        el.decompose()
+    
+    # Remove navigation elements and footers
+    for el in soup.select("nav, footer, [class*='pagination'], [class*='related-posts']"):
+        el.decompose()
+    
+    # Get the content as clean markdown-like text
+    text = soup.get_text(separator="\n", strip=True)
+    
+    # Post-processing: clean up excessive newlines and empty lines
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = text.strip()
+    
+    return text
+
+
+def post_to_markdown(post: dict) -> str:
+    """Convert a WP REST API post to a clean markdown document."""
+    meta = extract_metadata(post)
+    body = extract_body(post.get("content", {}).get("rendered", ""))
+    
     parts = [
-        f"# {article['title']}",
+        f"# {meta['title']}",
         "",
         f"**Lähde:** Kuluttaja.fi",
-        f"**Julkaistu:** {article['published'] or 'N/A'}",
-        f"**Kirjoittaja:** {article['author'] or 'N/A'}",
-        f"**URL:** {article['url']}",
+        f"**Julkaistu:** {meta['published'] or meta['date'] or 'N/A'}",
+        f"**Kirjoittaja:** {meta['author'] or 'N/A'}",
+        f"**URL:** {meta['link']}",
     ]
-    if article.get("paywalled"):
+    if meta.get("is_paywalled"):
         parts.append("**Huom:** Sisältö on osin lukumuurin takana. Kirjaudu sisään nähdäksesi koko artikkelin.")
     parts.append("")
     parts.append("---")
     parts.append("")
-    parts.append(article.get("body", "*Ei sisältöä saatavilla.*"))
+    parts.append(body)
     parts.append("")
+    
     return "\n".join(parts)
+
+
+# ── Search result formatting ────────────────────────────────────────────────
+
+def format_search_result(post: dict, idx: int) -> str:
+    """Format a search result for terminal display."""
+    meta = extract_metadata(post)
+    excerpt = BeautifulSoup(meta["excerpt"], "lxml").get_text(strip=True)[:150]
+    paywall_tag = " 🔒" if meta["is_paywalled"] else ""
+    
+    lines = [f"  {idx}. {meta['title']}{paywall_tag}"]
+    if meta.get("date"):
+        lines.append(f"     Date: {meta['date']}")
+    lines.append(f"     URL: {meta['link']}")
+    if excerpt:
+        lines.append(f"     {excerpt}...")
+    if meta.get("tags"):
+        lines.append(f"     Tags: {', '.join(meta['tags'][:5])}")
+    return "\n".join(lines)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Extract articles from kuluttaja.fi")
-    parser.add_argument("url", nargs="?", help="Article URL(s) to extract")
-    parser.add_argument("--file", help="File with one URL per line or search term")
-    parser.add_argument("--search", help="Search term to find articles")
-    parser.add_argument("--limit", type=int, default=10, help="Max search results or extracted articles (default: 10)")
-    parser.add_argument("--output-dir", default=None, help="Directory to save markdown files (default: current dir)")
-    parser.add_argument("--json", action="store_true", dest="output_json", help="Output JSON instead of markdown files")
-    parser.add_argument("--login", action="store_true", help="Force login (reads KULUTTAJA_EMAIL/PASSWORD)")
+    parser = argparse.ArgumentParser(description="Extract articles from kuluttaja.fi via WP REST API")
+    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--search", metavar="QUERY", help="Search articles")
+    group.add_argument("--id", type=int, metavar="ID", help="Article post ID")
+    group.add_argument("--slug", metavar="SLUG", help="Article slug")
+    group.add_argument("--latest-tests", action="store_true", help="List latest test posts")
+    group.add_argument("--test-winners", action="store_true", help="List latest test winners")
+    group.add_argument("--product-search", metavar="QUERY", help="Search product reviews")
+    group.add_argument("--magazines", action="store_true", help="List magazine issues")
+    
+    parser.add_argument("--limit", type=int, default=10, help="Max results (default: 10)")
+    parser.add_argument("--json", action="store_true", dest="output_json", help="Output JSON")
+    parser.add_argument("--output-dir", default=None, help="Dir to save markdown files")
+    
     args = parser.parse_args()
+    
+    # ── Search articles ────────────────────────────────────────────────
+    if args.search:
+        print(f"Searching for '{args.search}'…\n")
+        posts = search_posts(args.search, limit=args.limit)
+        
+        if not posts:
+            print("No results found.")
+            return
+        
+        # Display results
+        for i, p in enumerate(posts, 1):
+            print(format_search_result(p, i))
+            print()
+        
+        if args.output_json:
+            results = []
+            for p in posts:
+                meta = extract_metadata(p)
+                body = extract_body(p.get("content", {}).get("rendered", ""))
+                results.append({**meta, "body": body})
+            print(json.dumps({"query": args.search, "results": results}, ensure_ascii=False, indent=2))
+            return
+        
+        # Extract and save as markdown
+        out_dir = Path(args.output_dir or ".")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        
+        for post in posts:
+            md = post_to_markdown(post)
+            meta = extract_metadata(post)
+            safe_name = re.sub(r'[<>:"/\\|?*]', "_", meta["title"])[:60].strip(" .-_")
+            path = out_dir / f"{safe_name}.md"
+            path.write_text(md, encoding="utf-8")
+            paywall = " 🔒 paywalled" if meta["is_paywalled"] else ""
+            print(f"  Saved → {path.name}{paywall}")
+        
+        print(f"\nDone. {len(posts)} article(s) extracted to {out_dir}")
 
-    email = os.environ.get("KULUTTAJA_EMAIL", "")
-    password = os.environ.get("KULUTTAJA_PASSWORD", "")
+    # ── Single article by ID or slug ───────────────────────────────────
+    elif args.id:
+        post = get_post(args.id)
+        if args.output_json:
+            meta = extract_metadata(post)
+            body = extract_body(post.get("content", {}).get("rendered", ""))
+            print(json.dumps({**meta, "body": body}, ensure_ascii=False, indent=2))
+        else:
+            md = post_to_markdown(post)
+            out_dir = Path(args.output_dir or ".")
+            out_dir.mkdir(parents=True, exist_ok=True)
+            title = post.get("title", {}).get("rendered", "article")
+            safe_name = re.sub(r'[<>:"/\\|?*]', "_", title)[:60].strip(" .-_")
+            path = out_dir / f"{safe_name}.md"
+            path.write_text(md, encoding="utf-8")
+            print(f"Saved → {path}")
 
-    if args.login and (not email or not password):
-        print("Error: --login requires KULUTTAJA_EMAIL and KULUTTAJA_PASSWORD environment variables.")
-        sys.exit(1)
+    elif args.slug:
+        post = get_post_by_slug(args.slug)
+        if args.output_json:
+            meta = extract_metadata(post)
+            body = extract_body(post.get("content", {}).get("rendered", ""))
+            print(json.dumps({**meta, "body": body}, ensure_ascii=False, indent=2))
+        else:
+            md = post_to_markdown(post)
+            out_dir = Path(args.output_dir or ".")
+            out_dir.mkdir(parents=True, exist_ok=True)
+            title = post.get("title", {}).get("rendered", "article")
+            safe_name = re.sub(r'[<>:"/\\|?*]', "_", title)[:60].strip(" .-_")
+            path = out_dir / f"{safe_name}.md"
+            path.write_text(md, encoding="utf-8")
+            print(f"Saved → {path}")
 
-    urls: list[str] = []
-    search_results: list[dict] = []
-    search_term: str | None = None
-
-    if args.file:
-        raw = Path(args.file).read_text().splitlines()
-        urls = [line.strip() for line in raw if line.strip() and not line.startswith("#")]
-    elif args.search:
-        search_term = args.search
-    elif args.url:
-        urls = [args.url]
-    else:
-        parser.print_help()
-        sys.exit(1)
-
-    # Resolve browser executable on NixOS
-    nix_exe = _nix_browser_executable() or _find_nix_headless_shell()
-    launch_kwargs: dict = {"headless": True}
-    if nix_exe:
-        launch_kwargs["executable_path"] = nix_exe
-
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(**launch_kwargs)
-        ctx = browser.new_context(
-            user_agent=USER_AGENT,
-            locale="fi-FI",
-            viewport={"width": 1280, "height": 800},
-        )
-        page = ctx.new_page()
-
-        logged_in = False
-        if args.login or (args.search and email and password):
-            print("Logging in to kuluttaja.fi…")
-            try:
-                login(page, email, password)
-                logged_in = True
-                print("Logged in.")
-            except Exception as e:
-                print(f"Login failed: {e}")
-                if args.login:
-                    browser.close()
-                    sys.exit(1)
-
-        # Search mode
-        if search_term is not None:
-            print(f"Searching for '{search_term}'…")
-            search_results = search(page, search_term, limit=args.limit)
-            if not search_results:
-                print("No results found.")
-                if args.output_json:
-                    print(json.dumps({"query": search_term, "results": []}, ensure_ascii=False, indent=2))
-                browser.close()
-                return
-
-            if args.output_json:
-                print(json.dumps({"query": search_term, "results": search_results}, ensure_ascii=False, indent=2))
-                browser.close()
-                return
-
-            # Show search results
-            print(f"\nFound {len(search_results)} results for '{search_term}':\n")
-            for i, r in enumerate(search_results, 1):
-                print(f"  {i}. {r['title']}")
-                if r.get("date"):
-                    print(f"     Date: {r['date']}")
-                if r.get("url"):
-                    print(f"     URL: {r['url']}")
-                if r.get("snippet"):
-                    print(f"     {r['snippet'][:120]}...")
+    # ── Specialty endpoints ────────────────────────────────────────────
+    elif args.latest_tests:
+        posts = latest_tests_posts()
+        if args.output_json:
+            print(json.dumps(posts, ensure_ascii=False, indent=2))
+        else:
+            for i, p in enumerate(posts, 1):
+                title = p.get("title", {}).get("rendered", p.get("post_title", "?"))
+                link = p.get("link", p.get("guid", {}).get("rendered", "?"))
+                date = p.get("date", p.get("post_date", ""))[:10] if p.get("date") or p.get("post_date") else ""
+                print(f"  {i}. {title}")
+                if date:
+                    print(f"     Date: {date}")
+                print(f"     URL: {link}")
                 print()
 
-            # Extract all found articles
-            urls = [r["url"] for r in search_results if r["url"]]
+    elif args.test_winners:
+        winners = latest_test_winners(limit=args.limit)
+        if args.output_json:
+            print(json.dumps(winners, ensure_ascii=False, indent=2))
+        else:
+            for i, w in enumerate(winners, 1):
+                title = w.get("title", w.get("post_title", "?"))
+                link = w.get("link", w.get("guid", {}).get("rendered", "?"))
+                print(f"  {i}. {title}")
+                print(f"     URL: {link}")
+                print()
 
-        # Extract articles
-        articles = []
-        for i, url in enumerate(urls[:args.limit], 1):
-            print(f"  Extracting [{i}/{min(len(urls), args.limit)}]: {url}")
-            article = extract_article(page, url, logged_in=logged_in)
-            if article.get("paywalled") and not logged_in:
-                print(f"    (paywalled — re-run with --login or set KULUTTAJA_EMAIL/PASSWORD)")
-            else:
-                print(f"    ✓ {article['title']}")
-            articles.append(article)
+    elif args.product_search:
+        results = product_reviews_search(args.product_search, limit=args.limit)
+        if args.output_json:
+            print(json.dumps(results, ensure_ascii=False, indent=2))
+        else:
+            for i, r in enumerate(results, 1):
+                title = r.get("title", r.get("post_title", "?"))
+                print(f"  {i}. {title}")
+                if r.get("link") or r.get("guid", {}).get("rendered"):
+                    print(f"     URL: {r.get('link') or r.get('guid', {}).get('rendered', '')}")
+                print()
 
-        browser.close()
+    elif args.magazines:
+        issues = magazine_issues()
+        if args.output_json:
+            print(json.dumps(issues, ensure_ascii=False, indent=2))
+        else:
+            for i, m in enumerate(issues, 1):
+                print(f"  {i}. {m['title']} ({m['publish_year']})")
+                print(f"     URL: {m['permalink']}")
+                print()
 
-    # Output
-    if args.output_json:
-        print(json.dumps({"articles": articles}, ensure_ascii=False, indent=2))
-        return
-
-    out_dir = Path(args.output_dir or ".")
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    for art in articles:
-        if not art.get("title"):
-            continue
-        safe_name = re.sub(r'[<>:"/\\|?*]', "_", art["title"])[:60].strip(" ._-")
-        path = out_dir / f"{safe_name}.md"
-        path.write_text(article_to_markdown(art), encoding="utf-8")
-        print(f"  Saved → {path}")
-
-    print(f"\nDone. {len(articles)} article(s) extracted to {out_dir}")
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
