@@ -1,161 +1,145 @@
 ---
 name: kuluttaja
 description: >-
-  Search and extract articles from kuluttaja.fi (Finnish consumer magazine).
-  Supports login for paywalled content. Uses Playwright for browser automation.
+  Search and extract articles from kuluttaja.fi (Finnish consumer magazine)
+  via the WordPress REST API and custom endpoints. Fast httpx-based, no browser
+  required. Public metadata (title, date, excerpt, tags, paywall status) is
+  always available; full text for paywalled articles requires browser login.
   Use when the user asks to "search Kuluttaja", "find articles on kuluttaja.fi",
   "extract kuluttaja.fi content", or mentions reading Kuluttaja.
 ---
 
 # Kuluttaja.fi Article Search & Extraction
 
-Search the Kuluttaja.fi content catalog and extract full article text,
-including paywalled content after authenticating.
+Search, discover, and extract article content from kuluttaja.fi using
+its native WordPress REST API (`/wp-json/wp/v2/posts`) and custom
+endpoints (`/wp-json/kuluttaja/v1/*`).
+
+No browser required for search, metadata extraction, or public articles.
 
 ## Quick Start
 
 ```bash
-# List search results
-./scripts/extract.py --search "kaasugrilli" --limit 5
+# Search articles
+./scripts/extract.py --search "kaasugrilli"
 
-# Extract a single public article
-./scripts/extract.py https://kuluttaja.fi/fi/artikkeli/bauhausin-grilli-polttaa-napit
+# Search with limit
+./scripts/extract.py --search "grilli" --limit 5
 
-# Extract with login (for paywalled articles)
-KULUTTAJA_EMAIL=user@example.com KULUTTAJA_PASSWORD=secret \
-    ./scripts/extract.py --search "kaasugrilli" --limit 3
+# Extract single article by post ID
+./scripts/extract.py --id 249062
+
+# Extract by slug
+./scripts/extract.py --slug puhdista-grillin-ritilat-lampimana
+
+# JSON output
+./scripts/extract.py --search "kaasugrilli" --limit 3 --json
+
+# List latest test posts
+./scripts/extract.py --latest-tests
+
+# List latest test winners
+./scripts/extract.py --test-winners
+
+# Search product reviews
+./scripts/extract.py --product-search "grilli"
+
+# List magazine issues
+./scripts/extract.py --magazines
 ```
 
 ## How It Works
 
-Kuluttaja.fi is a Next.js-based site with no public REST API for content
-discovery. The extract script uses Playwright (headless Chromium) to:
+Kuluttaja.fi runs on WordPress with WooCommerce. The skill uses:
 
-1. Navigate to the homepage
-2. Use the built-in search box (in header) to search
-3. Parse article results from `<article>` elements
-4. Visit each article page and extract content from the main body
-5. For paywalled articles: log in first via the "Kirjaudu" header link
+| Endpoint | Purpose | Auth |
+|---|---|---|
+| `/wp-json/wp/v2/posts?search=<q>` | Article search & metadata | None |
+| `/wp-json/wp/v2/posts/<id>` | Single post (full content) | None* |
+| `/wp-json/kuluttaja/v1/product-reviews/search` | Product review search | None |
+| `/wp-json/kuluttaja/v1/product-reviews/latest-test-winners` | Test winners | None |
+| `/wp-json/kuluttaja/v1/test-category-navigation/latest-tests-posts` | Latest tests | None |
+| `/wp-json/kuluttaja/v1/magazine/latest` | Magazine issues | None |
+| `/wp-json/kuluttaja/v1/black-list/entries` | Musta lista (black list) | None |
+| `/wp-json/kuluttaja/v1/test-category-navigation/categories` | Test categories | None |
 
-Login credentials are read from `KULUTTAJA_EMAIL` and `KULUTTAJA_PASSWORD`
-environment variables. Never hard-code them.
+**\* Paywall note:** The WP REST API returns full `content.rendered` for
+public articles, but paywalled articles only return the teaser text.
+Full paywalled content requires browser-based login (WooCommerce
+Memberships auth, not WP application passwords).
 
-## Login Flow (reverse-engineered)
+## Paywall vs Public
 
-The login UI is reached by clicking "KIRJAUDU" in the site header:
-
-1. Form fields identified by `role="textbox"` labels:
-   - "SÄHKÖPOSTIOSOITE" — email
-   - "SALASANA" — password
-2. "PIDÄ MINUT KIRJAUTUNEENA" checkbox (optional)
-3. "Kirjaudu sisään" button — submits
-4. After success: header shows "KIRJAUDU ULOS" and "Oma tili"
-
-## Search Flow
-
-1. Header search box: `input[placeholder="Haku"]` → fill + Enter
-2. Results page shows `<article>` elements with:
-   - `<h4>` title + link
-   - Date string (e.g., "18.06.2026")
-   - Snippet excerpt
-3. Radio filters: KAIKKI / TESTIT / ARTIKKELIT / MUUT
-4. "LATAA LISÄÄ" button for pagination
-
-## Article Content
-
-Article pages use a standard layout:
-- `h1` — title
-- `JULKAISTU:` — publish date
-- `KIRJOITTAJA:` — author name
-- `<main>` — body content (`<p>`, `<h2>`–`<h4>`, `<li>`, `<figure>`)
-- Tags listed as paragraphs at the bottom
-- Paywalled articles show "Jatka lukemista" / "Osta pääsy" prompt
-- "Näytä lisää" expandable sections need to be clicked
+Articles with `class_list` containing `"access-restricted"` are paywalled.
+For these, only the first few paragraphs are available via the REST API.
+The Playwright-based fallback (`scripts/extract_browser.py`, legacy)
+can extract full content after login.
 
 ## Script Usage
 
-### Search only
+### Search + extract to markdown files
 ```bash
-./scripts/extract.py --search "grilli" --limit 5
-# Output: formatted result list to stdout, no file writes
+./scripts/extract.py --search "kaasugrilli" --output-dir ./articles
+# Saves one .md file per result with title, metadata, and body
 ```
 
-### Search + extract
-```bash
-KULUTTAJA_EMAIL=... KULUTTAJA_PASSWORD=... \
-    ./scripts/extract.py --search "kaasugrilli" \
-    --output-dir ./articles
-```
-
-### Single URL extraction
-```bash
-./scripts/extract.py https://kuluttaja.fi/fi/artikkeli/...
-```
-
-### Multiple URLs from file
-```bash
-./scripts/extract.py --file urls.txt --output-dir ./articles
-```
-
-### JSON output (search results)
-```bash
-./scripts/extract.py --search "grilli" --limit 5 --json
-```
-
-### JSON output (extracted articles)
-```bash
-KULUTTAJA_EMAIL=... KULUTTAJA_PASSWORD=... \
-    ./scripts/extract.py --search "grilli" --limit 2 --json
-```
-
-## Programmatic Use
-
+### Programmatic use
 ```python
-from scripts.extract import search, extract_article, article_to_markdown
+from scripts.extract import (
+    search_posts, get_post, get_post_by_slug,
+    extract_metadata, extract_body, post_to_markdown,
+    product_reviews_search, latest_test_winners,
+    latest_tests_posts, magazine_issues,
+)
 
-with sync_playwright() as pw:
-    browser = pw.chromium.launch(headless=True)
-    page = browser.new_context().new_page()
+# Search
+posts = search_posts("kaasugrilli", limit=5)
 
-    # Search
-    results = search(page, "kaasugrilli", limit=5)
+# Extract metadata
+meta = extract_metadata(posts[0])
+print(meta["title"], meta["is_paywalled"], meta["tags"])
 
-    # Extract (logged in)
-    article = extract_article(page, results[0]["url"], logged_in=True)
-    md = article_to_markdown(article)
+# Extract body (teaser for paywalled, full for public)
+body = extract_body(posts[0]["content"]["rendered"])
 
-    browser.close()
+# Full markdown doc
+md = post_to_markdown(posts[0])
 ```
 
 ## Key Functions
 
-| Function            | Description                                   |
-|----------------------|-----------------------------------------------|
-| `search(page, q)`   | Search articles, return list of dicts           |
-| `extract_article()`  | Extract article content as dict                 |
-| `login(page, e, p)`  | Authenticate to kuluttaja.fi                    |
-| `article_to_md()`    | Convert extracted article dict to markdown      |
+| Function | Description |
+|---|---|
+| `search_posts(query, limit)` | Search articles, return WP REST post objects |
+| `get_post(id)` | Get single post by ID |
+| `extract_metadata(post)` | Extract clean metadata dict from post |
+| `extract_body(html)` | Strip paywall + UI noise from content HTML |
+| `post_to_markdown(post)` | Convert post dict to markdown |
+| `product_reviews_search(q)` | Custom API product review search |
+| `latest_test_winners()` | Latest test winner list |
+| `latest_tests_posts()` | Latest test posts |
+| `magazine_issues()` | Magazine issue listing |
 
-## Key Article Fields
+## Metadata Fields
 
-| Field        | Description                              |
-|--------------|------------------------------------------|
-| `title`      | Article title (from <h1>)               |
-| `author`     | Author name                             |
-| `published`  | Publication date                         |
-| `url`        | Full article URL                        |
-| `paywalled`  | Boolean — content behind login wall      |
-| `body`       | Extracted body text (markdown-ish)       |
+Extracted by `extract_metadata()`:
 
-## Search Result Fields
-
-| Field       | Description                              |
-|-------------|------------------------------------------|
-| `title`     | Article title                            |
-| `url`       | Full article URL                        |
-| `date`      | Published date string                   |
-| `snippet`   | Excerpt text                             |
+| Field | Source |
+|---|---|
+| `id` | WP post ID |
+| `title` | Rendered title (HTML-stripped) |
+| `slug` | URL slug |
+| `link` | Full article URL |
+| `date` | Post date (YYYY-MM-DD) |
+| `published` | Published date from Yoast schema |
+| `author` | Author name from embedded data / Yoast |
+| `excerpt` | Rendered excerpt |
+| `tags` | Post tag names |
+| `categories` | Category IDs |
+| `is_paywalled` | Boolean — `"access-restricted"` in class_list |
+| `featured_media` | Featured image ID |
 
 ## API Reference
 
-See `references/api.md` for selectors, login flow, and page structure details.
+See `references/api.md` for full endpoint documentation, response
+structure, and DOM/page selectors (for Playwright fallback).

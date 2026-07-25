@@ -1,123 +1,154 @@
-# Kuluttaja.fi API / DOM Reference
+# Kuluttaja.fi API Reference
 
-Site architecture: Next.js SPA + server-rendered pages. No public REST API for content discovery — must use browser automation.
+Site platform: WordPress + WooCommerce + WooCommerce Memberships + Yoast SEO + Relevanssi search plugin.
 
-## Base URL
+## Base URLs
 
+| Base | Purpose |
+|---|---|
+| `https://kuluttaja.fi` | Frontend |
+| `https://kuluttaja.fi/wp-json` | WP REST API root |
+| `https://kuluttaja.fi/wp-json/wp/v2` | Standard WP endpoints |
+| `https://kuluttaja.fi/wp-json/kuluttaja/v1` | Custom Kuluttaja endpoints |
+| `https://kuluttaja.fi/wp-json/relevanssi/v1` | Relevanssi search |
+| `https://kuluttaja.fi/wp-json/yoast/v1` | Yoast SEO |
+
+## WP REST Endpoints (wp/v2)
+
+### Posts
+
+**Search posts:**
 ```
-https://kuluttaja.fi
-```
-
-## Login
-
-### Entry Point
-
-Click header link: `KIRJAUDU` — navigates to login form.
-The `/fi/kirjaudu` URL returns 404; use the header link instead.
-
-### Form Structure
-
-| Field          | Selector                                    |
-|----------------|---------------------------------------------|
-| Email          | `[role="textbox"][name*="email"]` or by label "SÄHKÖPOSTIOSOITE" |
-| Password       | `input[type="password"]` or by label "SALASANA" |
-| Remember me    | `[type="checkbox"]` text "PIDÄ MINUT KIRJAUTUNEENA" |
-| Submit         | `[role="button"]` text "Kirjaudu sisään" |
-
-### Success Indicators
-
-After login: header shows "KIRJAUDU ULOS" and "Oma tili" link.
-
-### Cookie Banner
-
-On first visit: banner with buttons "Hyväksy kaikki" or "Vain välttämättömät".
-
-## Search
-
-### Search Box
-
-```css
-input[placeholder="Haku"]
+GET /wp-json/wp/v2/posts?search=<query>&per_page=<N>&offset=<N>&_embed=true
 ```
 
-Submit by pressing Enter key — no form POST, uses Next.js routing.
+Response: array of post objects with fields:
+- `id`, `date`, `date_gmt`, `slug`, `status` ("publish"/"draft")
+- `title.rendered` — HTML title
+- `content.rendered` — HTML content (paywalled: teaser only)
+- `excerpt.rendered` — HTML excerpt
+- `class_list` — includes `"access-restricted"` when paywalled
+- `meta` — WordPress meta fields (including ACF fields)
+- `yoast_head` — raw Yoast schema JSON-LD
+- `yoast_head_json` — parsed Yoast schema (useful for date, author, OG data)
+- `categories` — category IDs
+- `tags` — tag IDs
+- `writer` — writer taxonomy IDs
 
-### Search Results Page
+**Single post:**
+```
+GET /wp-json/wp/v2/posts/<id>?_embed=true
+```
 
-URL pattern: search happens client-side, URL may show `/?q=...` or query params.
+**By slug:**
+```
+GET /wp-json/wp/v2/posts?slug=<slug>&per_page=1
+```
 
-Results are in `<article>` elements:
+### Categories / Tags / Writer
 
+```
+GET /wp-json/wp/v2/categories?post=<id>
+GET /wp-json/wp/v2/tags?post=<id>
+GET /wp-json/wp/v2/writer?post=<id>
+```
+
+### Search URL template (Yoast Schema)
+
+From the site's yoast schema:
+```
+Search URL: https://kuluttaja.fi/?s={search_term_string}
+```
+
+## Custom Endpoints (kuluttaja/v1)
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/product-reviews/search?search=<q>&per_page=<N>` | GET | Search product reviews |
+| `/product-reviews/latest-test-winners?limit=<N>` | GET | Latest test winners |
+| `/product-reviews/get-products` | POST | Get products by IDs |
+| `/product-reviews/<id>/related-products` | GET | Related products |
+| `/test-data/<id>` | GET | Test data by ID |
+| `/test-data/<id>/filters` | GET | Test data filters |
+| `/magazine/latest` | GET | Latest magazine issues |
+| `/magazine/<id>` | GET | Single magazine issue |
+| `/magazine/get-epaper-url` | POST | Get ePaper URL |
+| `/test-category-navigation/categories` | GET | Test categories |
+| `/test-category-navigation/latest-tests-posts` | GET | Latest test posts |
+| `/black-list/entries` | GET | Musta lista entries |
+| `/black-list/locations` | GET | Musta lista locations |
+| `/black-list/industries` | GET | Musta lista industries |
+| `/content-restrictions/<id>` | GET | Content restriction info |
+| `/comments?post=<id>` | GET | Comments for a post |
+| `/wc/products` | GET | WooCommerce products |
+| `/wc/up-sell-products-for-product` | GET | Upsell products |
+| `/prisjakt/partner-search-by-products` | GET | Prisjakt partner search |
+| `/code-scanner/tutorial` | GET | Code scanner tutorial |
+
+## Authentication
+
+### Subscriber accounts (Kuluttaja subscribers)
+
+Reader accounts (e.g. `antti18+kuluttaja@kaihola.fi`) authenticate via
+WooCommerce Memberships login flow, not WP application passwords. The
+login UI is at `/kirjaudu/` and uses a form with:
+- email field
+- password field
+- recaptcha
+- redirects to membership dashboard after login
+
+Full paywalled content requires this login flow. The WP REST API
+content field (`content.rendered`) returns only the teaser for
+`access-restricted` posts regardless of any HTTP auth headers.
+
+### Application passwords
+
+Available at `/wp/wp-admin/authorize-application.php`, but only for
+WordPress admin accounts, not subscriber/ticket holders.
+
+## Paywall Detection
+
+A post is paywalled when:
+- `"access-restricted"` ∈ `post.class_list`
+- OR `"membership-content"` ∈ `post.class_list`
+- OR `content.rendered` contains `<div id="paywall-section"`
+
+The paywall section wraps `content.rendered` with:
 ```html
-<article>
-  <a href="/path/to/article">
-    <h4>Article Title</h4>
-  </a>
-  <span>Date (e.g. 18.06.2026)</span>
-  <p>Snippet excerpt...</p>
-</article>
+<div id="paywall-section" data-content-id="<post_id>" ...>
+  <div class="paywall-section__wrapper__info ...">
+    <h2>Jatka lukemista</h2>
+    <p>Selvitimme olennaisen puolestasi...</p>
+  </div>
+  <div ...>
+    <p>Osta pääsy tähän sisältöön tai tilaa Kuluttaja.</p>
+    <a href="/kirjaudu/">Kirjaudu</a>
+  </div>
+</div>
 ```
 
-### Filter Radios
+## Cookie Consent
 
-| Label    | Selector |
-|----------|----------|
-| KAIKKI   | `[type="radio"]` + text "KAIKKI" |
-| TESTIT   | `[type="radio"]` + text "TESTIT" |
-| ARTIKKELIT | `[type="radio"]` + text "ARTIKKELIT" |
-| MUUT     | `[type="radio"]` + text "MUUT" |
+First-visit page has OneTrust cookie banner:
+- "Hyväksy kaikki" — accept all
+- "Vain välttämättömät" — accept only necessary
+- `onetrust-accept-btn-handler` — accept button ID
 
-### Pagination
+## Content Structure
 
-" LATAA LISÄÄ" button loads more results.
+Article pages (when rendered from `content.rendered`) typically contain:
+- Intro paragraphs (teaser — always visible)
+- `<div id="paywall-section">` — paywall prompt for subscribers
+- Section headings (h2, h3)
+- Content paragraphs
+- Tags (e.g., "GRILLAUS", "GRILLI", "KAASUGRILLI")
+- Author attribution
+- Related articles sidebar
 
-## Article Page
-
-### Structure
-
-```
-<main>
-  <h1>Article Title</h1>
-  <span>JULKAISTU: DD.MM.YYYY</span>
-  <p>KIRJOITTAJA: Author Name</p>
-  <p>Intro paragraph...</p>
-  <h3>Section Heading</h3>
-  <p>Content...</p>
-  <figure><img>...</figure>
-  <h3>Section Heading</h3>
-  ...
-  <!-- Tags as paragraphs -->
-  <p>GRILLAUS</p>
-  <p>GRILLI</p>
-  ...
-</main>
-```
-
-### Expandable Content
-
-Some articles have "NÄYTÄ LISÄÄ" / "Näytä lisää" buttons that load more content.
-Click them to reveal hidden text.
-
-### Paywall
-
-Paywalled articles show "Jatka lukemista" section with:
-- "Osta pääsy tähän sisältöön tai tilaa Kuluttaja."
-- "Kirjaudu" link
-
-Without login: only the intro paragraphs are visible.
-With login: full article content is visible.
-
-### Sidebar
-
-After article body: "Saatat pitää myös näistä" section with related articles.
-
-## Content Type Tags
-
-At bottom of articles, tags appear as paragraph elements:
-GRILLAUS, GRILLI, HIILIGRILLI, KAASUGRILLI, SÄHKÖGRILLI, RUOKA, etc.
-
-## URL Conventions
-
-Public articles: `https://kuluttaja.fi/fi/artikkeli/{slug}`
-Some also work at: `https://kuluttaja.fi/{slug}/`
-Some old URLs redirect or 404.
+Yoast head JSON-LD schema contains full article metadata:
+- Author name
+- Published date (`datePublished`)
+- Article sections
+- Keywords
+- Image URLs
+- Breadcrumbs
