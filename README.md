@@ -27,6 +27,7 @@ supporting scripts.
 | `motonet` | Motonet product search |
 | `nano-banana-image` | Image generation via nano-banana |
 | `power` | Power management utilities |
+| `rebase-all` | Rebase every branch onto main/master, keeping stacks and rewriting doc hash references |
 | `simplify-skill` | Propose which instructions in a skill, AGENTS.md or CLAUDE.md can be removed or shortened |
 | `tokmanni` | Tokmanni product search |
 | `verkkokauppa` | Verkkokauppa.com product search |
