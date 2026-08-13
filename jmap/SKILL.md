@@ -1,6 +1,6 @@
 ---
 name: jmap
-description: Generic JMAP email utilities. Use when syncing emails from any sender domain to disk, querying the local JMAP server, or downloading attachments. The sync script lives at ~/.claude/skills/jmap/sync_emails.py — always invoke it directly instead of writing ad-hoc Python.
+description: Generic JMAP email utilities. Use when syncing emails from any sender domain to disk, querying the local JMAP server, or downloading attachments. The sync script lives at ./.claude/skills/jmap/sync_emails.py inside the Atomikettu repository — always invoke it directly instead of writing ad-hoc Python.
 ---
 
 # JMAP Email Utilities
@@ -22,7 +22,7 @@ If that fails with "Connection refused", ask the user to bring up the tunnel fro
 **Always run the pre-made script** — never write ad-hoc Python for email sync:
 
 ```bash
-python3 ~/.claude/skills/jmap/sync_emails.py \
+python3 ./.claude/skills/jmap/sync_emails.py \
   --from-filter <domain-or-address-fragment> \
   --output-dir  <absolute-path-to-email-folder>
 ```
@@ -38,12 +38,12 @@ Optional flags:
 
 ```bash
 # All mail from one sender domain
-python3 ~/.claude/skills/jmap/sync_emails.py \
+python3 ./.claude/skills/jmap/sync_emails.py \
   --from-filter example.com \
   --output-dir ~/documents/archive/example-com/emails
 
 # A second sender, archived separately
-python3 ~/.claude/skills/jmap/sync_emails.py \
+python3 ./.claude/skills/jmap/sync_emails.py \
   --from-filter example.org \
   --output-dir ~/documents/archive/example-org/emails
 ```
