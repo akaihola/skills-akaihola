@@ -38,6 +38,8 @@ def parse_args():
                    help=f"JMAP base URL (default: {DEFAULTS['jmap_url']})")
     p.add_argument("--limit", type=int, default=500,
                    help="Max emails to fetch per run (default: 500)")
+    p.add_argument("--download-missing-attachments", action="store_true",
+                   help="Download attachments missing from already-synced emails")
     args = p.parse_args()
     if not args.from_filter and not args.subject_filter and not args.to_filter:
         p.error("at least one of --from-filter, --to-filter, or --subject-filter is required")
@@ -122,7 +124,8 @@ def main():
         folder.mkdir(parents=True, exist_ok=True)
 
         md_path = folder / "email.md"
-        if md_path.exists():
+        existing_email = md_path.exists()
+        if existing_email:
             print(f"SKIP  {folder.name}")
         else:
             from_str = ", ".join(
@@ -157,6 +160,9 @@ def main():
                 {body.strip()}
             """), encoding="utf-8")
             print(f"SAVE  {folder.name}")
+
+        if existing_email and not args.download_missing_attachments:
+            continue
 
         for att in (email.get("attachments") or []):
             raw  = att.get("name") or att.get("blobId", "unknown")
