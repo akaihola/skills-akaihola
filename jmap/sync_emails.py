@@ -13,6 +13,7 @@ import json
 import re
 import urllib.parse
 import urllib.request
+from datetime import date
 from pathlib import Path
 from textwrap import dedent
 
@@ -20,6 +21,17 @@ DEFAULTS = {
     "jmap_url":  "http://127.0.0.1:8895",
     "account_id": "kaihola",
 }
+
+
+def parse_earliest_date_filter(value):
+    if value.lower() == "none":
+        return "none"
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "must be YYYY-MM-DD or 'none'"
+        ) from exc
 
 
 def parse_args():
@@ -38,12 +50,26 @@ def parse_args():
                    help=f"JMAP base URL (default: {DEFAULTS['jmap_url']})")
     p.add_argument("--limit", type=int, default=500,
                    help="Max emails to fetch per run (default: 500)")
+    p.add_argument("--earliest-date-filter", type=parse_earliest_date_filter,
+                   help="Earliest received date (YYYY-MM-DD); use 'none' to disable (default: latest date already in output directory)")
     p.add_argument("--download-missing-attachments", action="store_true",
                    help="Download attachments missing from already-synced emails")
     args = p.parse_args()
     if not args.from_filter and not args.subject_filter and not args.to_filter:
         p.error("at least one of --from-filter, --to-filter, or --subject-filter is required")
     return args
+
+
+def latest_fetched_date(output_dir):
+    """Return the newest message date represented in the output directory."""
+    dates = (
+        match.group(1)
+        for path in output_dir.iterdir()
+        if path.is_dir()
+        for match in [re.match(r"(\d{4}-\d{2}-\d{2})(?: .*)?$", path.name)]
+        if match
+    )
+    return max(dates, default=None)
 
 
 def jmap_call(base_url, calls):
@@ -87,6 +113,13 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     jmap_filter = {}
+    if args.earliest_date_filter != "none":
+        earliest = args.earliest_date_filter
+        if earliest is None:
+            last_date = latest_fetched_date(output_dir)
+            earliest = date.fromisoformat(last_date) if last_date else None
+        if earliest:
+            jmap_filter["after"] = f"{earliest.isoformat()}T00:00:00Z"
     if args.from_filter:
         jmap_filter["from"] = args.from_filter
     if args.to_filter:

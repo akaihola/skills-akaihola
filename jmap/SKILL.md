@@ -33,6 +33,8 @@ Optional flags:
 | `--account` | `kaihola` | JMAP account ID |
 | `--jmap-url` | `http://127.0.0.1:8895` | JMAP base URL |
 | `--limit` | `500` | Max emails per run |
+| `--earliest-date-filter` | Latest date already fetched | Earliest received date to fetch, in `YYYY-MM-DD` format |
+| `--earliest-date-filter none` | Off | Disable the date filter and fetch all matching messages |
 
 ### Examples
 
@@ -48,7 +50,7 @@ python3 ./.claude/skills/jmap/sync_emails.py \
   --output-dir ~/documents/archive/example-org/emails
 ```
 
-The script is idempotent: existing `email.md` files and attachments are skipped.
+The script is idempotent: existing `email.md` files and attachments are skipped. By default it fetches messages from the latest date already represented in the output directory onward. Use `--earliest-date-filter YYYY-MM-DD` to override that date, or `--earliest-date-filter none` to disable the date filter entirely.
 
 ## Output Layout
 
