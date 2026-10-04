@@ -22,3 +22,11 @@ High-level plan:
 - Add a skill-specific privacy model so sender names, addresses, and message content are only surfaced when the user explicitly asks.
 - Define failure handling for partial results, unavailable accounts, auth failures, and rate/size limits.
 - After `mailjail` has a stable multi-account story, draft `SKILL.md` usage guidance and any helper scripts the skill needs.
+
+## Ordered backlog
+
+### Adopt modern task-tracking principles
+
+**Status:** backlog, user-requested
+
+See [the adoption task](docs/tasks/adopt-task-tracking-principles.md) for scope and acceptance criteria.
