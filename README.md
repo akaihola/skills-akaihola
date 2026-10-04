@@ -29,6 +29,7 @@ supporting scripts.
 | `power` | Power management utilities |
 | `rebase-all` | Rebase every branch onto main/master, keeping stacks and rewriting doc hash references |
 | `simplify-skill` | Propose which instructions in a skill, AGENTS.md or CLAUDE.md can be removed or shortened |
+| `t3-start-thread` | Start T3 Code threads with task handoffs and isolated worktrees |
 | `tokmanni` | Tokmanni product search |
 | `verkkokauppa` | Verkkokauppa.com product search |
 | `youtube-frame-analysis` | Extract scene-change frames from YouTube videos and analyse visuals with Gemini |
