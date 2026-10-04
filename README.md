@@ -27,6 +27,7 @@ supporting scripts.
 | `motonet` | Motonet product search |
 | `nano-banana-image` | Image generation via nano-banana |
 | `power` | Power management utilities |
+| `t3-start-thread` | Start T3 Code threads with task handoffs and isolated worktrees |
 | `tokmanni` | Tokmanni product search |
 | `verkkokauppa` | Verkkokauppa.com product search |
 | `youtube-frame-analysis` | Extract scene-change frames from YouTube videos and analyse visuals with Gemini |
