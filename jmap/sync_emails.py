@@ -151,9 +151,9 @@ def main():
     print(f"Found {len(emails)} emails matching '{filter_desc}'")
 
     for email in emails:
-        date    = email["receivedAt"][:10]
+        day     = email["receivedAt"][:10]
         subject = safe_name(email.get("subject") or "(no subject)")[:80]
-        folder  = output_dir / f"{date} {subject}"
+        folder  = output_dir / f"{day} {subject}"
         folder.mkdir(parents=True, exist_ok=True)
 
         md_path = folder / "email.md"
