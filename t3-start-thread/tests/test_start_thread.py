@@ -69,6 +69,7 @@ def test_resume_after_lost_reply_does_not_submit_again() -> None:
         args = argparse.Namespace(
             workspace=str(root),
             parent_thread="parent",
+            settings=None,
             prompt_file=str(prompt),
             title="Fixture task",
             base_dir=None,
@@ -94,6 +95,52 @@ def test_resume_after_lost_reply_does_not_submit_again() -> None:
             helper.submit(server, record_path, record)
         assert len(server.commands) == 1
         assert record["thread"]["latestTurn"]["state"] == "running"
+
+
+def test_settings_file_replaces_parent() -> None:
+    """A settings file starts a thread when no parent thread is available."""
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        prompt = root / "prompt.txt"
+        prompt.write_text("Perform the scheduled fixture task.", encoding="utf-8")
+        settings = {
+            "modelSelection": {"instanceId": "claudeAgent", "model": "fixture"},
+            "runtimeMode": "full-access",
+            "interactionMode": "default",
+        }
+        settings_file = root / "settings.json"
+        settings_file.write_text(json.dumps(settings), encoding="utf-8")
+        snapshot = {
+            "projects": [{"id": "project", "workspaceRoot": str(root)}],
+            "threads": [],
+        }
+        server = LostReplyServer(snapshot)
+        args = argparse.Namespace(
+            workspace=str(root),
+            parent_thread=None,
+            settings=str(settings_file),
+            prompt_file=str(prompt),
+            title="Scheduled task",
+            base_dir=None,
+            shared_checkout=True,
+            branch=None,
+            base_branch=None,
+        )
+        with (
+            patch.object(helper.Path, "home", return_value=root),
+            pytest.raises(TimeoutError),
+        ):
+            helper.start(args, server, snapshot)
+        command = server.commands[0]
+        for key, value in settings.items():
+            assert command[key] == value
+            assert command["bootstrap"]["createThread"][key] == value
+        assert "prepareWorktree" not in command["bootstrap"]
+
+        settings_file.write_text(json.dumps({"runtimeMode": "x"}), encoding="utf-8")
+        with pytest.raises(ValueError, match="Settings file must hold exactly"):
+            helper.start(args, server, snapshot)
+        assert len(server.commands) == 1
 
 
 def test_accepted_but_missing_thread_is_not_recreated() -> None:
