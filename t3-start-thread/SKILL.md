@@ -55,9 +55,14 @@ generate a unique branch name. `--base-branch` defaults to the repository's
 current branch. The parent must belong to the selected project.
 
 For an explicitly requested shared checkout, pass `--shared-checkout` instead
-of `--branch`; this does not switch the checkout's branch. For a model change,
-use the native tool or adapt the request to the running server's current schema
-instead of silently changing the inherited settings.
+of `--branch`; this does not switch the checkout's branch.
+
+When no parent thread fits, pass `--settings FILE` instead of
+`--parent-thread`. The file is a JSON object holding exactly `modelSelection`,
+`runtimeMode` and `interactionMode`, in the shape `inspect` prints. Use it for
+an explicitly requested model and for scheduled jobs, since archived threads
+drop out of the snapshot and can no longer serve as parents. Never change the
+settings silently.
 
 ## Verify and handle interrupted requests
 

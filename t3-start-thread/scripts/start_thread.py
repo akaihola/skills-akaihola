@@ -22,6 +22,9 @@ from urllib.request import Request, urlopen
 
 import websocket
 
+# Thread settings a new thread takes from its parent or a settings file.
+SETTINGS = ("modelSelection", "runtimeMode", "interactionMode")
+
 
 class Server:
     """Keep a short-lived bearer session in memory for one invocation."""
@@ -168,33 +171,32 @@ def submit(server: Server, path: Path, record: dict) -> None:
 
 
 def start(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
-    """Build a turn bootstrap that inherits the chosen parent's settings."""
+    """Build a turn bootstrap from a parent's settings or a settings file."""
     workspace = str(Path(args.workspace).resolve())
     projects = [p for p in snapshot["projects"] if p["workspaceRoot"] == workspace]
     if len(projects) != 1:
         msg = "Expected one T3 project for this workspace; inspect first"
         raise ValueError(msg)
     project = projects[0]
-    parent = next(
-        (t for t in snapshot["threads"] if t["id"] == args.parent_thread), None
-    )
-    if parent is None or parent["projectId"] != project["id"]:
-        msg = "Parent thread must belong to the selected project"
-        raise ValueError(msg)
+    if args.settings:
+        settings = json.loads(Path(args.settings).read_text(encoding="utf-8"))
+        if sorted(settings) != sorted(SETTINGS):
+            msg = "Settings file must hold exactly " + ", ".join(SETTINGS)
+            raise ValueError(msg)
+    else:
+        parent = next(
+            (t for t in snapshot["threads"] if t["id"] == args.parent_thread), None
+        )
+        if parent is None or parent["projectId"] != project["id"]:
+            msg = "Parent thread must belong to the selected project"
+            raise ValueError(msg)
+        settings = {key: parent[key] for key in SETTINGS}
     prompt = Path(args.prompt_file).read_text(encoding="utf-8")
     if not prompt.strip():
         msg = "Prompt file is empty"
         raise ValueError(msg)
     thread_id = str(uuid.uuid4())
     now = datetime.datetime.now(datetime.UTC).isoformat()
-    settings = {
-        key: parent[key]
-        for key in (
-            "modelSelection",
-            "runtimeMode",
-            "interactionMode",
-        )
-    }
     bootstrap = {
         "createThread": {
             "projectId": project["id"],
@@ -263,7 +265,9 @@ def main() -> None:
         command.add_argument("--base-dir")
         command.add_argument("--workspace", required=True)
         if action == "start":
-            command.add_argument("--parent-thread", required=True)
+            origin = command.add_mutually_exclusive_group(required=True)
+            origin.add_argument("--parent-thread")
+            origin.add_argument("--settings", help="JSON file of thread settings")
             command.add_argument("--title", required=True)
             command.add_argument("--prompt-file", required=True)
             command.add_argument("--base-branch")
