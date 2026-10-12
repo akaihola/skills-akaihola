@@ -1,0 +1,32 @@
+# Inherit the repository's lint rules and relax the few that clash with
+# parsing phone dumps from a command-line skill.
+extend = "../pyproject.toml"
+
+[lint]
+extend-ignore = [
+    "call-datetime-without-tzinfo", # device timestamps are naive local wall time by design
+    "call-datetime-now-without-tzinfo", # same: the phone reports wall time without a zone
+    "call-datetime-strptime-without-zone", # same, for strptime
+    "missing-copyright-notice", # the repository has no copyright-header convention
+    "docstring-missing-returns", # one-line helper docstrings already say what they return
+    "docstring-missing-yields", # same for generators
+    "docstring-missing-exception", # same for the ValueError raised on unparsable input
+]
+
+[lint.extend-per-file-ignores]
+"scripts/*.py" = [
+    "print", # command-line entry points print their summaries
+]
+"tests/*.py" = [
+    "assert",    # pytest asserts
+    "missing-copyright-notice",  # no copyright header in tests
+    "docstring-missing-returns",  # return docs not required in tests
+    "magic-value-comparison", # magic values are the point of fixture assertions
+    "implicit-namespace-package",  # tests are not a package
+    "import-outside-top-level", # imports inside fixtures
+    "ANN",     # fixture signatures need no annotations
+    "D",       # test names are their documentation
+    "print",
+    "suspicious-subprocess-import",    # tests run the scripts as subprocesses
+    "subprocess-without-shell-equals-true",
+]

@@ -1,0 +1,7 @@
+  Job history:
+       -5m0s0ms   START: #u0a102/12 com.example.sync/.SyncJob
+       -4m0s0ms    STOP: #u0a102/12 com.example.sync/.SyncJob app called jobFinished
+       -2m0s0ms   START-P: #1000/5 android/com.android.server.ExampleJobService
+
+Pending queue:
+  None

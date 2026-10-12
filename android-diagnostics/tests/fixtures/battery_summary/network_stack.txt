@@ -1,0 +1,10 @@
+IpClient.wlan0
+  IpClient.wlan0 APF dump:
+    Capabilities: { apfVersionSupported: 4, maximumApfProgramSize: 4096 }
+    ApfConfig: { mcast: ALLOW, doze: FALSE, low power standby filter: DISABLED }
+  IpClient.wlan0 StateMachine dump:
+    2026-01-15T06:00:00.000001 - INVOKE installPacketFilter(byte[331]) config: { mcast: ALLOW, doze: FALSE, offloads: [ ] }
+    2026-01-15T08:00:00.000001 - INVOKE installPacketFilter(byte[331]) config: { mcast: ALLOW, doze: TRUE, offloads: [ ] }
+    2026-01-15T08:00:00.000002 - INVOKE setMaxDtimMultiplier(1)
+    2026-01-15T09:00:00.000001 - INVOKE installPacketFilter(byte[440]) config: { mcast: DROP, doze: TRUE, offloads: [ ] }
+    2026-01-15T09:00:00.000002 - INVOKE setMaxDtimMultiplier(9)

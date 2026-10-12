@@ -12,6 +12,7 @@ supporting scripts.
 
 | Skill | Description |
 |-------|-------------|
+| `android-diagnostics` | Diagnose Android battery drain and slowness over adb with read-only collection and deterministic analyzers |
 | `brave-search` | Web search via Brave Search API |
 | `clasohlson` | Clas Ohlson product search |
 | `commit` | Stage and commit logical changes with conventional commit messages |

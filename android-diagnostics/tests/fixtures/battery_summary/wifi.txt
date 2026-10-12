@@ -1,0 +1,5 @@
+mMulticastEnabled 10
+mMulticastDisabled 8
+Multicast Locks held:
+    Multicaster{ExampleMdnsLock uid=10102}
+Wlan Wake Reasons: totalCmdEventWake 0 totalDriverFwLocalWake 0 totalRxDataWake 1000 rxUnicast 800 rxMulticast 180 rxBroadcast 20 icmp 0

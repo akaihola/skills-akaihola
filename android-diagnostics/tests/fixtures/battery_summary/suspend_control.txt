@@ -1,0 +1,4 @@
+Service host process PID: 100
+ | NAME                        | PID  | TYPE   | STATUS | ACTIVE COUNT | TOTAL TIME | MAX TIME  |
+ | PowerManager.SuspendLockout | 1394 | Native | Active |            3 | 7300000ms  | 7200000ms |
+ | ExampleLock                 | 1394 | Native | Active |            1 | 10ms       | 10ms      |
