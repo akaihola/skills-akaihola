@@ -1,0 +1,53 @@
+name: Test android-diagnostics
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "android-diagnostics/**"
+      # android-diagnostics/ruff.toml extends the root lint rules.
+      - "pyproject.toml"
+      - ".github/workflows/test-android-diagnostics.yml"
+  pull_request:
+    paths:
+      - "android-diagnostics/**"
+      # android-diagnostics/ruff.toml extends the root lint rules.
+      - "pyproject.toml"
+      - ".github/workflows/test-android-diagnostics.yml"
+
+jobs:
+  test:
+    name: Run pytest, validate and lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # The scripts promise Python 3.11+ and use only the standard library,
+        # so test the oldest supported version as well as a current one.
+        python-version:
+          - "3.11"
+          - "3.13"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      # --no-project: the skill needs none of the repository's dependencies,
+      # and the repository itself requires a newer Python than 3.11.
+      - name: Run tests
+        run: >-
+          uv run --no-project --python ${{ matrix.python-version }}
+          --with pytest pytest android-diagnostics/tests -q
+
+      - name: Validate SKILL.md against the Agent Skills spec
+        run: uvx --from skills-ref agentskills validate android-diagnostics
+
+      - name: Lint
+        run: uvx ruff check android-diagnostics
