@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["websocket-client>=1.8,<2"]
 # ///
-"""Create and verify T3 threads using authenticated orchestration commands."""
+"""Create T3 threads or message existing ones through authenticated commands."""
 
 import argparse
 import datetime
@@ -117,6 +117,12 @@ class Server:
         """Read the shell snapshot without printing other projects or messages."""
         return self.call("orchestration.subscribeShell", {}, stream=True)
 
+    def thread_snapshot(self, thread_id: str) -> dict:
+        """Read one thread to verify a submitted message by its identifier."""
+        return self.call(
+            "orchestration.subscribeThread", {"threadId": thread_id}, stream=True
+        )["thread"]
+
 
 def thread_summary(thread: dict) -> dict:
     """Select metadata useful for choosing a parent or verifying a handoff."""
@@ -147,6 +153,9 @@ def save_record(path: Path, record: dict, *, create: bool = False) -> None:
 
 def submit(server: Server, path: Path, record: dict) -> None:
     """Check for the saved thread first, then submit the unchanged command."""
+    if "bootstrap" not in record["command"]:
+        submit_message(server, path, record)
+        return
     thread_id = record["command"]["threadId"]
     snapshot = server.snapshot()
     thread = next((t for t in snapshot["threads"] if t["id"] == thread_id), None)
@@ -168,6 +177,94 @@ def submit(server: Server, path: Path, record: dict) -> None:
     record["thread"] = thread_summary(thread)
     save_record(path, record)
     print(json.dumps({"record": str(path), "thread": record["thread"]}, indent=2))
+
+
+def submit_message(server: Server, path: Path, record: dict) -> None:
+    """Resume sends by checking the message, since the thread already exists."""
+    command = record["command"]
+    message_id = command["message"]["messageId"]
+    thread = server.thread_snapshot(command["threadId"])
+    message = next((m for m in thread["messages"] if m["id"] == message_id), None)
+    if message is None and record.get("accepted"):
+        msg = "Accepted message is absent; inspect T3 before retrying"
+        raise RuntimeError(msg)
+    if message is None:
+        # Reuse the saved command ID if an earlier request lost its reply.
+        record["acknowledgement"] = server.call(
+            "orchestration.dispatchCommand", command
+        )
+        record["accepted"] = True
+        save_record(path, record)
+        thread = server.thread_snapshot(command["threadId"])
+        message = next((m for m in thread["messages"] if m["id"] == message_id), None)
+    if message is None:
+        msg = "Command accepted but message is not yet visible; resume"
+        raise RuntimeError(msg)
+    record["accepted"] = True
+    record["thread"] = thread_summary(thread)
+    record["messageId"] = message_id
+    record["messageTurnId"] = message.get("turnId")
+    save_record(path, record)
+    print(
+        json.dumps(
+            {
+                "record": str(path),
+                "messageId": message_id,
+                "messageTurnId": record["messageTurnId"],
+                "delivered": True,
+                "thread": record["thread"],
+            },
+            indent=2,
+        )
+    )
+
+
+def send(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
+    """Preserve an existing thread's settings when requesting another user turn."""
+    workspace = str(Path(args.workspace).resolve())
+    projects = [p for p in snapshot["projects"] if p["workspaceRoot"] == workspace]
+    if len(projects) != 1:
+        msg = "Expected one T3 project for this workspace; inspect first"
+        raise ValueError(msg)
+    thread = next((t for t in snapshot["threads"] if t["id"] == args.thread), None)
+    if thread is None or thread["projectId"] != projects[0]["id"]:
+        msg = "Target thread must belong to the selected project"
+        raise ValueError(msg)
+    prompt = Path(args.prompt_file).read_text(encoding="utf-8")
+    if not prompt.strip():
+        msg = "Prompt file is empty"
+        raise ValueError(msg)
+    command = {
+        "type": "thread.turn.start",
+        "commandId": str(uuid.uuid4()),
+        "threadId": thread["id"],
+        **{key: thread[key] for key in SETTINGS},
+        "createdAt": datetime.datetime.now(datetime.UTC).isoformat(),
+        "message": {
+            "messageId": str(uuid.uuid4()),
+            "role": "user",
+            "text": prompt,
+            "attachments": [],
+        },
+    }
+    if args.dry_run:
+        # Show the target and settings without exposing the private prompt.
+        print(
+            json.dumps(
+                {
+                    "dryRun": True,
+                    "thread": thread_summary(thread),
+                    "messageCharacters": len(prompt),
+                },
+                indent=2,
+            )
+        )
+        return
+    record = {"url": server.url, "baseDir": args.base_dir, "command": command}
+    path = Path.home() / ".local/state/t3-start-thread" / f"{command['commandId']}.json"
+    save_record(path, record, create=True)
+    print(f"Request record: {path}", flush=True)
+    submit(server, path, record)
 
 
 def start(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
@@ -255,15 +352,19 @@ def start(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
 
 
 def main() -> None:
-    """Parse inspect, start, and resume operations."""
+    """Parse inspect, start, send, and resume operations."""
     os.umask(0o077)
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="action", required=True)
-    for action in ("inspect", "start"):
+    for action in ("inspect", "start", "send"):
         command = commands.add_parser(action)
         command.add_argument("--url", default="http://127.0.0.1:3773")
         command.add_argument("--base-dir")
         command.add_argument("--workspace", required=True)
+        if action == "send":
+            command.add_argument("--thread", required=True)
+            command.add_argument("--prompt-file", required=True)
+            command.add_argument("--dry-run", action="store_true")
         if action == "start":
             origin = command.add_mutually_exclusive_group(required=True)
             origin.add_argument("--parent-thread")
@@ -283,6 +384,9 @@ def main() -> None:
         return
     server = Server(args.url, args.base_dir)
     snapshot = server.snapshot()
+    if args.action == "send":
+        send(args, server, snapshot)
+        return
     if args.action == "start":
         start(args, server, snapshot)
         return
