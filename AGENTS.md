@@ -59,3 +59,18 @@ This structure allows:
 - Source skills to be versioned at the root level
 - Claude to auto-discover skills via the `.claude/skills/` symlinks
 - Clear separation between skill source and integration points
+
+## Task tracking
+
+Use root `TASKS.md` for work queued through the T3 pacer, and read its Rules
+before changing an issue. Use Hai's revision-checked CLI or Python API for
+tracker mutations. The user approves which proposals enter Ordered backlog;
+agents record completion separately from user acceptance.
+
+Keep each task in one tracker. Root `BACKLOG.md` and `library/BACKLOG.md` retain
+their existing planning records until the task-tracking adoption work migrates
+them. New Android diagnostics review fixes belong only in `TASKS.md`.
+
+Pacer configuration is local to the machine and stays outside this public
+repository. Scheduling requires a clean `main` checkout. Do implementation in
+an isolated task worktree, then record completion after merge.
