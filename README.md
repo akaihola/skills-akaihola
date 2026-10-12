@@ -8,6 +8,25 @@ A collection of [Claude Code skills](https://docs.claude.com/en/docs/claude-code
 for personal use. Each skill is a self-contained folder with a `SKILL.md` and
 supporting scripts.
 
+## Tasks
+
+[TASKS.md](TASKS.md) holds reviewed work for the T3 pacer, with detailed
+requirements in [docs/tasks/](docs/tasks/). Read the tracker rules before
+changing issue state. The older root and library backlog files retain their
+existing planning records.
+
+Machine-specific pacer configuration belongs outside this public repository.
+With the pacer and Hai installed, check the configured queue without launching
+work:
+
+```bash
+kandev-pacer --config ~/.config/kandev-pacer/config-t3.toml --dump-order
+```
+
+Scheduling requires a clean `main` checkout and a tracker registered against
+the matching T3 project. Commit or otherwise resolve outstanding work before
+running the scheduler.
+
 ## Skills
 
 | Skill | Description |
