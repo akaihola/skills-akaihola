@@ -1,0 +1,12 @@
+Power Profile:
+    cpu.suspend=0.0
+    cpu.idle=0.1
+    cpu.active=8.5
+    wifi.on=0.1
+    battery.capacity=4000.0
+    cpu.core_speeds.cluster0=[300000.0, 600000.0]
+    cpu.core_power.cluster0=[10.0, 20.0]
+    cpu.core_speeds.cluster1=[400000.0, 800000.0]
+    cpu.core_power.cluster1=[30.0, 40.0]
+    Modem values:
+      drain:SLEEP,RAT:DEFAULT=0.0

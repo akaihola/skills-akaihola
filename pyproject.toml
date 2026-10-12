@@ -31,6 +31,10 @@ dev = [
     "pytest-asyncio>=0.23.0",
 ]
 
+[tool.ty.environment]
+# Skills that keep a helper package next to their scripts.
+extra-paths = ["android-diagnostics/scripts"]
+
 [tool.graylint]
 lint = ["ruff"]
 revision = "origin/main..."

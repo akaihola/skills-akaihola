@@ -1,0 +1,81 @@
+Discharge step durations:
+  #0: +3m12s250ms to 77 (power-save-on, device-idle-off)
+
+Statistics since last charge:
+  System starts: 3, currently on battery: false
+  Time on battery: 5h 0m 0s 0ms (99,1%) realtime, 3h 0m 0s 0ms (60,0%) uptime
+  Time on battery screen off: 4h 0m 0s 0ms (80,0%) realtime, 2h 0m 0s 0ms (40,0%) uptime
+  Total run time: 5h 2m 0s 0ms realtime, 3h 1m 0s 0ms uptime
+  Discharge: 500 mAh
+  Screen off discharge: 300 mAh
+  Start clock time: 2026-01-15-07-00-00
+  Total full wakelock time: 1m 0s 0ms
+  Total partial wakelock time: {partial}
+  Total WiFi Multicast wakelock Count: 4
+  Total WiFi Multicast wakelock time: {mc_total}
+
+  Estimated power use (mAh):
+    Capacity: 3000, Computed drain: 500, actual drain: 500-530
+    Global
+      screen: 100 apps: 100 duration: 40m 0s 0ms
+      cpu: {cpu} apps: {cpu}
+      wifi: 5.00 apps: 4.00 duration: 50m 0s 0ms
+      wakelock: {wakelock_mah} apps: 0.0100 duration: 2h 0m 0s 0ms
+      idle: 0.300 apps: 0 duration: 5h 0m 0s 0ms
+    UID u0a101: 90.0 fg: 4.00 bg: 1.00 ( screen=80.0 (30m 0s 0ms) cpu=10.0 cpu:fg=4.00 cpu:bg=1.00 )
+    UID 0: {uid0} ( cpu={uid0} wakelock=0.190 (1h 50m 0s 0ms) )
+    UID 1000: {uid1000} ( cpu={uid1000} )
+    UID u0a102: {bg_total} bg: {bg_total} ( cpu={bg_total} cpu:bg={bg_total} )
+
+  All kernel wake locks:
+  Kernel Wake lock PowerManagerService.WakeLocks: 20m 0s 0ms (600 times) realtime
+  Kernel Wake lock NETLINK: 10m 0s 0ms ({netlink} times) realtime
+  Kernel Wake lock PowerManager.SuspendLockout: {lockout} (1 times) realtime
+  Kernel Wake lock : 50ms (3 times) realtime
+
+  All partial wake locks:
+  Wake lock u0a102 SyncWorker: Example: {partial_uid} (40 times) max=5000 actual={actual_ms} realtime
+  Wake lock 1000 *alarm*: 9s 0ms (70 times) max=2000 actual=10000 realtime
+  Wake lock 1000 NoDuration realtime
+
+  All wakeup reasons:
+  Wakeup reason Abort: Pending Wakeup Sources: NETLINK NETLINK: 1h 0m 0s 0ms ({aborts} times) realtime
+  Wakeup reason 41 WLAN_EXAMPLE: 40m 0s 0ms ({resumes} times) realtime
+  Wakeup reason Abort: Callback failed on alarmtimer in platform_pm_suspend+0x0/0x54 returned -16: 5m 0s 0ms (8 times) realtime
+  Wakeup reason Abort: Disabling non-boot cpus failed: 1m 0s 0ms (7 times) realtime
+  Wakeup reason 10 ipcc_1: 5m 0s 0ms (80 times) realtime
+  Wakeup reason -1 misconfigured IRQ 999 example_irq realtime
+
+  CPU scaling:  policy0: 300000 600000 900000 policy4: 400000 800000
+
+  0:
+    Wake lock *vibrator* realtime
+    Total cpu time per freq: 0 60000 0 60000 0
+    Total screen-off cpu time per freq: 0 60000 0 0 0
+  1000:
+    TOTAL wake: 9s 0ms blamed partial, 10s 0ms actual partial realtime
+    Job android/com.android.server.ExampleJobService: 1s 0ms realtime (13 times), 1s 0ms background (13 times)
+    Job Completions android/com.android.server.ExampleJobService: successful_finish(13x)
+    Apk android:
+      Wakeup alarm *walarm*:ExampleIdleController.deep: 17 times
+  u0a101:
+    TOTAL wake: 1m 0s 0ms full, 5s 0ms blamed partial, 6s 0ms actual partial realtime
+    WiFi Multicast Wakelock count = 1 time = {mc_b}
+    Total cpu time per freq: 0 120000 60000 0 0
+  u0a102:
+    Wake lock SyncWorker: Example: {partial_uid} partial (40 times) max=5000 realtime
+    TOTAL wake: {partial_uid} blamed partial, {actual_dur} actual partial, {actual_dur} actual background partial realtime
+    WiFi Multicast Wakelock count = 3 time = {mc_a}
+    Job com.example.sync/.SyncJob: {job_dur} realtime ({job_runs} times)
+    Job com.example.sync/.Unused: (not used)
+    Apk com.example.sync:
+      Wakeup alarm *walarm*:com.example.sync.POLL: {alarms} times
+      Wakeup alarm *walarm*:com.example.sync.IDLE: 0 times
+
+Per process state tracking available: true
+
+CPU power brackets; cluster/freq in MHz(avg current in mA):
+    0: 0/300(10.0), 0/600(20.0), 0/900(0.0), 4/400(30.0), 4/800(0.0)
+
+On-battery energy consumer stats (microcoulombs)
+    Not supported on this device.

@@ -1,0 +1,17 @@
+  Top Alarms:
+    +5s0ms running, 20 wakeups, 20 alarms: 1000:android
+      *walarm*:DeviceIdleController.deep
+
+  Alarm Stats:
+  1000:android +10s0ms running, 30 wakeups:
+    +5s0ms 20 wakes 20 alarms, last -1m0s0ms:
+      *walarm*:DeviceIdleController.deep
+    +1s0ms 0 wakes 100 alarms, last -1m0s0ms:
+      *alarm*:TIME_TICK
+    +2s0ms 10 wakes 10 alarms, last -2m0s0ms:
+      *walarm*:android.appwidget.action.APPWIDGET_UPDATE
+  u0a102:com.example.sync +3s0ms running, 90 wakeups:
+    +3s0ms 90 wakes 90 alarms, last -5m0s0ms:
+      *walarm*:com.example.sync.POLL
+  Alarm manager stats:
+    REORDER_ALARMS_FOR_STANDBY: count=1, total=0,1ms
