@@ -714,6 +714,35 @@ def test_analyze_bugreport_option_with_any_name(tmp_path):
     assert (other / "bugreport.zip").is_symlink()
 
 
+def test_analyze_bugreport_option_lowercases_zip_suffix(tmp_path):
+    source = make_bugreport(tmp_path / "capture.zip", services={"battery": "x"})
+    for name in ("capture.ZIP", "capture.Zip"):
+        upper = tmp_path / name
+        upper.write_bytes(source.read_bytes())
+        root = tmp_path / f"wd-{name}"
+        proc = run_analyze(root, "--bugreport", upper)
+        assert proc.returncode in {0, 3}, proc.stderr
+        link = root / "capture.zip"
+        assert link.is_symlink()
+        assert link.resolve() == upper.resolve()
+        assert Workdir(root).bugreport_path == link
+        doc = json.loads((root / "analysis.json").read_text(encoding="utf-8"))
+        assert doc["sources"]["battery"] == "bugreport:dumpsys battery"
+        assert doc["notes"] == []
+
+
+def test_analyze_bugreport_option_keeps_existing_link(tmp_path):
+    source = make_bugreport(tmp_path / "capture.zip", services={"battery": "x"})
+    other = make_bugreport(tmp_path / "other.ZIP", services={"battery": "y"})
+    root = tmp_path / "wd"
+    proc = run_analyze(root, "--bugreport", source)
+    assert proc.returncode in {0, 3}, proc.stderr
+    (root / "other.zip").symlink_to(source.resolve())
+    proc = run_analyze(root, "--bugreport", other)
+    assert proc.returncode in {0, 3}, proc.stderr
+    assert (root / "other.zip").resolve() == source.resolve()
+
+
 def test_analyze_bugreport_option_rejects_non_zip(tmp_path):
     text = tmp_path / "notes.txt"
     text.write_text("not a zip", encoding="utf-8")

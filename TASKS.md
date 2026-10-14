@@ -10,10 +10,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [5] Discover imported Android bugreports with uppercase ZIP extensions
-  <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-14T22:36:27.822Z"} -->
-
 ## In Progress
+
+- [~] [5] Discover imported Android bugreports with uppercase ZIP extensions
+  <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-14T22:36:50.138Z"} -->
 
 ## Completed / Accepted
 
