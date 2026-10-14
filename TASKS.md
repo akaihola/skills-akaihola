@@ -13,10 +13,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [4] Redact short Wi-Fi names in explicit network contexts
-  <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-14T22:30:09.865Z"} -->
-
 ## In Progress
+
+- [~] [4] Redact short Wi-Fi names in explicit network contexts
+  <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-14T22:31:05.900Z"} -->
 
 ## Completed / Accepted
 
