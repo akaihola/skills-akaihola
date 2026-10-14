@@ -8,9 +8,6 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [3] Redact valid email addresses with package-like domain prefixes
-  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-12T03:58:53.244Z"} -->
-
 - [4] Redact short Wi-Fi names in explicit network contexts
   <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-12T03:58:53.364Z"} -->
 
@@ -18,6 +15,9 @@ they are not pacer inputs. Keep each task in one tracker only.
   <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-12T03:58:53.488Z"} -->
 
 ## Scheduled
+
+- [3] Redact valid email addresses with package-like domain prefixes
+  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-14T20:09:09.580Z"} -->
 
 ## In Progress
 
