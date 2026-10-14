@@ -8,9 +8,6 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [1] Protect Android diagnostics captures from other local users
-  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-12T03:58:52.995Z"} -->
-
 - [2] Require a valid baseline before reporting Android live traffic rates
   <!-- hai:{"id":"simple-f7bacf22-0266-4ed7-a938-0f489dd00ffa","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.115Z","updatedAt":"2026-10-12T03:58:53.115Z"} -->
 
@@ -24,6 +21,9 @@ they are not pacer inputs. Keep each task in one tracker only.
   <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-12T03:58:53.488Z"} -->
 
 ## Scheduled
+
+- [1] Protect Android diagnostics captures from other local users
+  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-14T20:00:08.086Z"} -->
 
 ## In Progress
 
