@@ -269,10 +269,14 @@ def main() -> int:
 def link_bugreport(workdir: Path, zip_path: Path) -> Path:
     """Link ``zip_path`` into ``workdir`` under its own name, or bugreport.zip.
 
-    Workdir finds any ``*.zip`` holding a dumpstate text, so only names that
-    do not end in ``.zip`` are replaced.
+    Workdir finds any ``*.zip`` holding a dumpstate text, so a ``.zip`` suffix
+    is kept in lowercase (``capture.ZIP`` becomes ``capture.zip``) and only
+    names with another suffix are replaced.
     """
-    name = zip_path.name if zip_path.suffix.lower() == ".zip" else "bugreport.zip"
+    if zip_path.suffix.lower() == ".zip":
+        name = zip_path.stem + ".zip"
+    else:
+        name = "bugreport.zip"
     link = workdir / name
     if not (link.exists() or link.is_symlink()):
         link.symlink_to(zip_path.resolve())
