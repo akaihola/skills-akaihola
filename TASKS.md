@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [5] Discover imported Android bugreports with uppercase ZIP extensions
-  <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-14T22:36:50.138Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [5] Discover imported Android bugreports with uppercase ZIP extensions
+  <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-14T22:40:24.390Z"} -->
 
 - [ ] [4] Redact short Wi-Fi names in explicit network contexts
   <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-14T22:34:54.759Z"} -->
