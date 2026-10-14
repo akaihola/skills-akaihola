@@ -16,10 +16,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [3] Redact valid email addresses with package-like domain prefixes
-  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-14T20:09:09.580Z"} -->
-
 ## In Progress
+
+- [~] [3] Redact valid email addresses with package-like domain prefixes
+  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-14T20:09:29.791Z"} -->
 
 ## Completed / Accepted
 
