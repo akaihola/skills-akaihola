@@ -225,6 +225,8 @@ class NetstatsMaps:
     uids: dict[int, Traffic] = field(default_factory=dict)
     ifaces: dict[str, Traffic] = field(default_factory=dict)
     skipped: int = 0  # rows inside a table that did not parse
+    tables: set[str] = field(default_factory=set)
+    incomplete: set[str] = field(default_factory=set)
 
 
 def parse_netstats(text: str) -> NetstatsMaps:
@@ -235,6 +237,7 @@ def parse_netstats(text: str) -> NetstatsMaps:
         s = " ".join(line.split())
         if s in {_UID_HEADER, _IFACE_HEADER}:
             table = "uid" if s == _UID_HEADER else "iface"
+            maps.tables.add(table)
         elif not s or s.endswith(":"):
             table = ""
         elif table == "uid" and (m := _UID_ROW_RE.match(s)):
@@ -247,6 +250,7 @@ def parse_netstats(text: str) -> NetstatsMaps:
             maps.ifaces[m[1]] = (old[0] + rxb, old[1] + rxp, old[2] + txb, old[3] + txp)
         elif table:
             maps.skipped += 1
+            maps.incomplete.add(table)
     return maps
 
 
@@ -352,7 +356,7 @@ def _traffic_rows(
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for key, after in end.items():
-        # A UID missing from the first sample had sent nothing since boot.
+        # Only complete, successfully read tables permit a zero for new rows.
         before = start.get(key, (0, 0, 0, 0))
         rxb, rxp, txb, txp = (x - y for x, y in zip(after, before, strict=True))
         if min(rxb, rxp, txb, txp) < 0:
@@ -385,9 +389,17 @@ def diff_traffic(
     notes: list[str],
 ) -> dict[str, Any]:
     """Return per-UID and per-interface packet deltas."""
+    traffic: dict[str, Any] = {"uids": [], "interfaces": []}
+    for sample, role in ((a, "baseline"), (b, "ending sample")):
+        if sample.commands.get("netstats", {}).get("status") != "ok":
+            notes.append(
+                f"netstats {role} command failed or is missing; "
+                "traffic deltas and rates unavailable."
+            )
+            return traffic
     start = parse_netstats(a.texts.get("netstats", ""))
     end = parse_netstats(b.texts.get("netstats", ""))
-    if not end.uids and not end.ifaces:
+    if not end.tables:
         notes.append(
             "No netstats BPF map rows (mAppUidStatsMap) found; they exist on "
             "Android 12 and newer.",
@@ -396,16 +408,24 @@ def diff_traffic(
         notes.append(
             f"netstats: skipped {start.skipped + end.skipped} unparsable table rows",
         )
-    uid_rows = _traffic_rows(start.uids, end.uids, seconds, "uid", notes)
+    for table, label, key, before, after in (
+        ("uid", "uid", "uids", start.uids, end.uids),
+        ("iface", "interface", "interfaces", start.ifaces, end.ifaces),
+    ):
+        for maps, role in ((start, "baseline"), (end, "ending sample")):
+            if table not in maps.tables or table in maps.incomplete:
+                notes.append(
+                    f"netstats {label} {role} table missing or incomplete; "
+                    "traffic deltas and rates unavailable."
+                )
+                break
+        else:
+            traffic[key] = _traffic_rows(before, after, seconds, label, notes)
+    uid_rows = traffic["uids"]
     for row in uid_rows:
         uid = row["uid"]
         row["name"] = f"pseudo-UID {uid}" if uid < 0 else packages.name(uid)
-    return {
-        "uids": uid_rows,
-        "interfaces": _traffic_rows(
-            start.ifaces, end.ifaces, seconds, "interface", notes
-        ),
-    }
+    return traffic
 
 
 def diff_wakeups(a: Sample, b: Sample, notes: list[str]) -> dict[str, Any]:
