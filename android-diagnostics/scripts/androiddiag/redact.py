@@ -11,7 +11,10 @@ same salt.
 
 Network names and serial numbers have no fixed shape. They are recognised by
 their context (``SSID: "..."``, ``ro.serialno``), remembered by
-:meth:`Redactor.learn`, and then replaced wherever else they appear.
+:meth:`Redactor.learn`, and then replaced wherever else they appear. A name
+of one or two characters is too likely to be an ordinary word, so it is
+replaced elsewhere only between quotes; its explicit contexts (``SSID: "A"``,
+``configKey="AB"WPA_PSK``) are always hidden.
 
 Limitations: phone numbers are recognised only in international ``+`` form
 or as ``tel:`` URIs, and a dotted version string with four numbers looks like
@@ -32,7 +35,7 @@ if TYPE_CHECKING:
 # Hex digits kept from the hash: 4 give 65,536 values, enough to keep the
 # handful of devices in one report apart while revealing little.
 HASH_DIGITS = 4
-# Learned literals shorter than this are too likely to be ordinary words.
+# Learned literals shorter than this are replaced only between quotes.
 MIN_LEARNED_LEN = 3
 # Values that look like an SSID or serial in context but name nothing.
 _NOT_NAMES = frozenset(
@@ -88,7 +91,7 @@ _SSID_RE = re.compile(
     r"(?:\"(?P<quoted>[^\"\n]{1,64})\"|(?P<bare>[^\s\"'<,;)\]}][^\s\"',;)\]}]{0,63}))",
 )
 _CONFIG_KEY_RE = re.compile(
-    r"\"(?P<ssid>[^\"\n]{1,64})\"-?"
+    rf"\"(?!{_PLACEHOLDER}\")(?P<ssid>[^\"\n]{{1,64}})\"-?"
     r"(?:WPA_PSK|WPA_EAP|SAE|OWE|WEP|NONE|IEEE8021X|SUITE_B_192|WAPI_PSK)\b",
 )
 _SERIAL_RE = re.compile(
@@ -141,7 +144,7 @@ class Redactor:
         value = value.strip()
         if _PLACEHOLDER_RE.fullmatch(value):
             return
-        if len(value) >= MIN_LEARNED_LEN and value.lower() not in _NOT_NAMES:
+        if value and value.lower() not in _NOT_NAMES:
             self.known.setdefault(value, kind)
 
     def redact(self, text: str) -> str:
@@ -186,8 +189,14 @@ class Redactor:
             return text
         if self._known_re is None:
             names = sorted(self.known, key=len, reverse=True)
-            alternatives = "|".join(re.escape(name) for name in names)
-            self._known_re = re.compile(rf"(?<!\w)(?:{alternatives})(?!\w)")
+            long = [re.escape(n) for n in names if len(n) >= MIN_LEARNED_LEN]
+            short = [re.escape(n) for n in names if len(n) < MIN_LEARNED_LEN]
+            alternatives = []
+            if long:
+                alternatives.append(rf"(?<!\w)(?:{'|'.join(long)})(?!\w)")
+            if short:
+                alternatives.append(rf"(?<=[\"'])(?:{'|'.join(short)})(?=[\"'])")
+            self._known_re = re.compile("|".join(alternatives))
         return self._known_re.sub(
             lambda m: self.placeholder(self.known[m[0]], m[0]),
             text,
@@ -203,6 +212,7 @@ class Redactor:
             (_TEL_RE, self._phone),
             (_LONG_ID_RE, self._long_id),
             (_SSID_RE, self._ssid_in_context),
+            (_CONFIG_KEY_RE, self._config_key),
             (_SERIAL_RE, self._serial_in_context),
         ]
 
@@ -233,16 +243,19 @@ class Redactor:
 
     def _ssid_in_context(self, m: re.Match[str]) -> str:
         group = "quoted" if m["quoted"] is not None else "bare"
-        value = m[group]
-        if value.strip().lower() in _NOT_NAMES:
+        return self._hide_group(m, group, "ssid")
+
+    def _config_key(self, m: re.Match[str]) -> str:
+        return self._hide_group(m, "ssid", "ssid")
+
+    def _serial_in_context(self, m: re.Match[str]) -> str:
+        return self._hide_group(m, "serial", "serial")
+
+    def _hide_group(self, m: re.Match[str], group: str, kind: str) -> str:
+        """Return the match with only ``group`` replaced by a placeholder."""
+        if m[group].strip().lower() in _NOT_NAMES:
             return m[0]
         start, end = m.span(group)
         offset = m.start()
-        hidden = self.placeholder("ssid", value.strip())
-        return m[0][: start - offset] + hidden + m[0][end - offset :]
-
-    def _serial_in_context(self, m: re.Match[str]) -> str:
-        start, end = m.span("serial")
-        offset = m.start()
-        hidden = self.placeholder("serial", m["serial"])
+        hidden = self.placeholder(kind, m[group].strip())
         return m[0][: start - offset] + hidden + m[0][end - offset :]
