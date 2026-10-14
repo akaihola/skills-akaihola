@@ -30,6 +30,9 @@ max_depth = 8
 
 # Path substrings that mark dead trees — backups, scratch dirs, trash. Matched
 # on the target before anything is sent back, so excluded trees cost nothing.
+# A pattern is tested against checkout paths, surface directories and each
+# entry inside a surface, so a full entry path excludes just that one entry
+# (for instance a different skill that only shares a name with one of yours).
 exclude = [
     "/.trash/",
     "/node_modules/",
