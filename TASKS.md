@@ -19,10 +19,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [2] Require a valid baseline before reporting Android live traffic rates
-  <!-- hai:{"id":"simple-f7bacf22-0266-4ed7-a938-0f489dd00ffa","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.115Z","updatedAt":"2026-10-14T20:05:25.040Z"} -->
-
 ## In Progress
+
+- [~] [2] Require a valid baseline before reporting Android live traffic rates
+  <!-- hai:{"id":"simple-f7bacf22-0266-4ed7-a938-0f489dd00ffa","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.115Z","updatedAt":"2026-10-14T20:05:44.267Z"} -->
 
 ## Completed / Accepted
 
