@@ -15,10 +15,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [4] Redact short Wi-Fi names in explicit network contexts
-  <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-14T22:31:05.900Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [4] Redact short Wi-Fi names in explicit network contexts
+  <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-14T22:34:54.759Z"} -->
 
 - [ ] [3] Redact valid email addresses with package-like domain prefixes
   <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-14T20:12:10.364Z"} -->
