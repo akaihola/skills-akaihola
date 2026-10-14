@@ -305,6 +305,14 @@ Caveats it also writes into its output:
 - The batterystats counters stop while the phone is charging.
 - A live sample shows the present. It can differ from the battery window the
   bugreport describes, for example when a connection started later.
+- Traffic deltas require successful netstats commands and recognized table
+  headers in both samples. Missing or unparsable tables produce empty traffic
+  row lists and a limitation note, rather than measured deltas or rates. UID
+  and interface tables are checked separately. An unparsable row invalidates
+  its whole table, since interface rows can share a name and must be summed.
+- A complete table with no rows is a valid empty map. A row newly appearing
+  after a complete baseline is compared with zero, preserving the assumption
+  that its counters started during the interval.
 
 ## A bugreport taken elsewhere
 

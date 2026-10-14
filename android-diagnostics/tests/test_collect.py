@@ -21,6 +21,7 @@ import collect
 import pytest
 import sample_live
 from androiddiag.catalog import FORBIDDEN_FRAGMENTS, LIVE_COMMANDS, LiveCommand
+from androiddiag.common import PackageMap
 from androiddiag.readonly import (
     DeviceError,
     check_adhoc,
@@ -129,6 +130,9 @@ FAKE_ADB = dedent(
         print(f"Ip6InReceives                   \t{500 + n}")
         print(f"Udp6InDatagrams                 \t{90 + 6 * n}")
     elif shell.startswith("dumpsys netstats |"):
+        if env.get("FAKE_ADB_FAIL_FIRST_NETSTATS") and n == 0:
+            print("simulated netstats failure", file=sys.stderr)
+            sys.exit(1)
         if env.get("FAKE_ADB_NO_BPF"):
             print("  mAppUidStatsMap: not available")
         else:
@@ -856,6 +860,123 @@ def test_parse_netstats_reads_uid_and_interface_maps():
     }
     assert maps.ifaces == {"wlan0": (1010, 11, 500, 5)}
     assert maps.skipped == 1
+    assert maps.tables == {"uid", "iface"}
+    assert maps.incomplete == {"uid"}
+
+
+def traffic_sample(number: int, uid_rows: str = "", iface_rows: str = ""):
+    """Build a successful synthetic read with both recognized tables."""
+    text = (
+        f"mAppUidStatsMap:\nuid rxBytes rxPackets txBytes txPackets\n{uid_rows}\n"
+        "mIfaceStatsMap:\nifaceIndex ifaceName rxBytes rxPackets txBytes txPackets\n"
+        f"{iface_rows}\n"
+    )
+    return sample_live.Sample(
+        number,
+        "",
+        120.0 * number,
+        texts={"netstats": text},
+        commands={"netstats": {"status": "ok"}},
+    )
+
+
+@pytest.mark.parametrize("status", ["failed", None])
+@pytest.mark.parametrize("number", [1, 2])
+def test_traffic_requires_successful_commands(status, number):
+    """Even parseable output cannot override a failed or missing command."""
+    samples = [
+        traffic_sample(1),
+        traffic_sample(2, "10101 40000 20000 0 0", "20 wlan0 40000 20000 0 0"),
+    ]
+    samples[number - 1].commands = (
+        {}
+        if status is None
+        else {
+            "netstats": {"status": status},
+        }
+    )
+    comparison = sample_live.diff_samples(*samples, PackageMap({}))
+    assert comparison["traffic"] == {"uids": [], "interfaces": []}
+    assert any("command failed or is missing" in n for n in comparison["notes"])
+
+
+@pytest.mark.parametrize("text", [None, "", "mAppUidStatsMap: not available\n"])
+def test_traffic_requires_recognized_baseline_tables(text):
+    """A successful command alone does not prove the maps were read."""
+    baseline = traffic_sample(1)
+    baseline.texts = {} if text is None else {"netstats": text}
+    comparison = sample_live.diff_samples(
+        baseline,
+        traffic_sample(2, "10101 40000 20000 0 0", "20 wlan0 40000 20000 0 0"),
+        PackageMap({}),
+    )
+    assert comparison["traffic"] == {"uids": [], "interfaces": []}
+    assert any("baseline table missing or incomplete" in n for n in comparison["notes"])
+
+
+@pytest.mark.parametrize(("table", "key"), [("uid", "uids"), ("iface", "interfaces")])
+@pytest.mark.parametrize("number", [1, 2])
+@pytest.mark.parametrize("malformed", [True, False])
+def test_traffic_rejects_partial_tables_independently(table, key, number, malformed):
+    """Malformed rows invalidate that table, including shared interface totals."""
+    samples = [
+        traffic_sample(1, "10101 100 10 0 0", "20 wlan0 100 10 0 0"),
+        traffic_sample(
+            2,
+            "10101 200 20 0 0\n10102 100 10 0 0",
+            "20 wlan0 200 20 0 0\n21 wlan1 100 10 0 0",
+        ),
+    ]
+    header = (
+        "uid rxBytes rxPackets txBytes txPackets"
+        if table == "uid"
+        else "ifaceIndex ifaceName rxBytes rxPackets txBytes txPackets"
+    )
+    sample = samples[number - 1]
+    sample.texts["netstats"] = sample.texts["netstats"].replace(
+        header, header + "\nmalformed row" if malformed else "unrecognized header"
+    )
+    comparison = sample_live.diff_samples(*samples, PackageMap({}))
+    assert comparison["traffic"][key] == []
+    other = "interfaces" if key == "uids" else "uids"
+    assert len(comparison["traffic"][other]) == 2
+    assert any("table missing or incomplete" in n for n in comparison["notes"])
+    if malformed:
+        assert any("skipped 1 unparsable" in n for n in comparison["notes"])
+
+
+@pytest.mark.parametrize("empty", [True, False])
+def test_traffic_valid_empty_maps_and_new_rows(empty):
+    """New rows start at zero only when the baseline table was fully read."""
+    baseline = (
+        traffic_sample(1)
+        if empty
+        else traffic_sample(
+            1,
+            "10101 100 10 0 0",
+            "20 wlan0 100 10 0 0",
+        )
+    )
+    ending = traffic_sample(
+        2,
+        "10101 200 20 0 0\n10102 100 10 0 0",
+        "20 wlan0 200 20 0 0\n21 wlan1 100 10 0 0",
+    )
+    notes = []
+    traffic = sample_live.diff_traffic(baseline, ending, 120, PackageMap({}), notes)
+    for key in ("uids", "interfaces"):
+        assert [r["rx_packets"] for r in traffic[key]] == (
+            [20, 10] if empty else [10, 10]
+        )
+        assert [r["packets_per_min"] for r in traffic[key]] == (
+            [10, 5] if empty else [5, 5]
+        )
+    assert notes == []
+    notes = []
+    assert sample_live.diff_traffic(
+        traffic_sample(1), traffic_sample(2), 120, PackageMap({}), notes
+    ) == {"uids": [], "interfaces": []}
+    assert notes == []
 
 
 @pytest.mark.parametrize("decimal", [",", "."])
@@ -979,6 +1100,18 @@ def test_sample_live_notes_missing_bpf_maps_and_failures(adb, tmp_path, capsys):
     assert report["samples"][0]["commands"]["snmp6"]["status"] == "failed"
     assert overall["snmp"]["counters"]["Tcp.OutRsts"]["delta"] == 15
     assert overall["wakeups"]["awake_share_pct"] == pytest.approx(25.0)
+
+
+def test_sample_live_failed_first_netstats_has_no_rates(adb, tmp_path, capsys):
+    """Exercise command status propagation through sampling and JSON output."""
+    adb.set(FAIL_FIRST_NETSTATS="1")
+    assert run_sampler(tmp_path / "wd") == 3
+    capsys.readouterr()
+    report = json.loads((tmp_path / "wd" / "sample-diff.json").read_text())
+    assert report["samples"][0]["commands"]["netstats"]["status"] == "failed"
+    assert report["samples"][1]["commands"]["netstats"]["status"] == "ok"
+    assert report["overall"]["traffic"] == {"uids": [], "interfaces": []}
+    assert any("baseline command failed" in n for n in report["overall"]["notes"])
 
 
 def test_sample_live_refuses_to_overwrite(adb, tmp_path, capsys):
