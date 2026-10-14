@@ -24,10 +24,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [1] Protect Android diagnostics captures from other local users
-  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-14T20:00:26.477Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [1] Protect Android diagnostics captures from other local users
+  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-14T20:04:11.913Z"} -->
 
 [*]: TASKS.md
 
