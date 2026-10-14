@@ -129,6 +129,42 @@ def test_network_names_are_learned_from_context():
     assert r.known["ExampleNet"] == "ssid"
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        'configKey="AB"WPA_PSK',
+        'configKey="A"-SAE',
+        'SSID: "AB"',
+        "ssid=A",
+        'wifiNetworkKey="B"',
+    ],
+)
+def test_short_network_names_are_hidden_in_context(text):
+    r = Redactor()
+    out = r.redact(text)
+    assert kinds(out) == ["ssid"]
+    assert re.fullmatch(r"\S+[=:] ?\"?<ssid:\w+>\"?(?:-?[A-Z_]+)?", out)
+    assert r.redact(out) == out
+
+
+def test_short_network_names_are_replaced_only_between_quotes():
+    r = Redactor()
+    out = r.redact(
+        'configKey="AB"WPA_PSK SSID: "LongNet"\nleft "AB" for "LongNet"; AB on LongNet',
+    )
+    assert out.count("AB") == 1
+    assert "LongNet" not in out
+    assert kinds(out) == ["ssid"] * 5
+    assert r.known == {"AB": "ssid", "LongNet": "ssid"}
+
+
+def test_unknown_and_empty_config_keys_are_not_names():
+    r = Redactor()
+    text = 'configKey="<unknown ssid>"WPA_PSK and configKey=""NONE'
+    assert r.redact(text) == text
+    assert r.known == {}
+
+
 def test_learning_from_one_text_redacts_another():
     r = Redactor()
     r.learn('ro.serialno]: [A1B2C3D4E5]\nSSID="ExampleNet"')

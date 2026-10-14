@@ -431,6 +431,34 @@ def test_redact_learns_names_from_the_whole_analysis(context_factory, tmp_path):
 
 
 @pytest.mark.parametrize("output_format", ["markdown", "json-summary"])
+@pytest.mark.parametrize("name", ["A", "AB"])
+def test_redact_short_network_names(context_factory, tmp_path, name, output_format):
+    doc = make_doc(context_factory)
+    doc["results"]["wifi_roaming"] = {
+        "status": "ok",
+        "tables": {"aps": [{"line": f'configKey="{name}"WPA_PSK rssi=-61'}]},
+    }
+    doc["findings"][0]["summary"] = f'The phone left "{name}" for "ExampleNet".'
+    doc["findings"][0]["evidence"] = [
+        {"ref": "live/x.txt:3", "excerpt": f'SSID: "ExampleNet" configKey="{name}"SAE'},
+    ]
+    path = write_doc(tmp_path, doc)
+    plain = render(path, "--format", output_format).replace('\\"', '"')
+    assert f'left "{name}" for' in plain
+    out = render(path, "--format", output_format, "--redact")
+    assert f'"{name}"' not in out.replace('\\"', '"')
+    assert "ExampleNet" not in out
+    short = Redactor().placeholder("ssid", name)
+    other = Redactor().placeholder("ssid", "ExampleNet")
+    if output_format == "json-summary":
+        item = json.loads(out)["findings"][0]
+        assert item["summary"] == f'The phone left "{short}" for "{other}".'
+    else:
+        assert f'left "\\{short}" for "\\{other}".' in out
+        assert f'`SSID: "{other}" configKey="{short}"SAE`' in out
+
+
+@pytest.mark.parametrize("output_format", ["markdown", "json-summary"])
 @pytest.mark.parametrize(
     "prefix",
     ["com", "org", "net", "io", "de", "android", "androidx", "vendor"],
