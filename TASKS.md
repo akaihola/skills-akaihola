@@ -18,10 +18,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [3] Redact valid email addresses with package-like domain prefixes
-  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-14T20:09:29.791Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [3] Redact valid email addresses with package-like domain prefixes
+  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-14T20:12:10.364Z"} -->
 
 - [ ] [2] Require a valid baseline before reporting Android live traffic rates
   <!-- hai:{"id":"simple-f7bacf22-0266-4ed7-a938-0f489dd00ffa","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.115Z","updatedAt":"2026-10-14T20:08:33.816Z"} -->
