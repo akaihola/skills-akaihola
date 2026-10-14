@@ -22,10 +22,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [1] Protect Android diagnostics captures from other local users
-  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-14T20:00:08.086Z"} -->
-
 ## In Progress
+
+- [~] [1] Protect Android diagnostics captures from other local users
+  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-14T20:00:26.477Z"} -->
 
 ## Completed / Accepted
 
