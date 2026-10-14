@@ -53,6 +53,7 @@ from androiddiag.readonly import (
     serial_hash,
     write_json,
 )
+from androiddiag.storage import private_directory
 
 if sys.version_info < (3, 11):  # ruff: ignore[outdated-version-block] - message for users of old Python
     sys.exit("sample_live.py needs Python 3.11 or newer")
@@ -560,12 +561,17 @@ def main(argv: list[str] | None = None) -> int:
     """Take the samples, write sample-diff.json and print its path."""
     args = parse_args(argv)
     try:
+        private_directory(args.workdir)
+        private_directory(args.workdir / "live")
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    try:
         adb, device = connect(args.serial)
     except DeviceError as exc:
         log(f"error: {exc}")
         return 2
     live = args.workdir / "live"
-    live.mkdir(parents=True, exist_ok=True)
     started = now_iso()
     packages = load_packages(adb, device.serial, live)
     samples: list[Sample] = []

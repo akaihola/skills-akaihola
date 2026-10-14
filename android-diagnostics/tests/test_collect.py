@@ -990,3 +990,70 @@ def test_sample_live_refuses_to_overwrite(adb, tmp_path, capsys):
     assert exc.value.code == 2
     assert "--force" in capsys.readouterr().err
     assert adb.calls() == []
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permissions required")
+@pytest.mark.parametrize("mask", [0o022, 0o002])
+@pytest.mark.parametrize("tool", ["collect", "sample", "adhoc"])
+@pytest.mark.usefixtures("adb")
+def test_collectors_use_private_storage(tmp_path, capsys, mask, tool):
+    """Every capture entry point writes private directories and files."""
+    previous = os.umask(mask)
+    workdir = tmp_path / "capture"
+    try:
+        if tool == "collect":
+            assert collect.main(["--out", str(workdir), "--only", "battery"]) == 0
+            workdir = next(workdir.iterdir())
+        elif tool == "sample":
+            assert run_sampler(workdir) == 0
+        else:
+            assert (
+                adb_ro.main(
+                    [
+                        "--workdir",
+                        str(workdir),
+                        "--save",
+                        "example",
+                        "--",
+                        "dumpsys",
+                        "wifi",
+                    ]
+                )
+                == 0
+            )
+    finally:
+        os.umask(previous)
+    capsys.readouterr()
+    assert workdir.stat().st_mode & 0o777 == 0o700
+    for path in workdir.rglob("*"):
+        assert path.stat().st_mode & 0o777 == (0o700 if path.is_dir() else 0o600)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permissions required")
+@pytest.mark.parametrize("tool", ["sample", "adhoc"])
+def test_saved_reads_reject_public_workdir_before_adb(adb, tmp_path, capsys, tool):
+    """Existing exposed destinations fail explicitly without contacting a phone."""
+    workdir = tmp_path / "capture"
+    workdir.mkdir()
+    workdir.chmod(0o755)
+    if tool == "sample":
+        assert run_sampler(workdir) == 2
+    else:
+        assert (
+            adb_ro.main(
+                [
+                    "--workdir",
+                    str(workdir),
+                    "--save",
+                    "example",
+                    "--",
+                    "dumpsys",
+                    "wifi",
+                ]
+            )
+            == 2
+        )
+    assert "0700" in capsys.readouterr().err
+    assert adb.calls() == []
+    assert list(workdir.iterdir()) == []
+    assert workdir.stat().st_mode & 0o777 == 0o755

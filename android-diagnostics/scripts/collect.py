@@ -51,6 +51,7 @@ from androiddiag.readonly import (
     serial_hash,
     write_json,
 )
+from androiddiag.storage import private_directory, write_private
 
 if sys.version_info < (3, 11):  # ruff: ignore[outdated-version-block] - message for users of old Python
     sys.exit("collect.py needs Python 3.11 or newer")
@@ -177,10 +178,16 @@ def make_workdir(out: Path, model: str, now: datetime) -> Path:
     name = re.sub(r"[^A-Za-z0-9._-]+", "_", model).strip("._") or "android"
     base = out / f"{name}-{now:%Y%m%d-%H%M%S}"
     path, n = base, 1
-    while path.exists():
-        n += 1
-        path = base.with_name(f"{base.name}-{n}")
-    (path / "live").mkdir(parents=True)
+    # The output root may be a normal user directory; never chmod it.
+    private_directory(out, require_private=False)
+    while True:
+        try:
+            path.mkdir(mode=0o700)
+            break
+        except FileExistsError:
+            n += 1
+            path = base.with_name(f"{base.name}-{n}")
+    private_directory(path / "live")
     return path
 
 
@@ -263,6 +270,7 @@ class Collector:
     def bugreport(self) -> bool:
         """Take a bugreport into the workdir; return whether it succeeded."""
         path = self.workdir / "bugreport.zip"
+        write_private(path, b"")
         log("taking a bugreport (usually 2-5 minutes)...")
         run = run_adb(
             self.adb,
@@ -331,7 +339,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     return args
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # ruff: ignore[too-many-return-statements] - CLI exit cases
     """Collect from the device and print the workdir path."""
     args = parse_args(argv)
     if args.list:
@@ -356,7 +364,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     info = parse_device_props(props.stdout.decode(errors="replace"), device.serial)
     model = info["model"] or device.model.replace("_", " ")
-    workdir = make_workdir(args.out, model, datetime.now())
+    try:
+        workdir = make_workdir(args.out, model, datetime.now())
+    except (OSError, ValueError) as exc:
+        log(f"error: {exc}")
+        return 2
     manifest: dict[str, Any] = {
         "tool": "android-diagnostics collect",
         "started": now_iso(),

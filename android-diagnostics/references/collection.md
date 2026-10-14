@@ -37,6 +37,28 @@ A full run takes 5 to 10 minutes: about 1 to 3 minutes of dumps, then the
 bugreport. Run it in the background if your harness can, and wait for it to
 finish before analysing.
 
+### Local storage protection
+
+On POSIX systems, collection, sampling and `adb_ro.py --save` create capture
+workdirs and their subdirectories with mode `0700`. Raw output, stderr,
+manifests, temporary manifest files, sample differences and bugreport archives
+have owner-only permissions, normally `0600`, even with umask `022` or `002`.
+The adb child process uses umask `077` before creating any archive data.
+
+An existing capture directory must belong to the current user and have mode
+`0700`. Existing output files must also belong to that user, have no group or
+other permissions, and be regular files with one link. Unsafe destinations
+are rejected before writing to them. Choose a new destination or inspect and
+secure the old capture yourself before retrying. The scripts never chmod
+existing directories or files. A collection output root may remain `0755`;
+each new capture beneath it is private.
+
+Directory symlinks, output-file links and parent directories writable by
+other users are rejected. Sticky temporary directories such as `/tmp` are
+allowed. Windows does not provide these POSIX mode guarantees; use a location
+whose Windows access controls restrict access to your account. These local
+storage checks do not change any phone commands.
+
 ### Workdir layout
 
 | Path | Written by | Content |
