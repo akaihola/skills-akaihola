@@ -27,15 +27,20 @@ fleet-audit/scripts/audit.py path/to/fleet.toml
 Start from `references/fleet.example.toml`. Keep the real one outside any public
 repo, next to your other environment/topology notes.
 
-Exit status is `0` when everything matches and `1` when anything is off, so it
-works as a cron job or CI step. Progress goes to stderr, findings to stdout;
-`--quiet` suppresses the progress lines.
+Exit status is `0` when everything matches, `1` when anything is off and `2`
+when at least one target could not be scanned, so it works as a cron job or CI
+step. Progress goes to stderr, one line per target with what its scan found;
+findings go to stdout. `--quiet` suppresses the progress lines.
 
 ## What it reports
 
 | Finding | Meaning |
 | --- | --- |
-| `stale-checkout` | A clone's HEAD differs from the canonical ref. |
+| `scan-failed` | The target could not be scanned: ssh failed, the scanner exited non-zero, timed out, or its output ended early. Nothing else is reported for that target. |
+| `stale-checkout` | A clone's HEAD is an ancestor of the canonical ref, so a fast-forward is possible. |
+| `ahead-checkout` | A clone has commits on top of the canonical ref that are not published there. |
+| `diverged-checkout` | A clone and the canonical ref each have commits the other lacks. |
+| `unknown-checkout` | Neither side has the other's commit, so the relationship cannot be judged without fetching. Not proof of either "behind" or "ahead". |
 | `dirty-checkout` | Tracked modifications in a deployed clone. |
 | `broken-link` | A skill symlink whose target does not resolve. |
 | `external-link` | An absolute symlink pointing outside the account's own `$HOME` — works for one user, dead for every other. |
@@ -55,6 +60,9 @@ locally for the local account) and parses its TSV output. The scanner:
    target mentions the repo — everything else in those directories (third-party
    skills, vendored marketplaces) is filtered out at the source rather than
    shipped back and discarded.
+
+Ancestry is judged on the target when the clone has the canonical commit, and
+in the canonical checkout otherwise.
 
 Copies are compared by a digest over relative path plus content. The **same
 shell function** computes the digest on the targets and on the canonical
