@@ -345,6 +345,9 @@ uv run --script SKILL_DIR/scripts/report.py WORKDIR --redact --output WORKDIR/re
 `--redact` replaces MAC and IP addresses, network names, serial-like numbers,
 e-mail addresses and phone numbers with stable placeholders such as
 `<ip:3f2a>`, so the same address keeps the same placeholder throughout.
+Network names are learned from their context (`SSID: "..."`, `configKey=`)
+and then hidden wherever they recur; a name of one or two characters is
+hidden elsewhere only between quotes, so check prose for it by hand.
 `--redact-salt TEXT` mixes a secret into the placeholder hashes. It does not
 touch `analysis.json` or the dumps, and it does not hide app names. Read the
 redacted report before it leaves the machine, and remove app names that the
