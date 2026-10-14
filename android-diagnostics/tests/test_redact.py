@@ -85,6 +85,20 @@ def test_emails_but_not_hal_or_job_names():
     assert "@com.example.app" in out
 
 
+@pytest.mark.parametrize(
+    "prefix",
+    ["com", "org", "net", "io", "de", "android", "androidx", "vendor"],
+)
+@pytest.mark.parametrize("domain", ["example.com", "example.org"])
+def test_email_domain_prefixes(prefix, domain):
+    address = f"sender@{prefix}.{domain}"
+    r = Redactor()
+    expected = r.placeholder("email", address)
+    out = r.redact(f"{address} {address.upper()}")
+    assert out == f"{expected} {expected}"
+    assert r.redact(out) == out
+
+
 def test_phone_numbers_and_long_ids():
     out = Redactor().redact(
         "call +1 555 0100 123 or tel:5550100123; id 356789012345678 count 3345750",
