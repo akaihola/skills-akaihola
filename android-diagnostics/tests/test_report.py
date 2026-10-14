@@ -16,6 +16,7 @@ import pytest
 import report
 from androiddiag import budget
 from androiddiag.model import SEVERITY_RANK, Evidence, Finding, Result, Windows
+from androiddiag.redact import Redactor
 from conftest import SCRIPTS
 
 WINDOWS = Windows(
@@ -427,3 +428,33 @@ def test_redact_learns_names_from_the_whole_analysis(context_factory, tmp_path):
     redacted = render(path, "--redact")
     assert "Example Home" not in redacted
     assert "roamed away from \\<ssid:" in redacted
+
+
+@pytest.mark.parametrize("output_format", ["markdown", "json-summary"])
+@pytest.mark.parametrize(
+    "prefix",
+    ["com", "org", "net", "io", "de", "android", "androidx", "vendor"],
+)
+def test_redact_email_domain_prefixes(context_factory, tmp_path, prefix, output_format):
+    address = f"sender@{prefix}.example.org"
+    diagnostic = "hal vendor.sensors@2.0-service.example and job @com.example.app"
+    doc = make_doc(context_factory)
+    doc["findings"][0]["summary"] = (
+        f"Account {address} and {address.upper()}. {diagnostic}"
+    )
+    doc["findings"][0]["evidence"] = [
+        {"ref": "live/x.txt:3", "excerpt": f"Account {address.upper()}. {diagnostic}"},
+    ]
+    path = write_doc(tmp_path, doc)
+    plain = render(path, "--format", output_format)
+    assert address in plain
+    assert address.upper() in plain
+    out = render(path, "--format", output_format, "--redact")
+    assert address not in out.lower()
+    expected = Redactor().redact(address)
+    if output_format == "json-summary":
+        item = json.loads(out)["findings"][0]
+        assert item["summary"] == f"Account {expected} and {expected}. {diagnostic}"
+    else:
+        assert f"Account \\{expected} and \\{expected}. {diagnostic}" in out
+        assert f"`Account {expected}. {diagnostic}`" in out

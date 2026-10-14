@@ -52,12 +52,10 @@ _NOT_NAMES = frozenset(
 
 _PLACEHOLDER = r"<[a-z]+:[0-9a-f]+>"
 _PLACEHOLDER_RE = re.compile(_PLACEHOLDER)
-# The domain must start with a letter and must not look like a reversed package
-# name, so HAL names (``sensors@2.0-service``) and job tags (``@com.example.app``)
-# are not taken for addresses.
+# A local part and a domain starting with a letter keep HAL versions
+# (``sensors@2.0-service``) and job tags (``@com.example.app``) intact.
 _EMAIL_RE = re.compile(
     r"(?<![\w.+-])[A-Za-z0-9._%+-]+@"
-    r"(?!(?:com|org|net|io|de|android|androidx|vendor)\.)"
     r"[A-Za-z][A-Za-z0-9-]*(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b",
 )
 _MAC_RE = re.compile(
