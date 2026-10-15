@@ -24,6 +24,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess  # ruff: ignore[suspicious-subprocess-import] - adb is the point
@@ -33,6 +34,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from .catalog import FORBIDDEN_FRAGMENTS
+from .storage import check_private_file, private_directory, write_private
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -759,6 +761,7 @@ def run_adb(adb: str, args: list[str], timeout: float) -> Run:
             capture_output=True,
             timeout=timeout,
             check=False,
+            **({"umask": 0o077} if os.name == "posix" else {}),
         )
     except subprocess.TimeoutExpired as exc:
         error = f"timed out after {timeout:g} s; the output may be incomplete"
@@ -822,14 +825,15 @@ def now_iso() -> str:
 
 def write_json(path: Path, data: object) -> None:
     """Write ``data`` as JSON, replacing ``path`` atomically."""
-    tmp = path.with_name(f"{path.name}.tmp")
-    tmp.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", "utf-8")
-    tmp.replace(path)
+    text = json.dumps(data, indent=1, ensure_ascii=False) + "\n"
+    write_private(path, text.encode())
 
 
 def append_manifest(workdir: Path, key: str, entry: dict[str, Any]) -> None:
     """Append ``entry`` to the list ``key`` of the workdir's manifest.json."""
     path = workdir / "manifest.json"
+    private_directory(workdir)
+    check_private_file(path)
     manifest = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     manifest.setdefault(key, []).append(entry)
     write_json(path, manifest)
@@ -837,9 +841,14 @@ def append_manifest(workdir: Path, key: str, entry: dict[str, Any]) -> None:
 
 def save_output(live_dir: Path, name: str, run: Run) -> Path:
     """Save stdout as ``<name>.txt`` and non-empty stderr as ``<name>.err``."""
-    live_dir.mkdir(parents=True, exist_ok=True)
+    private_directory(live_dir.parent)
+    private_directory(live_dir)
     path = live_dir / f"{name}.txt"
-    path.write_bytes(run.stdout)
+    error_path = live_dir / f"{name}.err"
+    check_private_file(path)
     if run.stderr.strip():
-        (live_dir / f"{name}.err").write_bytes(run.stderr)
+        check_private_file(error_path)
+    write_private(path, run.stdout)
+    if run.stderr.strip():
+        write_private(error_path, run.stderr)
     return path

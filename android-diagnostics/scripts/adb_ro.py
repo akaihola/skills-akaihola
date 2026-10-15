@@ -44,6 +44,7 @@ from androiddiag.readonly import (
     run_shell,
     save_output,
 )
+from androiddiag.storage import private_directory
 
 if sys.version_info < (3, 11):  # ruff: ignore[outdated-version-block] - message for users of old Python
     sys.exit("adb_ro.py needs Python 3.11 or newer")
@@ -92,6 +93,13 @@ def main(argv: list[str] | None = None) -> int:
         check_adhoc(command)
     except ValueError as exc:
         print(f"rejected: {exc}", file=sys.stderr)
+        return 2
+    try:
+        if args.save:
+            private_directory(args.workdir)
+            private_directory(args.workdir / "live")
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 2
     try:
         adb, device = connect(args.serial)

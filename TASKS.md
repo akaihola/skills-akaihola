@@ -8,26 +8,26 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [1] Protect Android diagnostics captures from other local users
-  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-12T03:58:52.995Z"} -->
-
-- [2] Require a valid baseline before reporting Android live traffic rates
-  <!-- hai:{"id":"simple-f7bacf22-0266-4ed7-a938-0f489dd00ffa","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.115Z","updatedAt":"2026-10-12T03:58:53.115Z"} -->
-
-- [3] Redact valid email addresses with package-like domain prefixes
-  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-12T03:58:53.244Z"} -->
-
-- [4] Redact short Wi-Fi names in explicit network contexts
-  <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-12T03:58:53.364Z"} -->
-
-- [5] Discover imported Android bugreports with uppercase ZIP extensions
-  <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-12T03:58:53.488Z"} -->
-
 ## Scheduled
 
 ## In Progress
 
 ## Completed / Accepted
+
+- [x] [5] Discover imported Android bugreports with uppercase ZIP extensions
+  <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-15T15:47:57.923Z"} -->
+
+- [x] [4] Redact short Wi-Fi names in explicit network contexts
+  <!-- hai:{"id":"simple-71a4a9a7-3b77-40f6-b4a1-759bee3d2729","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.364Z","updatedAt":"2026-10-15T15:47:55.227Z"} -->
+
+- [x] [3] Redact valid email addresses with package-like domain prefixes
+  <!-- hai:{"id":"simple-8e743a01-6d8d-4718-b07b-a4721954d82a","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.244Z","updatedAt":"2026-10-15T08:20:43.649Z"} -->
+
+- [x] [2] Require a valid baseline before reporting Android live traffic rates
+  <!-- hai:{"id":"simple-f7bacf22-0266-4ed7-a938-0f489dd00ffa","priority":"medium","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.115Z","updatedAt":"2026-10-15T08:20:22.439Z"} -->
+
+- [x] [1] Protect Android diagnostics captures from other local users
+  <!-- hai:{"id":"simple-cd33e380-dfe6-48da-a292-776e182ccb6d","priority":"high","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:52.995Z","updatedAt":"2026-10-15T08:12:40.769Z"} -->
 
 [*]: TASKS.md
 
