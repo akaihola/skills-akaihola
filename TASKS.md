@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [6] Make the t3-start-thread helper speak T3's V2 protocol as well as V1
+  <!-- hai:{"id":"simple-88599925-e2e3-4c51-af5c-f4b0e9ebe196","labels":["steward"],"createdAt":"2026-10-16T20:05:55.680Z","updatedAt":"2026-10-16T20:05:55.680Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -33,7 +36,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -42,6 +45,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [4]: docs/tasks/4-redact-short-wi-fi-names-in-explicit-network-contexts.md
 
 [5]: docs/tasks/5-discover-imported-android-bugreports-with-uppercase-zip-extensions.md
+
+[6]: docs/tasks/6-make-the-t3-start-thread-helper-speak-t3-s-v2-protocol-as-well-as-v1.md
 
 ## Rules
 
