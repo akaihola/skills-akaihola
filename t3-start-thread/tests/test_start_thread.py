@@ -2,11 +2,14 @@
 
 import argparse
 import importlib.util
+import io
 import json
 import stat
 import tempfile
 from pathlib import Path
+from typing import Protocol
 from unittest.mock import patch
+from urllib.request import Request
 
 import pytest
 
@@ -22,6 +25,7 @@ class LostReplyServer:
     """Accept the first request, then lose its reply as a transport could."""
 
     url = "http://127.0.0.1:3773"
+    protocol = 1
 
     def __init__(self, snapshot: dict) -> None:
         """Keep only the scoped fixture snapshot and submitted commands."""
@@ -159,6 +163,7 @@ class MessageServer:
     """Track messages separately from the already existing target thread."""
 
     url = "http://127.0.0.1:3773"
+    protocol = 1
 
     def __init__(self, thread: dict) -> None:
         """Keep a target and switches for transport failures around acceptance."""
@@ -359,3 +364,505 @@ def test_resume_accepted_but_missing_message_does_not_resend(
     with pytest.raises(RuntimeError, match="Accepted message is absent"):
         helper.submit(server, path, record)
     assert len(server.commands) == 1
+
+
+class FixtureSocket(Protocol):
+    """Socket methods used by the helper transport."""
+
+    def send(self, raw: str) -> None:
+        """Accept a serialized RPC."""
+
+    def settimeout(self, timeout: float) -> None:
+        """Bound a receive."""
+
+    def close(self) -> None:
+        """Release the connection."""
+
+    def recv(self) -> str:
+        """Return a serialized reply."""
+
+
+class WireServer:
+    """Serve protocol-shaped RPC replies through the real helper transport."""
+
+    def __init__(self, protocol: int, root: Path) -> None:
+        """Keep an isolated project, receipt cache, and connection history."""
+        self.protocol = protocol
+        self.urls = []
+        self.requests = []
+        self.tickets = 0
+        self.lose_reply = False
+        self.project = {"id": "project", "title": "Fixture", "workspaceRoot": str(root)}
+        self.settings = {
+            "modelSelection": {"instanceId": "codex", "model": "fixture-model"},
+            "runtimeMode": "approval-required",
+            "interactionMode": "plan",
+        }
+        self.threads = [self.make_thread("parent")]
+        self.archived = []
+        self.receipts = {}
+
+    def make_thread(self, thread_id: str) -> dict:
+        """Keep V1 and V2 activity fields distinct in fixtures."""
+        activity = (
+            {"session": {"status": "running"}, "latestTurn": {"state": "running"}}
+            if self.protocol == 1
+            else {
+                "status": "running",
+                "activeRunId": "run",
+                "activityRunStatus": "running",
+            }
+        )
+        return {
+            "id": thread_id,
+            "projectId": "project",
+            "title": "Fixture",
+            "updatedAt": "2026-10-17T00:00:00Z",
+            **self.settings,
+            **activity,
+            "messages": [],
+        }
+
+    def ticket(self, request: Request, *, timeout: float) -> io.StringIO:
+        """Issue a fresh ticket for each connection attempt."""
+        assert timeout == 15
+        assert request.get_method() == "POST"
+        assert request.get_header("Authorization") == "Bearer fixture-token"
+        self.tickets += 1
+        return io.StringIO(json.dumps({"ticket": f"ticket-{self.tickets}"}))
+
+    def connect(self, url: str, *, timeout: float) -> "FixtureSocket":
+        """Reject V1 upgrades exactly as a V2 server does."""
+        assert timeout == 45
+        self.urls.append(url)
+        if self.protocol == 2 and "orchestrationProtocol=2" not in url:
+            msg = "Upgrade rejected"
+            raise helper.websocket.WebSocketBadStatusException(
+                msg,
+                status_code=426,
+                resp_body='{"error":"orchestration_protocol_incompatible"}',
+            )
+        backend = self
+
+        class Socket:
+            def send(self, raw: str) -> None:
+                self.request = json.loads(raw)
+
+            def settimeout(self, timeout: float) -> None:
+                pass
+
+            def close(self) -> None:
+                pass
+
+            def recv(self) -> str:
+                request = self.request
+                method, payload = request["tag"], request["payload"]
+                backend.requests.append((method, payload))
+                if method == "orchestration.subscribeShell":
+                    value = {"projects": [backend.project], "threads": backend.threads}
+                    if backend.protocol == 2:
+                        value["archivedThreads"] = backend.archived
+                elif method == "orchestration.subscribeThread":
+                    thread = next(
+                        t
+                        for t in backend.threads + backend.archived
+                        if t["id"] == payload["threadId"]
+                    )
+                    value = (
+                        {"thread": thread}
+                        if backend.protocol == 1
+                        else {
+                            "projection": {
+                                "thread": {"id": thread["id"]},
+                                "messages": thread["messages"],
+                            }
+                        }
+                    )
+                else:
+                    value = backend.dispatch(method, payload)
+                    if backend.lose_reply:
+                        backend.lose_reply = False
+                        msg = "Lost accepted reply"
+                        raise TimeoutError(msg)
+                    return json.dumps(
+                        {
+                            "_tag": "Exit",
+                            "requestId": request["id"],
+                            "exit": {"_tag": "Success", "value": value},
+                        }
+                    )
+                return json.dumps(
+                    {
+                        "_tag": "Chunk",
+                        "requestId": request["id"],
+                        "values": [
+                            {"kind": "snapshot", **value}
+                            if backend.protocol == 2
+                            and method == "orchestration.subscribeThread"
+                            else {"kind": "snapshot", "snapshot": value}
+                        ],
+                    }
+                )
+
+        return Socket()
+
+    def dispatch(self, method: str, command: dict) -> dict:
+        """Validate the envelope and deduplicate by command ID."""
+        if command["commandId"] in self.receipts:
+            return self.receipts[command["commandId"]]
+        if self.protocol == 1:
+            assert method == "orchestration.dispatchCommand"
+            assert command["type"] == "thread.turn.start"
+            creation = "bootstrap" in command
+            message = command["message"]
+        else:
+            creation = method == "orchestration.launchThread"
+            assert "bootstrap" not in command
+            if creation:
+                assert command["workspaceStrategy"]["type"] in {"root", "worktree"}
+                for key in helper.SETTINGS:
+                    assert command[key] == self.settings[key]
+                message = command["initialMessage"]
+            else:
+                assert method == "orchestration.dispatchCommand"
+                assert command["type"] == "message.dispatch"
+                assert command["createdBy"] == "user"
+                assert command["creationSource"] == "mcp"
+                assert command["dispatchMode"] == {"type": "queue_after_active"}
+                assert command["modelSelection"] == self.settings["modelSelection"]
+                message = command
+        if creation:
+            thread = next(
+                (t for t in self.threads if t["id"] == command["threadId"]), None
+            )
+            if thread is None:
+                thread = self.make_thread(command["threadId"])
+                self.threads.append(thread)
+        else:
+            thread = next(t for t in self.threads if t["id"] == command["threadId"])
+        thread["messages"].append(
+            {
+                "id": message["messageId"],
+                ("turnId" if self.protocol == 1 else "runId"): "turn",
+            }
+        )
+        result = (
+            {"threadId": thread["id"], "projection": {}, "resumed": False}
+            if self.protocol == 2 and creation
+            else {"sequence": 1}
+        )
+        self.receipts[command["commandId"]] = result
+        return result
+
+
+@pytest.fixture(params=[1, 2])
+def wire_server(
+    request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> WireServer:
+    """Run the CLI against both protocols without real credentials or sessions."""
+    server = WireServer(request.param, tmp_path)
+    monkeypatch.setenv("T3_THREAD_AUTH_TOKEN", "fixture-token")
+    monkeypatch.setattr(helper, "urlopen", server.ticket)
+    monkeypatch.setattr(helper.websocket, "create_connection", server.connect)
+    monkeypatch.setattr(helper.Path, "home", lambda: tmp_path)
+    return server
+
+
+def invoke(monkeypatch: pytest.MonkeyPatch, *arguments: str | Path) -> None:
+    """Exercise the unchanged public CLI."""
+    monkeypatch.setattr(helper.sys, "argv", [str(SCRIPT), *map(str, arguments)])
+    helper.main()
+
+
+def test_inspect_protocol_detection(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Inspect prints compatible summaries, detects once, and hides messages."""
+    invoke(monkeypatch, "inspect", "--workspace", tmp_path)
+    output = json.loads(capsys.readouterr().out)
+    assert output["threads"][0]["active"] is True
+    assert "messages" not in output["threads"][0]
+    assert output["projects"] == [wire_server.project]
+    assert len(wire_server.urls) == wire_server.protocol
+    assert len(set(wire_server.urls)) == wire_server.tickets
+
+
+@pytest.mark.parametrize("shared", [False, True])
+@pytest.mark.parametrize("parent", [False, True])
+def test_start_and_resume_both_protocols(  # ruff: ignore[too-many-arguments] - fixture matrix.
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    *,
+    shared: bool,
+    parent: bool,
+) -> None:
+    """Both settings sources and workspace strategies survive a lost reply."""
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture task.")
+    settings = tmp_path / "settings.json"
+    settings.write_text(json.dumps(wire_server.settings))
+    arguments = ["--parent-thread", "parent"] if parent else ["--settings", settings]
+    arguments += (
+        ["--shared-checkout"]
+        if shared
+        else ["--base-branch", "main", "--branch", "fixture"]
+    )
+    wire_server.lose_reply = True
+    with pytest.raises(TimeoutError):
+        invoke(
+            monkeypatch,
+            "start",
+            "--workspace",
+            tmp_path,
+            "--title",
+            "Fixture",
+            "--prompt-file",
+            prompt,
+            *arguments,
+        )
+    record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
+    saved = json.loads(record.read_text())
+    assert not saved.get("accepted")
+    requests = [
+        (m, p)
+        for m, p in wire_server.requests
+        if m in {"orchestration.launchThread", "orchestration.dispatchCommand"}
+    ]
+    assert len(requests) == 1
+    _method, command = requests[0]
+    if wire_server.protocol == 2:
+        assert command["workspaceStrategy"] == (
+            {"type": "root"}
+            if shared
+            else {
+                "type": "worktree",
+                "baseRef": "main",
+                "branch": "fixture",
+                "startFromOrigin": False,
+            }
+        )
+    invoke(monkeypatch, "resume", record)
+    assert len(wire_server.receipts) == 1
+    assert len(wire_server.threads) == 2
+    assert json.loads(record.read_text())["thread"]["active"] is True
+    assert prompt.read_text() not in capsys.readouterr().out
+
+
+def test_send_and_resume_both_protocols(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Send verifies the exact message; resume never submits a second turn."""
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture follow-up.")
+    args = [
+        "send",
+        "--workspace",
+        tmp_path,
+        "--thread",
+        "parent",
+        "--prompt-file",
+        prompt,
+    ]
+    invoke(monkeypatch, *args, "--dry-run")
+    assert json.loads(capsys.readouterr().out)["dryRun"] is True
+    assert not wire_server.receipts
+    wire_server.lose_reply = True
+    with pytest.raises(TimeoutError):
+        invoke(monkeypatch, *args)
+    record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
+    capsys.readouterr()
+    invoke(monkeypatch, "resume", record)
+    output = json.loads(capsys.readouterr().out)
+    assert output["delivered"] is True
+    assert output["thread"]["active"] is True
+    assert output["messageTurnId"] == "turn"
+    assert len(wire_server.receipts) == 1
+    assert len(wire_server.threads[0]["messages"]) == 1
+
+
+@pytest.mark.parametrize(
+    ("fields", "active"),
+    [
+        ({"session": None, "latestTurn": None}, False),
+        ({"session": {"status": "ready"}}, False),
+        ({"session": {"activeTurnId": "turn"}}, True),
+        ({"latestTurn": {"state": "running"}}, True),
+        ({"hasPendingApprovals": True}, True),
+        ({"hasPendingUserInput": True}, True),
+        ({"backgroundLiveness": "monitoring"}, True),
+        ({"status": "idle", "activeRunId": None}, False),
+        ({"status": "completed", "activeRunId": None}, False),
+        ({"status": "queued", "activeRunId": None}, False),
+        ({"status": "starting"}, True),
+        ({"status": "waiting"}, True),
+        ({"status": "completed", "activeRunId": "run"}, True),
+        ({"status": "completed", "activityRunStatus": "preparing"}, True),
+        ({"status": "completed", "pendingRuntimeRequest": {"id": "request"}}, True),
+        ({"status": "completed", "pendingBackgroundTasks": [{"taskId": "task"}]}, True),
+    ],
+)
+def test_activity(fields: dict, *, active: bool) -> None:
+    """Parked runs are idle; approvals, runtime requests and background work count."""
+    assert helper.thread_summary(fields)["active"] is active
+
+
+@pytest.mark.parametrize("action", ["start", "send"])
+def test_resume_unsubmitted_v1_record_on_either_protocol(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    action: str,
+) -> None:
+    """Old records translate without changing any saved identifier or setting."""
+    command = {
+        "type": "thread.turn.start",
+        "commandId": "saved-command",
+        "threadId": "new" if action == "start" else "parent",
+        **wire_server.settings,
+        "createdAt": "2026-10-17T00:00:00Z",
+        "message": {
+            "messageId": "saved-message",
+            "role": "user",
+            "text": "Fixture.",
+            "attachments": [],
+        },
+    }
+    if action == "start":
+        command["bootstrap"] = {
+            "createThread": {
+                "projectId": "project",
+                "title": "Fixture",
+                **wire_server.settings,
+            }
+        }
+    record = tmp_path / "old-record.json"
+    record.write_text(json.dumps({"url": "http://127.0.0.1:3773", "command": command}))
+    invoke(monkeypatch, "resume", record)
+    assert json.loads(record.read_text())["command"] == command
+    assert list(wire_server.receipts) == ["saved-command"]
+    assert wire_server.threads[-1]["messages"][0]["id"] == "saved-message"
+    # Force server-side deduplication too, rather than relying on reconciliation.
+    server = helper.Server("http://127.0.0.1:3773", None)
+    server.snapshot()
+    assert helper.dispatch(server, command) == helper.dispatch(server, command)
+    assert len(wire_server.threads[-1]["messages"]) == 1
+    # No repeated negotiation within one server instance.
+    urls = wire_server.urls[-3:]
+    assert all(
+        ("orchestrationProtocol=2" in u) == (wire_server.protocol == 2) for u in urls
+    )
+
+
+@pytest.mark.parametrize("wire_server", [2], indirect=True)
+def test_resume_partial_v2_launch(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Thread creation alone does not prove that the initial message persisted."""
+    command = {
+        "type": "thread.turn.start",
+        "commandId": "partial-command",
+        "threadId": "partial",
+        **wire_server.settings,
+        "message": {
+            "messageId": "initial",
+            "role": "user",
+            "text": "Fixture.",
+            "attachments": [],
+        },
+        "bootstrap": {"createThread": {"projectId": "project", "title": "Fixture"}},
+    }
+    wire_server.threads.append(wire_server.make_thread("partial"))
+    record = tmp_path / "partial.json"
+    record.write_text(json.dumps({"url": "http://127.0.0.1:3773", "command": command}))
+    invoke(monkeypatch, "resume", record)
+    assert len(wire_server.threads) == 2
+    assert wire_server.threads[-1]["messages"] == [{"id": "initial", "runId": "turn"}]
+    assert json.loads(record.read_text())["accepted"] is True
+
+
+@pytest.mark.parametrize("status", [401, 403, 426, 500])
+def test_unrelated_handshake_errors_never_trigger_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    status: int,
+) -> None:
+    """Authentication and generic upgrade failures are not protocol detection."""
+    monkeypatch.setenv("T3_THREAD_AUTH_TOKEN", "fixture-token")
+    backend = WireServer(1, Path("/fixture"))
+    monkeypatch.setattr(helper, "urlopen", backend.ticket)
+    error = helper.websocket.WebSocketBadStatusException(
+        "Fixture failure", status_code=status, resp_body="unrelated failure"
+    )
+    with patch.object(
+        helper.websocket, "create_connection", side_effect=error
+    ) as connect:
+        server = helper.Server("http://127.0.0.1:3773", None)
+        with pytest.raises(helper.websocket.WebSocketBadStatusException):
+            server.snapshot()
+    assert connect.call_count == 1
+    assert server.protocol is None
+
+
+@pytest.mark.parametrize("action", ["start", "send"])
+def test_accepted_missing_result_is_not_resent(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    action: str,
+) -> None:
+    """An acknowledged but absent result requires inspection on either protocol."""
+    command = {"threadId": "parent", "message": {"messageId": "missing"}}
+    if action == "start":
+        command["bootstrap"] = {}
+        if wire_server.protocol == 1:
+            wire_server.threads.clear()
+    record = tmp_path / "accepted.json"
+    record.write_text(
+        json.dumps(
+            {"url": "http://127.0.0.1:3773", "command": command, "accepted": True}
+        )
+    )
+    with pytest.raises(RuntimeError, match="inspect T3 before retrying"):
+        invoke(monkeypatch, "resume", record)
+    assert not wire_server.receipts
+
+
+@pytest.mark.parametrize("wire_server", [2], indirect=True)
+def test_archived_launch_stays_resumable(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Archived V2 threads reconcile without a replacement launch."""
+    thread = wire_server.threads.pop()
+    thread.update(
+        {"status": "completed", "activeRunId": None, "activityRunStatus": None}
+    )
+    thread["messages"] = [{"id": "initial", "runId": "run"}]
+    wire_server.archived.append(thread)
+    command = {
+        "threadId": "parent",
+        "message": {"messageId": "initial"},
+        "bootstrap": {},
+    }
+    record = tmp_path / "archived.json"
+    record.write_text(
+        json.dumps(
+            {"url": "http://127.0.0.1:3773", "command": command, "accepted": True}
+        )
+    )
+    invoke(monkeypatch, "resume", record)
+    assert json.loads(capsys.readouterr().out)["thread"]["active"] is False
+    assert not wire_server.receipts
+    invoke(monkeypatch, "inspect", "--workspace", tmp_path)
+    assert json.loads(capsys.readouterr().out)["threads"] == []

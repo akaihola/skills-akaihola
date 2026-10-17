@@ -70,3 +70,35 @@ describes running a dev server ("Checked end to end").
 
 Out of scope: `start-run.sh` itself (the steward adapts it to the `active` flag)
 and deploying T3.
+
+## Implementation and validation, 2026-10-17
+
+The helper negotiates V1 or V2 once per invocation from the WebSocket upgrade
+response. Saved requests retain their existing format and identifiers; V2
+launch and message requests are translated at dispatch. Resume checks the
+initial message as well as the thread on V2, including archived threads.
+Inspect adds `active` while retaining existing fields. V2 run IDs appear in
+`messageTurnId`. The skill documents paced prompts ending in either ellipsis.
+
+Validation:
+
+- 53 unit tests passed, covering every CLI action on both protocols, both
+  settings sources and workspace strategies, old records, lost replies,
+  partial launches, archived results, command deduplication and activity.
+- Ruff, ty with the script's dependency environment, and `git diff --check`
+  passed.
+- Live V1 inspect found the intended project and returned activity flags.
+  The steward's `tick --dry-run` passed. No live threads were started or
+  messaged.
+- An isolated V2 server ran the pacing-hook branch at `ea944594ce`, bound only
+  to loopback port 18746, with a separately pruned V1 database copy. In a new
+  scratch Git project, settings-file/shared-checkout and parent/worktree
+  launches completed, followed by a successful send. Direct replays of the
+  same launch and message command IDs created no duplicate runs or messages.
+  Inspect reported both settled threads as inactive. An interrupted send
+  record was also resumed successfully during validation.
+- The isolated server was stopped after testing. Private database, credentials,
+  request records and synthetic prompt evidence remain outside this repository.
+
+Deployment and changes to the steward scheduler remain outside this issue.
+User acceptance is pending.

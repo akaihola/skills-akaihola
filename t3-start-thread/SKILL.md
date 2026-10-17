@@ -26,9 +26,11 @@ uv run scripts/start_thread.py inspect --workspace /path/to/repository
 ```
 
 This prints matching project metadata and recent thread IDs, titles, and model
-settings. Choose the intended parent thread using conversation context, rather
-than assuming the newest thread is the current one. `CODEX_THREAD_ID` is the
-provider's session ID, not necessarily T3's thread ID.
+settings. Each thread includes an `active` boolean for running work, pending
+approvals or input, and background tasks on either protocol. A parked paced
+run alone is not active. Choose the intended parent thread using conversation
+context, rather than assuming the newest thread is the current one.
+`CODEX_THREAD_ID` is the provider's session ID, not necessarily T3's thread ID.
 
 The default server is `http://127.0.0.1:3773`. Use `--url` for another server.
 For a local server, the helper captures `t3 auth session issue --ttl 5m
@@ -52,9 +54,10 @@ uv run scripts/start_thread.py send \
 ```
 
 The helper preserves the target's model options, runtime mode, and interaction
-mode. It submits a normal user message and requests an agent turn with
-`thread.turn.start`; it does not create a thread or worktree. This API is
-available in the [tested 0.0.44 contracts](https://github.com/pingdotgg/t3code/blob/v0.0.44/packages/contracts/src/orchestration.ts#L1255).
+mode. It submits a normal user message using V1 `thread.turn.start` or V2
+`message.dispatch`. V2 queues the message after any active run. This does not
+create a thread or worktree. The helper detects the protocol from the WebSocket handshake,
+without relying on the server's version string.
 
 Use `--dry-run` to verify authentication, the target, and its settings without
 sending a message or writing a request record. It does not print the prompt.
@@ -67,8 +70,9 @@ establish exclusive access.
 
 Successful output includes `delivered: true` after finding the exact message
 ID in the target's thread snapshot. This verifies persistence, not that the
-other agent has acted on the message. Report the message's turn ID and observed
-state when available, and wait for the requested acknowledgement when needed.
+other agent has acted on the message. Report the message's turn ID, or V2 run
+ID in `messageTurnId`, and observed state when available. Wait for the requested
+acknowledgement when needed.
 
 ## Hand off the task
 
@@ -102,6 +106,11 @@ an explicitly requested model and for scheduled jobs, since archived threads
 drop out of the snapshot and can no longer serve as parents. Never change the
 settings silently.
 
+On a server with the pacing hook, a prompt ending in `...` or `…`, ignoring
+trailing whitespace, parks until the pacer admits it. This applies to both
+initial prompts and follow-ups. Delivery confirms persistence even when the
+run is parked; it does not mean the agent is running.
+
 ## Verify and handle interrupted requests
 
 Before sending a command, the helper saves its thread ID, command ID, message
@@ -113,19 +122,25 @@ its reply, resume that record rather than running `start` or `send` again:
 uv run scripts/start_thread.py resume /path/to/request.json
 ```
 
-For thread creation, resume checks the saved thread ID. For existing-thread
+For thread creation, resume checks the saved thread ID and, on V2, the initial
+message ID so a partially accepted launch can finish. For existing-thread
 messaging, it checks the saved message ID, since the thread already exists.
 If the result is visible, it reports it without submitting another turn.
 Otherwise it resends the same command ID, preserving server deduplication.
+Existing V1 records remain resumable after a V2 upgrade. Records keep their
+original IDs and request format; the helper translates requests at dispatch.
 An acknowledged command with a missing result stops for inspection. Stop and
 inspect a failed turn or schema error; do not create fresh requests as retries.
 
 Report the title, branch/worktree, and observed turn state. Claim the task is
-running only when the server reports a running turn or active session. Check
+running only when the server reports a running turn, active session, or V2
+running run. Check
 the new thread's UI if it needs an approval or user answer.
 
-The helper was exercised against T3 Code 0.0.44. If the API changes, inspect
-the running version's contracts before modifying the request. Relevant source:
+The helper supports V1 and V2 orchestration. V1 uses turn bootstrap commands;
+V2 uses `orchestration.launchThread` for creation and `message.dispatch` for
+follow-ups. If the API changes, inspect the running version's contracts before
+modifying the request. Relevant V1 source:
 [thread commands](https://github.com/pingdotgg/t3code/blob/v0.0.44/packages/contracts/src/orchestration.ts),
 [authentication](https://github.com/pingdotgg/t3code/blob/v0.0.44/apps/server/src/cli/auth.ts),
 and [WebSocket server](https://github.com/pingdotgg/t3code/blob/v0.0.44/apps/server/src/ws.ts).
