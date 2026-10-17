@@ -8,12 +8,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+## Scheduled
+
 - [7] Add a settle command to the t3-start-thread helper
     - Depends on: [6]
 
-  <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-17T12:52:25.981Z"} -->
-
-## Scheduled
+  <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-17T12:53:04.455Z"} -->
 
 ## In Progress
 
