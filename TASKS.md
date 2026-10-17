@@ -8,6 +8,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [7] Add a settle command to the t3-start-thread helper
+    - Depends on: [6]
+
+  <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-17T12:52:25.981Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -36,7 +41,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -47,6 +52,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [5]: docs/tasks/5-discover-imported-android-bugreports-with-uppercase-zip-extensions.md
 
 [6]: docs/tasks/6-make-the-t3-start-thread-helper-speak-t3-s-v2-protocol-as-well-as-v1.md
+
+[7]: docs/tasks/7-add-a-settle-command-to-the-t3-start-thread-helper.md
 
 ## Rules
 
