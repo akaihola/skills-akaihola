@@ -12,12 +12,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [7] Add a settle command to the t3-start-thread helper
+## Completed / Accepted
+
+- [ ] [7] Add a settle command to the t3-start-thread helper
     - Depends on: [6]
 
-      <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-17T12:53:25.497Z"} -->
-
-## Completed / Accepted
+      <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-17T12:58:13.794Z"} -->
 
 - [ ] [6] Make the t3-start-thread helper speak T3's V2 protocol as well as V1
       <!-- hai:{"id":"simple-88599925-e2e3-4c51-af5c-f4b0e9ebe196","labels":["steward"],"createdAt":"2026-10-16T20:05:55.680Z","updatedAt":"2026-10-17T09:02:27.761Z"} -->

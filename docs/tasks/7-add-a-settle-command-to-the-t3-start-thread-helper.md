@@ -58,3 +58,29 @@ cannot settle them.
   settle it again (no-op), and check that a running thread is refused.
 
 Out of scope: which threads the steward settles (its `AGENTS.md`).
+
+## Implementation and validation, 2026-10-17
+
+Implemented `settle` for both protocols with repeatable `--thread` arguments,
+a fresh command ID for every dispatch, and one JSON result per target.
+Each target gets a fresh shell snapshot. Archived, active and pending-input
+or pending-approval targets are refused before dispatch; failures leave the
+remaining targets eligible for processing. Dry-run performs no dispatch.
+Inspect exposes `settledAt`; the skill documents usage and result statuses.
+
+Validation:
+
+- 83 helper unit tests passed across V1 and V2, including every refusal,
+  already-settled targets, dry-run, per-target errors, command IDs and inspect
+  timestamps.
+- Ruff, ty with the helper dependencies, and `git diff --check` passed.
+- Live V1 inspect exposed `settledAt` on eight steward threads. Dry-run
+  reported seven eligible targets and refused one active target, exiting 1.
+  No live threads were settled, started or messaged.
+- On the isolated pacing-hook V2 server at `ea944594ce`, bound only to
+  loopback port 18746 using the private state from task [6], a new scratch
+  thread settled successfully. A second settle preserved its timestamp.
+  A synthetic provider turn un-settled it, and the helper refused settlement
+  while that scratch thread was running.
+
+Implementation merged into local main at `65fec29`. User acceptance is pending.
