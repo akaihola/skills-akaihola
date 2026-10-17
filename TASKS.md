@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [8] Gather acceptance evidence for the 2 review-queue items
+  <!-- hai:{"id":"simple-9467a5ab-9645-4aa0-89cc-747c91768be8","labels":["steward"],"createdAt":"2026-10-17T20:09:27.827Z","updatedAt":"2026-10-17T20:09:27.827Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -41,7 +44,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -54,6 +57,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [6]: docs/tasks/6-make-the-t3-start-thread-helper-speak-t3-s-v2-protocol-as-well-as-v1.md
 
 [7]: docs/tasks/7-add-a-settle-command-to-the-t3-start-thread-helper.md
+
+[8]: docs/tasks/8-gather-acceptance-evidence-for-the-2-review-queue-items.md
 
 ## Rules
 
