@@ -510,6 +510,13 @@ class WireServer:
         """Validate the envelope and deduplicate by command ID."""
         if command["commandId"] in self.receipts:
             return self.receipts[command["commandId"]]
+        if command.get("type") == "thread.settle":
+            assert method == "orchestration.dispatchCommand"
+            assert set(command) == {"type", "threadId", "commandId"}
+            thread = next(t for t in self.threads if t["id"] == command["threadId"])
+            thread["settledAt"] = thread.get("settledAt") or "2026-10-17T12:00:00Z"
+            self.receipts[command["commandId"]] = {"sequence": 1}
+            return self.receipts[command["commandId"]]
         if self.protocol == 1:
             assert method == "orchestration.dispatchCommand"
             assert command["type"] == "thread.turn.start"
@@ -584,6 +591,7 @@ def test_inspect_protocol_detection(
     invoke(monkeypatch, "inspect", "--workspace", tmp_path)
     output = json.loads(capsys.readouterr().out)
     assert output["threads"][0]["active"] is True
+    assert output["threads"][0]["settledAt"] is None
     assert "messages" not in output["threads"][0]
     assert output["projects"] == [wire_server.project]
     assert len(wire_server.urls) == wire_server.protocol
@@ -866,3 +874,158 @@ def test_archived_launch_stays_resumable(
     assert not wire_server.receipts
     invoke(monkeypatch, "inspect", "--workspace", tmp_path)
     assert json.loads(capsys.readouterr().out)["threads"] == []
+
+
+def idle_thread(server: WireServer, thread_id: str) -> dict:
+    """Create a stopped thread with protocol-appropriate shell fields."""
+    thread = server.make_thread(thread_id)
+    if server.protocol == 1:
+        thread.update(session={"status": "ready"}, latestTurn={"state": "completed"})
+    else:
+        thread.update(status="completed", activeRunId=None, activityRunStatus=None)
+    return thread
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_settle_batch(
+    wire_server: WireServer,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    *,
+    dry_run: bool,
+) -> None:
+    """Settle distinct IDs, preserving an existing timestamp and dry-run purity."""
+    timestamp = "2026-10-16T00:00:00Z"
+    first = idle_thread(wire_server, "first")
+    second = {**idle_thread(wire_server, "second"), "settledAt": timestamp}
+    wire_server.threads = [first, second]
+    invoke(
+        monkeypatch,
+        "settle",
+        "--url",
+        "http://127.0.0.1:3773",
+        "--thread",
+        "first",
+        "--thread",
+        "second",
+        *(["--dry-run"] if dry_run else []),
+    )
+    results = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [r["status"] for r in results] == ["settled", "already-settled"]
+    assert all(r["dryRun"] is dry_run for r in results)
+    assert second["settledAt"] == timestamp
+    assert bool(first.get("settledAt")) is not dry_run
+    commands = [
+        p for m, p in wire_server.requests if m == "orchestration.dispatchCommand"
+    ]
+    assert len(commands) == (0 if dry_run else 2)
+    assert len({c["commandId"] for c in commands}) == len(commands)
+    assert not (Path.home() / ".local/state/t3-start-thread").exists()
+
+
+@pytest.mark.parametrize(
+    ("fields", "reason"),
+    [
+        ({"archivedAt": "2026-10-17T00:00:00Z"}, "archived"),
+        ({"hasPendingUserInput": True}, "waiting for an answer"),
+        ({"hasPendingApprovals": True}, "waiting for approval"),
+        (
+            {"pendingRuntimeRequest": {"id": "question"}},
+            "waiting for runtime input or approval",
+        ),
+        ({"active": True}, "active"),
+    ],
+)
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_settle_refuses_and_continues(  # ruff: ignore[too-many-arguments] - fixture matrix.
+    wire_server: WireServer,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    fields: dict,
+    reason: str,
+    *,
+    dry_run: bool,
+) -> None:
+    """Unsafe targets never dispatch, even if already settled; other targets proceed."""
+    blocked = idle_thread(wire_server, "blocked")
+    blocked["settledAt"] = "2026-10-16T00:00:00Z"
+    blocked.update(fields)
+    if fields.get("active"):
+        blocked.update(wire_server.make_thread("blocked"))
+    wire_server.threads = [blocked, idle_thread(wire_server, "safe")]
+    with pytest.raises(SystemExit) as exit_info:
+        invoke(
+            monkeypatch,
+            "settle",
+            "--thread",
+            "blocked",
+            "--thread",
+            "safe",
+            *(["--dry-run"] if dry_run else []),
+        )
+    assert exit_info.value.code == 1
+    results = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert results[0]["status"] == "refused"
+    assert results[0]["reason"] == reason
+    assert results[1]["status"] == "settled"
+    assert all(
+        p["threadId"] == "safe"
+        for m, p in wire_server.requests
+        if m == "orchestration.dispatchCommand"
+    )
+
+
+def test_settle_archived_collection_and_missing(
+    wire_server: WireServer,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """V2 archived shells and absent targets are refused without dispatch."""
+    wire_server.archived = [idle_thread(wire_server, "archived")]
+    with pytest.raises(SystemExit):
+        invoke(monkeypatch, "settle", "--thread", "archived", "--thread", "missing")
+    results = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert results[0]["reason"] == (
+        "archived" if wire_server.protocol == 2 else "thread not found"
+    )
+    assert results[1]["reason"] == "thread not found"
+    assert not wire_server.receipts
+
+
+def test_settle_server_error_continues(
+    wire_server: WireServer,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A server-side refusal is reported verbatim and does not stop the batch."""
+    wire_server.threads = [idle_thread(wire_server, t) for t in ("race", "safe")]
+    original = wire_server.dispatch
+
+    def reject_one(method: str, command: dict) -> dict:
+        if command["threadId"] == "race":
+            msg = (
+                'T3 rejected the RPC: {"_tag":"OrchestrationThreadSettleBlockedError"}'
+            )
+            raise RuntimeError(msg)
+        return original(method, command)
+
+    monkeypatch.setattr(wire_server, "dispatch", reject_one)
+    with pytest.raises(SystemExit):
+        invoke(monkeypatch, "settle", "--thread", "race", "--thread", "safe")
+    results = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert results[0]["status"] == "error"
+    assert "OrchestrationThreadSettleBlockedError" in results[0]["error"]
+    assert results[1]["status"] == "settled"
+
+
+def test_inspect_settled_timestamp(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Expose persisted settlement without needing database access."""
+    timestamp = "2026-10-17T12:00:00Z"
+    wire_server.threads[0]["settledAt"] = timestamp
+    invoke(monkeypatch, "inspect", "--workspace", tmp_path)
+    assert json.loads(capsys.readouterr().out)["threads"][0]["settledAt"] == timestamp

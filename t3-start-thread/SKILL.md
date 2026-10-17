@@ -1,9 +1,9 @@
 ---
 name: t3-start-thread
-description: Create T3 Code threads or send user messages to existing threads for requested coordination. Use when asked to start, delegate to, message, or coordinate with a T3 thread, including when no native T3 messaging tool is exposed.
+description: Create, message or settle T3 Code threads for requested coordination. Use when asked to start, delegate to, message, settle or coordinate with a T3 thread, including when no native T3 tool is exposed.
 ---
 
-# Create or message a T3 Code thread
+# Create, message or settle a T3 Code thread
 
 Create a thread with a task handoff, or send a user message to an existing
 thread, and verify the result. A harness subagent is not a T3 Code thread.
@@ -38,6 +38,28 @@ For a local server, the helper captures `t3 auth session issue --ttl 5m
 directory differs from the server's. For a remote server, supply an existing
 bearer session through `T3_THREAD_AUTH_TOKEN`; do not mint credentials from an
 unrelated local server. Tokens stay in memory.
+
+## Settle threads
+
+Use the thread IDs from `inspect`, which includes each thread's `settledAt`:
+
+```bash
+uv run scripts/start_thread.py settle --url http://127.0.0.1:3773 \
+  --thread T3_THREAD_ID --thread ANOTHER_THREAD_ID --dry-run
+```
+
+Remove `--dry-run` to dispatch `thread.settle` on either protocol. No workspace
+argument is needed. Each target gets one JSON line with `threadId`, `dryRun`
+and `status`: `settled`, `already-settled`, `refused` with a `reason`, or `error`
+with the server's rejection. In a dry-run, `settled` means it would be settled.
+Archived, active and pending-input or pending-approval threads are refused
+before dispatch. A refusal or error makes the exit status nonzero, while the
+remaining targets are still checked. Already-settled threads retain their
+original timestamp. New activity un-settles a thread.
+
+Settle only threads the user has authorized. This command sends no user message
+and creates no request record; after an interrupted invocation, inspect the
+targets before retrying.
 
 ## Message an existing thread
 

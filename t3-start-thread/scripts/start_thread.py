@@ -3,10 +3,10 @@
 # requires-python = ">=3.11"
 # dependencies = ["websocket-client>=1.8,<2"]
 # ///
-"""Create T3 threads or message existing ones through authenticated commands."""
+"""Create, message or settle T3 threads through authenticated commands."""
 
 import argparse
-import datetime
+import datetime as dt
 import json
 import operator
 import os
@@ -209,6 +209,7 @@ def thread_summary(thread: dict) -> dict:
         "worktreePath",
         "latestTurn",
         "session",
+        "settledAt",
     )
     summary = {key: thread.get(key) for key in keys}
     if "status" in thread:
@@ -243,6 +244,60 @@ def thread_summary(thread: dict) -> dict:
             or thread.get("backgroundLiveness")
         )
     return summary
+
+
+def settle(args: argparse.Namespace, server: Server) -> None:
+    """Settle safe targets independently, emitting one JSON result per thread."""
+    failed = False
+    for thread_id in args.thread:
+        result = {"threadId": thread_id, "dryRun": args.dry_run}
+        try:  # ruff: ignore[too-many-statements-in-try-clause] - each target must fail independently.
+            # Refresh before each command; earlier targets may take time to settle.
+            snapshot = server.snapshot()
+            thread = next(
+                (t for t in all_threads(snapshot) if t["id"] == thread_id), None
+            )
+            reason = None
+            if thread is None:
+                reason = "thread not found"
+            elif thread.get("archivedAt") or any(
+                t["id"] == thread_id for t in snapshot.get("archivedThreads", [])
+            ):
+                reason = "archived"
+            elif thread.get("hasPendingUserInput"):
+                reason = "waiting for an answer"
+            elif thread.get("hasPendingApprovals"):
+                reason = "waiting for approval"
+            elif thread.get("pendingRuntimeRequest"):
+                reason = "waiting for runtime input or approval"
+            elif thread_summary(thread)["active"]:
+                reason = "active"
+            if reason:
+                result.update(status="refused", reason=reason)
+                failed = True
+            elif thread is not None:
+                result["status"] = (
+                    "already-settled" if thread.get("settledAt") else "settled"
+                )
+                if not args.dry_run:
+                    server.call(
+                        "orchestration.dispatchCommand",
+                        {
+                            "type": "thread.settle",
+                            "commandId": str(uuid.uuid4()),
+                            "threadId": thread_id,
+                        },
+                    )
+        except RuntimeError as error:
+            # RPC rejection text contains the server error, not transport tickets.
+            result.update(status="error", error=str(error))
+            failed = True
+        except (OSError, ValueError, KeyError, websocket.WebSocketException) as error:
+            result.update(status="error", error=type(error).__name__)
+            failed = True
+        print(json.dumps(result), flush=True)
+    if failed:
+        raise SystemExit(1)
 
 
 def save_record(path: Path, record: dict, *, create: bool = False) -> None:
@@ -347,7 +402,7 @@ def send(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
         "commandId": str(uuid.uuid4()),
         "threadId": thread["id"],
         **{key: thread[key] for key in SETTINGS},
-        "createdAt": datetime.datetime.now(datetime.UTC).isoformat(),
+        "createdAt": dt.datetime.now(dt.UTC).isoformat(),
         "message": {
             "messageId": str(uuid.uuid4()),
             "role": "user",
@@ -401,7 +456,7 @@ def start(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
         msg = "Prompt file is empty"
         raise ValueError(msg)
     thread_id = str(uuid.uuid4())
-    now = datetime.datetime.now(datetime.UTC).isoformat()
+    now = dt.datetime.now(dt.UTC).isoformat()
     bootstrap = {
         "createThread": {
             "projectId": project["id"],
@@ -460,16 +515,20 @@ def start(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
 
 
 def main() -> None:
-    """Parse inspect, start, send, and resume operations."""
+    """Parse inspect, start, send, settle, and resume operations."""
     os.umask(0o077)
     os.environ["SHELL"] = shutil.which("bash") or "/bin/bash"
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="action", required=True)
-    for action in ("inspect", "start", "send"):
+    for action in ("inspect", "start", "send", "settle"):
         command = commands.add_parser(action)
         command.add_argument("--url", default="http://127.0.0.1:3773")
         command.add_argument("--base-dir")
-        command.add_argument("--workspace", required=True)
+        if action == "settle":
+            command.add_argument("--thread", action="append", required=True)
+            command.add_argument("--dry-run", action="store_true")
+        else:
+            command.add_argument("--workspace", required=True)
         if action == "send":
             command.add_argument("--thread", required=True)
             command.add_argument("--prompt-file", required=True)
@@ -492,6 +551,9 @@ def main() -> None:
         submit(server, args.record, record)
         return
     server = Server(args.url, args.base_dir)
+    if args.action == "settle":
+        settle(args, server)
+        return
     snapshot = server.snapshot()
     if args.action == "send":
         send(args, server, snapshot)
