@@ -8,10 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [6] Make the t3-start-thread helper speak T3's V2 protocol as well as V1
-  <!-- hai:{"id":"simple-88599925-e2e3-4c51-af5c-f4b0e9ebe196","labels":["steward"],"createdAt":"2026-10-16T20:05:55.680Z","updatedAt":"2026-10-16T20:05:55.680Z"} -->
-
 ## Scheduled
+
+- [6] Make the t3-start-thread helper speak T3's V2 protocol as well as V1
+  <!-- hai:{"id":"simple-88599925-e2e3-4c51-af5c-f4b0e9ebe196","labels":["steward"],"createdAt":"2026-10-16T20:05:55.680Z","updatedAt":"2026-10-17T08:56:39.077Z"} -->
 
 ## In Progress
 
