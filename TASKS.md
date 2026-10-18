@@ -64,8 +64,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ### Review and ordering
 
-- Only the user promotes proposals to Ordered backlog. An explicit request to
-  add tasks for reviewed findings authorizes adding those tasks there.
+- Only the user, or the steward (`~/my-knowledge/agents/steward/`) for a
+  proposal that fits `~/my-knowledge/pages/Goals.md`, promotes proposals to
+  Ordered backlog; the steward lists each move in its daily digest. An
+  explicit request to add tasks for reviewed findings authorizes adding those
+  tasks there.
 - Before adding an issue, check all sections and the older backlog files for
   duplicates. Merge overlapping proposals instead of making another record.
 - Each issue has exactly one lifecycle section. Preserve its stable Hai ID,
