@@ -13,11 +13,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [13] Fix the skills review's next three: library argument hint, Asana
-  discovery, ECB command
-  <!-- hai:{"id":"simple-b6046199-2631-4b0b-80d1-cb7f05f0f51b","labels":["steward"],"createdAt":"2026-10-19T14:11:43.093Z","updatedAt":"2026-10-19T17:59:34.895Z"} -->
-
 ## In Progress
+
+- [~] [13] Fix the skills review's next three: library argument hint, Asana
+  discovery, ECB command
+      <!-- hai:{"id":"simple-b6046199-2631-4b0b-80d1-cb7f05f0f51b","labels":["steward"],"createdAt":"2026-10-19T14:11:43.093Z","updatedAt":"2026-10-19T17:59:47.554Z"} -->
 
 ## Completed / Accepted
 
