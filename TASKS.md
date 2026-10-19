@@ -16,10 +16,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [10] Separate T3 child-task delegation from top-level launches
-  <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T12:44:40.630Z"} -->
-
 ## In Progress
+
+- [~] [10] Separate T3 child-task delegation from top-level launches
+      <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T12:44:52.028Z"} -->
 
 ## Completed / Accepted
 
