@@ -1,21 +1,68 @@
 ---
 name: t3-start-thread
-description: Create, message or settle T3 Code threads for requested coordination. Use when asked to start, delegate to, message, settle or coordinate with a T3 thread, including when no native T3 tool is exposed.
+description: Route requested T3 Code coordination to child-task delegation, an explicitly requested new conversation, or messaging and settling existing threads, including when native tools are not initially exposed.
 ---
 
-# Create, message or settle a T3 Code thread
+# Coordinate T3 Code tasks and threads
 
-Create a thread with a task handoff, or send a user message to an existing
-thread, and verify the result. A harness subagent is not a T3 Code thread.
+## Choose the operation first
 
-Prefer a native T3 tool for the requested operation if one is exposed.
+Decide from the user's intent before choosing a tool or helper command:
+
+- A subagent, delegated review, or parallel child task belongs to the current
+  thread. Follow **Delegate a child task** below.
+- An explicitly requested separate/new/top-level thread or conversation uses
+  `t3_thread_launch` or `create_threads`, or the helper's `start` command.
+- A follow-up to an existing ordinary thread uses `t3_thread_send`, or the
+  helper's `send` command. Settling uses the native settle tool or `settle`.
+
+"Delegate this review to a subagent" does not authorize a top-level launch.
+If "hand this off" leaves the intended kind of coordination unclear, ask
+whether the user wants a child task or a separate conversation.
+
+## Delegate a child task
+
+Call `orchestrator_capabilities` to discover the live provider instances and
+model IDs, including configured custom models. Follow the session's T3
+orchestration contract when selecting native subagent tools or `delegate_task`.
+Prefer native subagent tools for same-provider work only when they support the
+selected model. Use `delegate_task` with that provider instance and model when
+native tools cannot, for cross-provider or explicitly T3-owned child tasks,
+and for a child needing a separate checkout. For the latter, set
+`isolation: "worktree"`; it starts from the parent's local commit, runs project
+setup, and does not copy uncommitted edits.
+
+Retain each returned `taskId` for `task_status` or `task_cancel`. The returned
+`childThreadId` is backing storage, not an ordinary thread to launch or message.
+For each further T3 delegated review round, call `delegate_task` again with the
+original brief, prior findings, responses and unresolved objections. Give each
+round a distinct `clientRequestId`, stable across retries of that round.
+
+If T3 tools are missing from the initial catalog, make one bounded direct
+`orchestrator_capabilities` attempt using the harness's T3 tool name. If an ACP
+harness still exposes no tools and `T3_ACP_MCP_NODE` is set, use its supported
+transport, with arguments passed as JSON:
+
+```bash
+ELECTRON_RUN_AS_NODE=1 "$T3_ACP_MCP_NODE" ${T3_ACP_MCP_ENTRYPOINT:+"$T3_ACP_MCP_ENTRYPOINT"} \
+  acp-mcp-call orchestrator_capabilities '{}'
+```
+
+Use the same transport for `delegate_task`, `task_status` or `task_cancel` as
+needed. If delegation remains unavailable, report the observed blocker.
+The helper implements ordinary thread operations only; never substitute
+`start`, `send` or `t3_thread_launch` for child-task delegation.
+
+## Ordinary thread operations
+
+Prefer a native T3 tool for the selected operation if one is exposed.
 Otherwise use the helper below. It uses the running server's authenticated
 WebSocket API and also works when the collaborative browser is unavailable.
 
-Before claiming T3 thread creation or messaging is unavailable, check this
-helper and the local backend. Missing native tools do not establish that the
-operation is impossible. Describe an observed authentication, connection, or
-API failure precisely; describe an untested path as untested.
+Before claiming ordinary thread creation or messaging is unavailable, check
+this helper and the local backend. Missing native tools do not establish that
+the operation is impossible. Describe an observed authentication, connection,
+or API failure precisely; describe an untested path as untested.
 
 ## Inspect the project
 
@@ -96,7 +143,7 @@ other agent has acted on the message. Report the message's turn ID, or V2 run
 ID in `messageTurnId`, and observed state when available. Wait for the requested
 acknowledgement when needed.
 
-## Hand off the task
+## Start an explicitly requested ordinary thread
 
 Write a private prompt file outside the repository. Include the user's goal,
 relevant files and decisions, useful verification results, and the permitted
