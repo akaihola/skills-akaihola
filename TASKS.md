@@ -18,10 +18,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [10] Separate T3 child-task delegation from top-level launches
-      <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T12:44:52.028Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [10] Separate T3 child-task delegation from top-level launches
+      <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T12:46:25.166Z"} -->
 
 - [ ] [9] Review every skill for stale instructions, weak triggers and token cost,
   and draft the fixes
