@@ -15,10 +15,12 @@ Usage:
 Options:
     --model MODEL       LLM model (default: openrouter/openai/gpt-5.4-nano)
     --force             Re-OCR even when JSON cache exists
-    --dry-run           Show proposed renames without writing anything
+    --dry-run           Preview renames from cached JSON only; no OCR or writes
     --jobs N            Parallel OCR jobs (default: 4)
     --work-dir DIR      Cache directory (default: <directory>/.receipt-work)
 """
+
+# ruff: file-ignore[print] - CLI output is intentional.
 
 import argparse
 import json
@@ -253,6 +255,34 @@ def process_one(pdf_path: Path, work_dir: Path, model: str, force: bool) -> tupl
 # Main
 # ---------------------------------------------------------------------------
 
+def preview_receipts(pdfs: list[Path], work_dir: Path) -> None:
+    """Print proposed names using cached metadata without extraction or OCR."""
+    results = []
+    for pdf in pdfs:
+        cache = work_dir / f"{pdf.stem}.json"
+        try:
+            data = json.loads(cache.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            print(f"  Cache miss: {pdf.name} (no cached metadata; skipped)")
+            continue
+        except (OSError, UnicodeError, ValueError) as exc:
+            print(f"  Cache error: {pdf.name}: {exc} (skipped)", file=sys.stderr)
+            continue
+        if not isinstance(data, dict):
+            print(f"  Cache error: {pdf.name}: expected a JSON object (skipped)",
+                  file=sys.stderr)
+            continue
+        results.append((pdf, data))
+
+    results.sort(key=lambda t: (t[1].get("date") or "9999", t[0].name))
+    seen: dict[str, int] = {}
+    for pdf, data in results:
+        base = unique_name(make_base_name(data), seen)
+        print(f"  {pdf.name}")
+        print(f"    → {base}.{{pdf,jpg,txt}}")
+    print("\nDry run: cached metadata only; no OCR or files written.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="OCR-process scanned receipt PDFs and rename them descriptively."
@@ -263,7 +293,8 @@ def main() -> None:
     parser.add_argument("--force", action="store_true",
                         help="Re-OCR even when JSON cache already exists")
     parser.add_argument("--dry-run", action="store_true",
-                        help="Print proposed renames without writing files")
+                        help="Preview cached renames; no OCR or writes "
+                             "(ignores --force)")
     parser.add_argument("--jobs", type=int, default=4,
                         help="Parallel OCR workers (default: 4)")
     parser.add_argument("--work-dir",
@@ -279,12 +310,15 @@ def main() -> None:
         if args.work_dir
         else target_dir / ".receipt-work"
     )
-    work_dir.mkdir(parents=True, exist_ok=True)
-
     pdfs = sorted(target_dir.glob("*.pdf"))
     if not pdfs:
         sys.exit(f"No PDF files found in {target_dir}")
 
+    if args.dry_run:
+        preview_receipts(pdfs, work_dir)
+        return
+
+    work_dir.mkdir(parents=True, exist_ok=True)
     print(f"Found {len(pdfs)} PDF(s) – OCR model: {args.model}\n")
 
     # --- parallel OCR ---
@@ -322,10 +356,6 @@ def main() -> None:
         plan.append((pdf_path, jpg_path, base, data))
         print(f"  {pdf_path.name}")
         print(f"    → {base}.{{pdf,jpg,txt}}")
-
-    if args.dry_run:
-        print("\nDry run – no files written.")
-        return
 
     # --- write files ---
     print()

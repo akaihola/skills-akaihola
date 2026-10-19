@@ -38,10 +38,15 @@ The script processes all `*.pdf` files in the directory in parallel (4 workers b
 ```
 --model MODEL       Override LLM model (default: openrouter/openai/gpt-5.4-nano)
 --force             Re-OCR even if JSON cache exists
---dry-run           Preview proposed renames without writing files
+--dry-run           Preview renames from cached JSON only; no OCR or writes
 --jobs N            Parallel workers (default: 4)
 --work-dir DIR      Cache directory (default: <input-dir>/.receipt-work)
 ```
+
+Dry-run reads existing `<work-dir>/<PDF stem>.json` metadata, even without a
+cached JPG. It reports cache misses and unreadable metadata and skips those
+PDFs. It creates no directories or files, runs no extraction or OCR commands,
+and ignores `--force`. Run normal processing first to populate missing caches.
 
 ## Post-Processing: Manual Corrections
 
