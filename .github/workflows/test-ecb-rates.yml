@@ -1,0 +1,16 @@
+name: Test ECB rates
+
+on:
+  push:
+    branches: [main]
+    paths: ["ecb-rates/**", ".github/workflows/test-ecb-rates.yml"]
+  pull_request:
+    paths: ["ecb-rates/**", ".github/workflows/test-ecb-rates.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v2
+      - run: uv run --no-project --with pytest --with defusedxml pytest ecb-rates/tests -q

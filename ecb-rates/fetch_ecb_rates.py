@@ -1,14 +1,19 @@
 # Copyright (c) 2026 Antti Kaihola
 """Fetch USD/EUR currency exchange rates from ECB and save to CSV.
 
-Usage: uv run --with defusedxml fetch_ecb_rates.py [year] [output_file]
+Usage: uv run ecb-rates/fetch_ecb_rates.py [YEAR] [OUTPUT]
 """
+
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["defusedxml>=0.7.1"]
+# ///
 
 from __future__ import annotations
 
+import argparse
 import csv
 import operator
-import sys
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
@@ -55,11 +60,13 @@ def fetch_ecb_rates(year: int = 2025, output_file: str | None = None) -> list[di
         for rate_cube in cube:
             if rate_cube.get("currency") == "USD":
                 rate = float(rate_cube.get("rate"))
-                rates.append({
-                    "date": date_formatted,
-                    "rate": rate,
-                    "date_obj": date_obj,
-                })
+                rates.append(
+                    {
+                        "date": date_formatted,
+                        "rate": rate,
+                        "date_obj": date_obj,
+                    }
+                )
                 break
 
     rates.sort(key=operator.itemgetter("date_obj"))
@@ -74,7 +81,26 @@ def fetch_ecb_rates(year: int = 2025, output_file: str | None = None) -> list[di
     return rates
 
 
+def main() -> None:
+    """Parse the documented CLI before fetching historical rates."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "year",
+        type=int,
+        nargs="?",
+        default=2025,
+        metavar="YEAR",
+        help="historical year to export (default: 2025; never rolls forward)",
+    )
+    parser.add_argument(
+        "output",
+        nargs="?",
+        metavar="OUTPUT",
+        help="output CSV path (default: valuuttakurssit_YEAR.csv)",
+    )
+    args = parser.parse_args()
+    fetch_ecb_rates(args.year, args.output)
+
+
 if __name__ == "__main__":
-    year = int(sys.argv[1]) if len(sys.argv) > 1 else 2025
-    output = sys.argv[2] if len(sys.argv) > 2 else None  # noqa: PLR2004
-    fetch_ecb_rates(year, output)
+    main()
