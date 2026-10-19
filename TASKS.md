@@ -8,10 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [14] Send review findings to the thread that implemented the work
-  <!-- hai:{"id":"simple-345f3047-2675-4813-b434-f30bf4a8e48e","labels":["steward"],"createdAt":"2026-10-19T17:05:31.441Z","updatedAt":"2026-10-19T17:05:31.441Z"} -->
-
 ## Scheduled
+
+- [14] Send review findings to the thread that implemented the work
+  <!-- hai:{"id":"simple-345f3047-2675-4813-b434-f30bf4a8e48e","labels":["steward"],"createdAt":"2026-10-19T17:05:31.441Z","updatedAt":"2026-10-19T18:03:26.947Z"} -->
 
 ## In Progress
 
