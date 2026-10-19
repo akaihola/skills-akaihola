@@ -143,6 +143,43 @@ other agent has acted on the message. Report the message's turn ID, or V2 run
 ID in `messageTurnId`, and observed state when available. Wait for the requested
 acknowledgement when needed.
 
+## Route review findings back to the implementer
+
+When a review or acceptance check finds changes needed in work a known ordinary
+thread implemented, send the findings to that thread as a paced follow-up.
+Include the original issue, evidence (files, failing checks or reproduction),
+the changes needed and what "done" means. End the private prompt with `...`
+so the pacing hook parks it until admission. Do not hand the findings to the
+user to relay. Preserve any explicit restriction on messaging.
+
+For paced work, resolve the implementing thread from its canonical tracker
+and issue number:
+
+```bash
+uv run scripts/start_thread.py send \
+  --tracker /path/to/repository/TASKS.md --issue 14 \
+  --prompt-file /path/to/private-review.txt --dry-run
+```
+
+This requires `hai-tasks` on PATH. It reads Hai's `sourceReference` to find the
+stable issue ID, then matches `tracker` and `issue` in the local launch records
+under `~/.local/state/kandev-pacer/t3/`. The workspace defaults to the tracker's
+directory; pass `--workspace` if its T3 project root differs. Server and
+authentication options are the same as for explicit thread IDs. The live
+snapshot must still contain the target in the selected project. Missing,
+archived or ambiguous targets are refused; dry-run sends nothing.
+
+After checking the dry-run, remove `--dry-run` to send the paced follow-up.
+If the implementing thread is gone or archived, or no launch record identifies
+it, file a follow-up issue in the same tracker with the evidence and completion
+criteria. Check for duplicates and follow that tracker's ordering rules. An
+authentication or connection failure does not establish that a thread is gone.
+
+The steward includes these routing instructions in review issues it files:
+send actionable findings to the implementing thread as paced follow-ups; file
+follow-up issues in the same tracker when that thread is unavailable. Record
+the destination and delivery evidence in the review result.
+
 ## Start an explicitly requested ordinary thread
 
 Write a private prompt file outside the repository. Include the user's goal,

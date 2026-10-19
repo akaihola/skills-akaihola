@@ -28,6 +28,51 @@ SETTINGS = ("modelSelection", "runtimeMode", "interactionMode")
 V2 = 2
 
 
+class SendTargetError(ValueError):
+    """A safe-to-display refusal to select a follow-up target."""
+
+
+def paced_thread(tracker: str, issue: int) -> str:
+    """Resolve a tracker reference through Hai and the pacer's launch records."""
+    tracker_path = Path(tracker).expanduser().resolve()
+    snapshot = json.loads(
+        subprocess.check_output(  # ruff: ignore[subprocess-without-shell-equals-true]
+            [shutil.which("hai-tasks") or "hai-tasks", "read", str(tracker_path)],
+            text=True,
+        )
+    )
+    issues = [
+        item
+        for item in snapshot["workspace"]["issues"]
+        if item.get("sourceReference") == f"[{issue}]"
+    ]
+    if len(issues) != 1:
+        msg = "Expected exactly one Hai issue with this number in the tracker"
+        raise SendTargetError(msg)
+    records = []
+    for path in (Path.home() / ".local/state/kandev-pacer/t3").glob("*.json"):
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if (
+            Path(record["tracker"]).expanduser().resolve() == tracker_path
+            and record["issue"] == issues[0]["id"]
+        ):
+            records.append(record)
+    if not records:
+        msg = (
+            "No pacer launch record for this tracker issue; "
+            "file a follow-up in the same tracker"
+        )
+        raise SendTargetError(msg)
+    if len(records) != 1:
+        msg = "Multiple pacer launch records for this issue; inspect before sending"
+        raise SendTargetError(msg)
+    thread_id = (records[0].get("thread") or {}).get("id")
+    if not isinstance(thread_id, str) or not thread_id:
+        msg = "Pacer launch record has no thread; file a follow-up in the same tracker"
+        raise SendTargetError(msg)
+    return thread_id
+
+
 class Server:
     """Keep a short-lived bearer session in memory for one invocation."""
 
@@ -390,7 +435,10 @@ def send(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
         msg = "Expected one T3 project for this workspace; inspect first"
         raise ValueError(msg)
     thread = next((t for t in snapshot["threads"] if t["id"] == args.thread), None)
-    if thread is None or thread["projectId"] != projects[0]["id"]:
+    if thread is None or thread.get("archivedAt"):
+        msg = "Target thread is gone or archived; file a follow-up in the same tracker"
+        raise SendTargetError(msg)
+    if thread["projectId"] != projects[0]["id"]:
         msg = "Target thread must belong to the selected project"
         raise ValueError(msg)
     prompt = Path(args.prompt_file).read_text(encoding="utf-8")
@@ -528,9 +576,12 @@ def main() -> None:
             command.add_argument("--thread", action="append", required=True)
             command.add_argument("--dry-run", action="store_true")
         else:
-            command.add_argument("--workspace", required=True)
+            command.add_argument("--workspace", required=action != "send")
         if action == "send":
-            command.add_argument("--thread", required=True)
+            target = command.add_mutually_exclusive_group(required=True)
+            target.add_argument("--thread")
+            target.add_argument("--tracker", help="Canonical Hai tracker path")
+            command.add_argument("--issue", type=int, help="Tracker issue number")
             command.add_argument("--prompt-file", required=True)
             command.add_argument("--dry-run", action="store_true")
         if action == "start":
@@ -545,6 +596,16 @@ def main() -> None:
     resume = commands.add_parser("resume")
     resume.add_argument("record", type=Path)
     args = parser.parse_args()
+    if args.action == "send":
+        if args.tracker:
+            if args.issue is None or args.issue < 1:
+                parser.error("--tracker requires a positive --issue number")
+            args.thread = paced_thread(args.tracker, args.issue)
+            args.workspace = args.workspace or str(
+                Path(args.tracker).expanduser().resolve().parent
+            )
+        elif args.issue is not None or not args.workspace:
+            parser.error("--thread requires --workspace; --issue requires --tracker")
     if args.action == "resume":
         record = json.loads(args.record.read_text(encoding="utf-8"))
         server = Server(record["url"], record.get("baseDir"))
@@ -586,6 +647,9 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
+    except SendTargetError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        sys.exit(1)
     except (
         OSError,
         ValueError,

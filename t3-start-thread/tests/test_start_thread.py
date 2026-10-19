@@ -292,7 +292,7 @@ def test_send_rejects_missing_target(
     """A nonexistent thread never becomes a new thread implicitly."""
     args, snapshot, server = message_setup
     args.thread = "missing"
-    with pytest.raises(ValueError, match="Target thread must belong"):
+    with pytest.raises(helper.SendTargetError, match="gone or archived"):
         helper.send(args, server, snapshot)
     assert server.commands == []
 
@@ -1029,3 +1029,171 @@ def test_inspect_settled_timestamp(
     wire_server.threads[0]["settledAt"] = timestamp
     invoke(monkeypatch, "inspect", "--workspace", tmp_path)
     assert json.loads(capsys.readouterr().out)["threads"][0]["settledAt"] == timestamp
+
+
+@pytest.fixture
+def paced_tracker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Provide Hai's number-to-ID mapping and private pacer launch records."""
+    tracker = tmp_path / "TASKS.md"
+    tracker.touch()
+    monkeypatch.setattr(helper.Path, "home", lambda: tmp_path)
+    data = {
+        "workspace": {
+            "issues": [
+                {"id": "stable-fixture", "sourceReference": "[14]"},
+                {"id": "unlaunched-fixture", "sourceReference": "[15]"},
+            ]
+        }
+    }
+
+    def read_tracker(command: list[str], *, text: bool) -> str:
+        assert command[1:] == ["read", str(tracker)]
+        assert text
+        return json.dumps(data)
+
+    monkeypatch.setattr(helper.subprocess, "check_output", read_tracker)
+    directory = tmp_path / ".local/state/kandev-pacer/t3"
+    directory.mkdir(parents=True)
+    records = {
+        "target": {
+            "tracker": str(tracker),
+            "issue": "stable-fixture",
+            "thread": {"id": "parent"},
+        },
+        "other-tracker": {
+            "tracker": str(tmp_path / "other/TASKS.md"),
+            "issue": "stable-fixture",
+            "thread": {"id": "wrong"},
+        },
+        "other-issue": {
+            "tracker": str(tracker),
+            "issue": "other-fixture",
+            "thread": {"id": "wrong"},
+        },
+    }
+    for name, record in records.items():
+        (directory / f"{name}.json").write_text(json.dumps(record), encoding="utf-8")
+    return tracker
+
+
+def test_paced_send_dry_run(
+    wire_server: WireServer,
+    paced_tracker: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Both wire protocols resolve a tracker number without sending a message."""
+    prompt = tmp_path / "review.txt"
+    prompt.write_text(
+        "Fixture evidence and completion criteria.\n...", encoding="utf-8"
+    )
+    invoke(
+        monkeypatch,
+        "send",
+        "--tracker",
+        paced_tracker.parent / "./TASKS.md",
+        "--issue",
+        "14",
+        "--prompt-file",
+        prompt,
+        "--dry-run",
+    )
+    result = json.loads(capsys.readouterr().out)
+    assert result["thread"]["id"] == "parent"
+    assert result["dryRun"] is True
+    assert "Fixture evidence" not in json.dumps(result)
+    assert not wire_server.receipts
+    assert not (tmp_path / ".local/state/t3-start-thread").exists()
+
+
+@pytest.mark.parametrize(
+    ("issue", "message"),
+    [
+        (15, "No pacer launch record"),
+        (99, "Expected exactly one Hai issue"),
+    ],
+)
+def test_paced_lookup_refuses_missing(
+    paced_tracker: Path,
+    issue: int,
+    message: str,
+) -> None:
+    """Missing issues and launch records cannot select another target."""
+    with pytest.raises(helper.SendTargetError, match=message):
+        helper.paced_thread(str(paced_tracker), issue)
+
+
+@pytest.mark.parametrize("state", ["missing", "archived", "archived-flag"])
+def test_paced_send_refuses_unavailable_thread(
+    wire_server: WireServer,
+    paced_tracker: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    state: str,
+) -> None:
+    """A stale launch record cannot send to a gone or archived implementer."""
+    if state == "archived-flag":
+        wire_server.threads[0]["archivedAt"] = "2026-10-19T00:00:00Z"
+    else:
+        thread = wire_server.threads.pop()
+        if state == "archived":
+            wire_server.archived.append(thread)
+    with pytest.raises(helper.SendTargetError, match="gone or archived"):
+        invoke(
+            monkeypatch,
+            "send",
+            "--tracker",
+            paced_tracker,
+            "--issue",
+            "14",
+            "--prompt-file",
+            tmp_path / "unread.txt",
+            "--dry-run",
+        )
+    assert not wire_server.receipts
+    assert not (tmp_path / ".local/state/t3-start-thread").exists()
+
+
+@pytest.mark.parametrize("duplicate", [False, True])
+def test_paced_lookup_refuses_incomplete_or_duplicate_records(
+    paced_tracker: Path,
+    tmp_path: Path,
+    *,
+    duplicate: bool,
+) -> None:
+    """Refuse incomplete launches and ambiguity instead of guessing."""
+    directory = tmp_path / ".local/state/kandev-pacer/t3"
+    path = directory / "target.json"
+    if duplicate:
+        (directory / "duplicate.json").write_text(path.read_text(encoding="utf-8"))
+        message = "Multiple pacer launch records"
+    else:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        record["thread"] = None
+        path.write_text(json.dumps(record), encoding="utf-8")
+        message = "Pacer launch record has no thread"
+    with pytest.raises(helper.SendTargetError, match=message):
+        helper.paced_thread(str(paced_tracker), 14)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["--tracker", "TASKS.md"],
+        ["--tracker", "TASKS.md", "--issue", "0"],
+        ["--thread", "target", "--issue", "14", "--workspace", "."],
+        ["--thread", "target"],
+        ["--thread", "target", "--tracker", "TASKS.md", "--issue", "14"],
+    ],
+)
+def test_send_rejects_incomplete_target_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+    arguments: list[str],
+) -> None:
+    """Invalid target combinations fail before authentication or delivery."""
+    with pytest.raises(SystemExit) as error:
+        invoke(
+            monkeypatch, "send", *arguments, "--prompt-file", "unused.txt", "--dry-run"
+        )
+    assert error.value.code == 2
