@@ -8,6 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [9] Review every skill for stale instructions, weak triggers and token cost,
+  and draft the fixes
+  <!-- hai:{"id":"simple-2d9cbdb6-f827-4bd2-96e4-eed5462ebd07","labels":["steward"],"createdAt":"2026-10-19T08:08:27.558Z","updatedAt":"2026-10-19T08:08:27.558Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -44,7 +48,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -59,6 +63,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [7]: docs/tasks/7-add-a-settle-command-to-the-t3-start-thread-helper.md
 
 [8]: docs/tasks/8-gather-acceptance-evidence-for-the-2-review-queue-items.md
+
+[9]: docs/tasks/9-review-every-skill-for-stale-instructions-weak-triggers-and-token-cost.md
 
 ## Rules
 
