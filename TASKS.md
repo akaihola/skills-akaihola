@@ -8,14 +8,14 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [13] Fix the skills review's next three: library argument hint, Asana
-  discovery, ECB command
-  <!-- hai:{"id":"simple-b6046199-2631-4b0b-80d1-cb7f05f0f51b","labels":["steward"],"createdAt":"2026-10-19T14:11:43.093Z","updatedAt":"2026-10-19T14:11:43.093Z"} -->
-
 - [14] Send review findings to the thread that implemented the work
   <!-- hai:{"id":"simple-345f3047-2675-4813-b434-f30bf4a8e48e","labels":["steward"],"createdAt":"2026-10-19T17:05:31.441Z","updatedAt":"2026-10-19T17:05:31.441Z"} -->
 
 ## Scheduled
+
+- [13] Fix the skills review's next three: library argument hint, Asana
+  discovery, ECB command
+  <!-- hai:{"id":"simple-b6046199-2631-4b0b-80d1-cb7f05f0f51b","labels":["steward"],"createdAt":"2026-10-19T14:11:43.093Z","updatedAt":"2026-10-19T17:59:34.895Z"} -->
 
 ## In Progress
 
