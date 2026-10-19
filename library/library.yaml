@@ -12,7 +12,7 @@ default_dirs:
 library:
   skills:
     - name: asana
-      description: Manage Asana tasks and projects
+      description: Design-only Asana integration reference for explicit architecture planning; no operational scripts
       source: ~/prg/skills-akaihola/asana/SKILL.md
 
     - name: bauhaus

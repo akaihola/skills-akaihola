@@ -1,4 +1,8 @@
-# Asana Skill for Pykoclaw
+# Asana integration design for Pykoclaw
+
+**Status: design only; no implementation exists.** The scripts, commands,
+dependencies, and directory layout below are proposed architecture for explicit
+planning. They cannot be used to query, create, update, or sync tasks.
 
 ## Architecture Philosophy
 
@@ -306,5 +310,5 @@ When this becomes a plugin:
 
 ---
 
-**Status:** Ready for implementation
-**Next step:** Create `SKILL.md` and `scripts/asana_client.py` scaffold
+**Status:** Design only
+**Next step:** Implement and test the proposed scripts before advertising operational task management
