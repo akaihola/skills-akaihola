@@ -8,13 +8,13 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [11] Make receipt dry-run use cached metadata without side effects
-  <!-- hai:{"id":"simple-de3d951d-c147-420b-89be-1533b86c3ba8","labels":["steward"],"createdAt":"2026-10-19T11:18:14.475Z","updatedAt":"2026-10-19T11:18:14.475Z"} -->
-
 - [12] Sanitize skill examples and check secrets without printing them
   <!-- hai:{"id":"simple-d601aeb2-dff1-4782-b654-92461629afc9","labels":["steward"],"createdAt":"2026-10-19T11:18:14.878Z","updatedAt":"2026-10-19T11:18:14.878Z"} -->
 
 ## Scheduled
+
+- [11] Make receipt dry-run use cached metadata without side effects
+  <!-- hai:{"id":"simple-de3d951d-c147-420b-89be-1533b86c3ba8","labels":["steward"],"createdAt":"2026-10-19T11:18:14.475Z","updatedAt":"2026-10-19T12:46:47.879Z"} -->
 
 ## In Progress
 
