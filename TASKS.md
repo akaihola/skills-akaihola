@@ -133,7 +133,9 @@ they are not pacer inputs. Keep each task in one tracker only.
    through Hai, and commit. Implement its requirements and run its acceptance
    checks. Preserve unrelated work and keep the branch rebased.
 3. Merge the reviewed change into `main` using the repository's normal Git
-   workflow. Record completion only after merge, under Completed / Accepted
+   workflow. Keep the worktree and branch after merging.
+   Remove them only when the user explicitly requests it.
+   Record completion only after merge, under Completed / Accepted
    with `[ ]`, and commit the tracker update. Tests passing alone do not mean
    that the user has accepted the result.
 4. Only explicit user acceptance changes `[ ]` to `[x]`. During later tracker
