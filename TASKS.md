@@ -15,10 +15,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [11] Make receipt dry-run use cached metadata without side effects
-      <!-- hai:{"id":"simple-de3d951d-c147-420b-89be-1533b86c3ba8","labels":["steward"],"createdAt":"2026-10-19T11:18:14.475Z","updatedAt":"2026-10-19T12:46:59.678Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [11] Make receipt dry-run use cached metadata without side effects
+      <!-- hai:{"id":"simple-de3d951d-c147-420b-89be-1533b86c3ba8","labels":["steward"],"createdAt":"2026-10-19T11:18:14.475Z","updatedAt":"2026-10-19T12:50:04.262Z"} -->
 
 - [ ] [10] Separate T3 child-task delegation from top-level launches
       <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T12:46:25.166Z"} -->
