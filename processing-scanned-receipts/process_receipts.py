@@ -53,7 +53,7 @@ OCR_PROMPT = dedent("""\
     - vat_rate: VAT percentage e.g. "14%" or "25.5%", else null
     - payment_method: e.g. "Visa Contactless", "Visa Debit", "Cash", else null
     - card_last4: last 4 digits of payment card if visible, else null
-    - car_reg: vehicle registration plate e.g. "SPH-233", else null
+    - car_reg: vehicle registration plate in format AAA-000, else null
     - car_number: taxi car number if visible, else null
     - driver_number: taxi driver number (kuljettajanumero) if visible, else null
     - receipt_number: receipt/kuittinro if visible, else null

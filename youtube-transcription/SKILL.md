@@ -39,6 +39,8 @@ The skill provides a three-step workflow:
 
 ## Quick Start
 
+Examples use synthetic titles and placeholder video IDs.
+
 ### From YouTube URL
 
 ```bash
@@ -63,7 +65,7 @@ uv run --with=assemblyai ./.claude/skills/youtube-transcription/scripts/transcri
 ```bash
 # 1. Run transcription
 export ASSEMBLYAI_API_KEY="your_key_here"
-uv run --with=assemblyai ./.claude/skills/youtube-transcription/scripts/transcribe_video.py "https://youtu.be/_gPODg6br5w"
+uv run --with=assemblyai ./.claude/skills/youtube-transcription/scripts/transcribe_video.py "https://youtu.be/VIDEO_ID"
 
 # 2. Copy output to project with metadata
 # Edit the transcript file to add:
@@ -137,10 +139,15 @@ uv run --with=assemblyai ./scripts/transcribe_video.py <input>
 
 AssemblyAI requires valid API key.
 
-**Solution:** Verify environment variable is set:
+**Solution:** Check presence only. Never print the key or enable shell tracing
+with `set -x` while handling credentials:
 
 ```bash
-echo $ASSEMBLYAI_API_KEY  # Should show your key
+if [ -n "${ASSEMBLYAI_API_KEY:-}" ]; then
+  printf '%s\n' 'ASSEMBLYAI_API_KEY is set'
+else
+  printf '%s\n' 'ASSEMBLYAI_API_KEY is missing or empty'
+fi
 ```
 
 Set it in your shell profile to persist:
@@ -185,8 +192,8 @@ Save transcripts following this structure:
 
 ```
 pages/Projects/Second Brain/
-├── Nate B Jones - Why 2026 Is the Year to Build a Second Brain - Transcript.md
-├── Nate B Jones - Follow-up Video - Transcript.md
+├── Synthetic Creator - Example Topic - Transcript.md
+├── Synthetic Creator - Another Example - Transcript.md
 └── README.md (links to transcripts)
 ```
 

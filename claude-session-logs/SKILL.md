@@ -49,25 +49,26 @@ stripped and every `/` is replaced with `-`. For example the project at
 Use `search-sessions.py` when you have a phrase and need to locate which
 session it belongs to.
 
+The following query and output are synthetic fixtures, not copied session data.
+
 ```bash
-cd ~/prg/skills-akaihola/claude-session-logs
-uv run scripts/search-sessions.py "pystytkö nyt listaamaan"
+cd /path/to/skills/claude-session-logs
+uv run scripts/search-sessions.py "synthetic search marker" --dir /tmp/synthetic-sessions
 ```
 
-Sample output:
+Synthetic sample output:
 
 ```
 ========================================================================
-Session : a01cdfa4-5944-48da-8b2d-15bffab0c923
-File    : /home/user/.claude/projects/…/a01cdfa4-….jsonl
-Project : /home/user/projects/notes/slack-CXXXXXXXX
+Session : 00000000-0000-4000-8000-000000000001
+File    : /tmp/synthetic-sessions/00000000-0000-4000-8000-000000000001.jsonl
+Project : /tmp/synthetic/sessions
 Matches : 2
 ========================================================================
-   [ 175] 2026-03-04T12:56 assistant/assistant   Yritän uudelleen yksinkertaisemmin: …
-   [ 176] 2026-03-04T12:56 assistant/assistant   QR-koodeista löytyi nämä videot: …
->>> [ 177] 2026-03-04T13:51 queue/enqueue         New message batch … pystytkö nyt listaamaan …
-   [ 178] 2026-03-04T13:51 queue/dequeue
-   [ 179] 2026-03-04T13:51 user/user             New message batch … pystytkö nyt …
+    [   0] 2030-01-01T12:00:00 assistant/assistant  Synthetic context entry.
+>>> [   1] 2030-01-01T12:01:00 queue-operation      synthetic search marker
+    [   2] 2030-01-01T12:02:00 queue-operation
+>>> [   3] 2030-01-01T12:03:00 user/user            synthetic search marker
 ```
 
 Options:
@@ -84,9 +85,9 @@ Use `analyze-session.py` once you have the session file path or ID.
 ### Timeline mode (default) — one line per entry, streaming tokens merged
 
 ```bash
-uv run scripts/analyze-session.py a01cdfa4-5944-48da-8b2d-15bffab0c923
+uv run scripts/analyze-session.py 00000000-0000-4000-8000-000000000001
 # or with full path:
-uv run scripts/analyze-session.py ~/.claude/projects/…/a01cdfa4-….jsonl
+uv run scripts/analyze-session.py ~/.claude/projects/…/00000000-….jsonl
 ```
 
 Consecutive single-token assistant entries are collapsed into one line with a
@@ -95,7 +96,7 @@ token count suffix so the timeline stays readable.
 ### Transcript mode — full reconstructed conversation
 
 ```bash
-uv run scripts/analyze-session.py a01cdfa4 --mode transcript
+uv run scripts/analyze-session.py 00000000 --mode transcript
 ```
 
 Prints each turn as a block. Tool calls show the full input JSON; tool
@@ -104,7 +105,7 @@ results show up to 500 characters of output.
 ### Tools mode — only tool calls and results
 
 ```bash
-uv run scripts/analyze-session.py a01cdfa4 --mode tools
+uv run scripts/analyze-session.py 00000000 --mode tools
 ```
 
 Useful for quickly auditing what the agent tried to do (installs, file reads,

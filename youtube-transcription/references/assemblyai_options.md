@@ -107,7 +107,7 @@ For long transcriptions, use webhooks to get notified when complete:
 
 ```python
 config = TranscriptionConfig(
-    webhook_url="https://your-domain.com/transcription-webhook",
+    webhook_url="https://example.com/transcription-webhook",
     webhook_auth_header_value="your-secret-key"
 )
 ```

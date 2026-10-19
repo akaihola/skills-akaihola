@@ -18,8 +18,10 @@ Automates the full pipeline from raw scan PDFs to neatly named, OCR-extracted re
 
 ## Quick Start
 
+All examples below are synthetic and contain no real receipt data.
+
 ```bash
-uv run /path/to/process_receipts.py "talous/laskut ja kuitit/2025 Päivin taksikuitit/"
+uv run /path/to/process_receipts.py "receipts/synthetic-batch/"
 ```
 
 The script processes all `*.pdf` files in the directory in parallel (4 workers by default).
@@ -79,7 +81,7 @@ When the same trip is scanned twice (e.g. meter receipt + card terminal receipt)
 
 ```bash
 # Keep colour (2), replace its .txt with primary's, delete primary, rename
-trip="2025-01-01 Esimerkkiyritys Oy taksimatka Esimerkkikatu-Esimerkkilä"
+trip="2030-01-01 Example taxi synthetic trip"
 cp "$trip.txt" "$trip (2).txt"
 rm "$trip.jpg" "$trip.pdf" "$trip.txt"
 for ext in jpg pdf txt; do mv "$trip (2).$ext" "$trip.$ext"; done
@@ -101,17 +103,17 @@ The script strips accidental markdown fences before parsing.
 ================================================
               TAKSIKUITTI / TAXI RECEIPT
 ================================================
-Yritys:        Esimerkkiyritys Oy
-Y-tunnus:      1234567-8
+Yritys:        Example taxi
+Y-tunnus:      XXXXXXX-X
 
-Päivämäärä:    2025-01-01
+Päivämäärä:    2030-01-01
 Kellonaika:    12:00
 
 ------------------------------------------------
 MATKAN TIEDOT
 ------------------------------------------------
-Mistä:         Esimerkkikatu, Esimerkkilä
-Minne:         Testitie, Esimerkkilä
+Mistä:         Synthetic origin
+Minne:         Synthetic destination
 Matka:         10.00 km
 …
 ```
