@@ -8,6 +8,15 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [10] Separate T3 child-task delegation from top-level launches
+  <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T11:18:14.060Z"} -->
+
+- [11] Make receipt dry-run use cached metadata without side effects
+  <!-- hai:{"id":"simple-de3d951d-c147-420b-89be-1533b86c3ba8","labels":["steward"],"createdAt":"2026-10-19T11:18:14.475Z","updatedAt":"2026-10-19T11:18:14.475Z"} -->
+
+- [12] Sanitize skill examples and check secrets without printing them
+  <!-- hai:{"id":"simple-d601aeb2-dff1-4782-b654-92461629afc9","labels":["steward"],"createdAt":"2026-10-19T11:18:14.878Z","updatedAt":"2026-10-19T11:18:14.878Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -48,7 +57,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -65,6 +74,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 [8]: docs/tasks/8-gather-acceptance-evidence-for-the-2-review-queue-items.md
 
 [9]: docs/tasks/9-review-every-skill-for-stale-instructions-weak-triggers-and-token-cost.md
+
+[10]: docs/tasks/10-separate-t3-child-task-delegation-from-top-level-launches.md
+
+[11]: docs/tasks/11-make-receipt-dry-run-use-cached-metadata-without-side-effects.md
+
+[12]: docs/tasks/12-sanitize-skill-examples-and-check-secrets-without-printing-them.md
 
 ## Rules
 
