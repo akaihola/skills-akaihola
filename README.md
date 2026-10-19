@@ -82,6 +82,18 @@ git clone https://github.com/akaihola/skills-akaihola.git
 ln -s /path/to/skills-akaihola/tokmanni ~/.claude/skills/tokmanni
 ```
 
+## Metadata validation
+
+Run the offline check for every Git-tracked `SKILL.md` before publishing changes:
+
+```bash
+uv run --no-project --with pyyaml python scripts/check_skill_metadata.py
+uv run --no-project --with pyyaml --with pytest pytest tests/test_skill_metadata.py -q
+```
+
+The check requires YAML frontmatter with nonempty string names and descriptions.
+Failures identify the skill path. CI runs it for skill metadata changes.
+
 ## License
 
 For personal use.
