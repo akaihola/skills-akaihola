@@ -12,6 +12,9 @@ they are not pacer inputs. Keep each task in one tracker only.
   discovery, ECB command
   <!-- hai:{"id":"simple-b6046199-2631-4b0b-80d1-cb7f05f0f51b","labels":["steward"],"createdAt":"2026-10-19T14:11:43.093Z","updatedAt":"2026-10-19T14:11:43.093Z"} -->
 
+- [14] Send review findings to the thread that implemented the work
+  <!-- hai:{"id":"simple-345f3047-2675-4813-b434-f30bf4a8e48e","labels":["steward"],"createdAt":"2026-10-19T17:05:31.441Z","updatedAt":"2026-10-19T17:05:31.441Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -61,7 +64,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -86,6 +89,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [12]: docs/tasks/12-sanitize-skill-examples-and-check-secrets-without-printing-them.md
 
 [13]: docs/tasks/13-fix-the-skills-review-s-next-three-library-argument-hint-asana-discove.md
+
+[14]: docs/tasks/14-send-review-findings-to-the-thread-that-implemented-the-work.md
 
 ## Rules
 
