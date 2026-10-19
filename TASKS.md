@@ -10,10 +10,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [12] Sanitize skill examples and check secrets without printing them
-  <!-- hai:{"id":"simple-d601aeb2-dff1-4782-b654-92461629afc9","labels":["steward"],"createdAt":"2026-10-19T11:18:14.878Z","updatedAt":"2026-10-19T12:50:27.196Z"} -->
-
 ## In Progress
+
+- [~] [12] Sanitize skill examples and check secrets without printing them
+      <!-- hai:{"id":"simple-d601aeb2-dff1-4782-b654-92461629afc9","labels":["steward"],"createdAt":"2026-10-19T11:18:14.878Z","updatedAt":"2026-10-19T12:50:39.043Z"} -->
 
 ## Completed / Accepted
 
