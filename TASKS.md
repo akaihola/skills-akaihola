@@ -12,11 +12,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [9] Review every skill for stale instructions, weak triggers and token cost,
-  and draft the fixes
-      <!-- hai:{"id":"simple-2d9cbdb6-f827-4bd2-96e4-eed5462ebd07","labels":["steward"],"createdAt":"2026-10-19T08:08:27.558Z","updatedAt":"2026-10-19T08:42:03.798Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [9] Review every skill for stale instructions, weak triggers and token cost,
+  and draft the fixes
+      <!-- hai:{"id":"simple-2d9cbdb6-f827-4bd2-96e4-eed5462ebd07","labels":["steward"],"createdAt":"2026-10-19T08:08:27.558Z","updatedAt":"2026-10-19T08:53:40.873Z"} -->
 
 - [ ] [8] Gather acceptance evidence for the 2 review-queue items
       <!-- hai:{"id":"simple-9467a5ab-9645-4aa0-89cc-747c91768be8","labels":["steward"],"createdAt":"2026-10-17T20:09:27.827Z","updatedAt":"2026-10-17T20:30:30.967Z"} -->
