@@ -121,6 +121,8 @@ High. Verified, confidence 9.
     - A planted `index.json` that points outside the cache is ignored.
     - A symlinked `.cache` is refused.
 
+Fixed by [16].
+
 ### S2. Email attachments silently replace files in the project
 
 High. Verified, confidence 8.
@@ -170,6 +172,8 @@ High. Verified, confidence 8.
     - Those attachments are stored under sanitised names in the attachment
       folder.
 
+Fixed by [16].
+
 ### S3. secrets-scan prints every secret it finds
 
 High. Verified, confidence 9.
@@ -216,6 +220,8 @@ High. Verified, confidence 9.
       format.
     - Classification results are unchanged.
     - No instruction in the skill tells the agent to read the value.
+
+Fixed by [16].
 
 ### S4. android-diagnostics passes zip text to the shell
 
@@ -300,6 +306,8 @@ Medium. Verified, confidence 8.
   `cached: true`, and `/proc/self/environ` returned a synthetic API key from
   the environment.
 - **Draft issue:** covered by [S1].
+
+Fixed by [16].
 
 ### S6. rebase-all's undo rolls back other tasks' commits
 
@@ -930,3 +938,5 @@ placeholders.
 [workflows]: ../../.github/workflows/
 [yt-frame]: ../../youtube-frame-analysis/scripts/yt_frame_analysis.py
 [zed]: ../../zed-threads/scripts/read_zed_threads.py
+
+[16]: ../tasks/16-fix-the-three-high-findings-of-the-2026-10-21-security-review.md

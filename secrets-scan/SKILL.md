@@ -22,7 +22,9 @@ Scan a git repository for leaked credentials using two complementary tools:
 
 Running both catches what each misses individually. The automation script
 (`scripts/scan.py`) handles setup, runs both tools, reads the flagged lines,
-auto-classifies findings, and emits a combined Markdown report.
+auto-classifies findings, and emits a combined Markdown report containing only
+locations, detector kinds and classifications. Credential verification is disabled
+by default (`--no-verify`).
 
 ## Quick Start (automation script)
 
@@ -117,7 +119,8 @@ git ls-files | xargs /tmp/sl-check/node_modules/.bin/secretlint \
 ```
 
 `"results": {}` means no secrets found. The secret value is hashed; use the
-line number to read the actual content.
+location and detector kind to inspect surrounding context without displaying
+the flagged line or secret value.
 
 ### secretlint output (JSON)
 
@@ -141,7 +144,10 @@ line number to read the actual content.
 
 ## Classifying Findings
 
-For every finding, read the flagged line. Then apply this decision tree:
+For every finding, inspect its location, detector kind and surrounding context.
+Keep flagged lines and secret values out of tool output and the transcript.
+The script classifies placeholders internally. Apply this decision tree using
+that classification and non-secret context:
 
 ```
 Does the line contain a placeholder?

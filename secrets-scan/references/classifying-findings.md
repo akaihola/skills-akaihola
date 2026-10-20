@@ -1,7 +1,8 @@
 # Classifying Secrets-Scan Findings
 
 Both `detect-secrets` and `secretlint` produce false positives. This reference
-lists common patterns and how to handle each.
+lists common patterns and how to handle each. Inspect locations, detector kinds
+and surrounding context without displaying flagged lines or secret values.
 
 ## Decision Criteria
 
@@ -13,7 +14,7 @@ lists common patterns and how to handle each.
 | File is documentation or a SKILL.md with example keys                                                 | False positive  | Add allowlist comment or exclude          |
 | Variable name is generic (`key`, `secret`, `password`) but value is empty string or env var reference | False positive  | No action needed                          |
 | Value matches a known vendor format AND is not a placeholder                                          | **Real secret** | Rotate + remove                           |
-| High-entropy string in a `.py` or `.js` file in the project (not a dep)                               | Likely real     | Read line to confirm, then rotate if real |
+| High-entropy string in a `.py` or `.js` file in the project (not a dep)                               | Likely real     | Review non-secret context, then rotate if real |
 
 ## Common Placeholder Strings (auto-classified by scan.py)
 

@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shlex
 import shutil
 import subprocess
 import sys
@@ -122,9 +123,11 @@ def pdftotext_converter(source: Path) -> tuple[str, str]:
 
     if cmd_prefix[0] == "nix-shell":
         # nix-shell --run takes a single shell command string
-        result = _run([*cmd_prefix, f"pdftotext -layout '{source}' -"])
+        result = _run(
+            [*cmd_prefix, shlex.join(["pdftotext", "-layout", "--", str(source), "-"])]
+        )
     else:
-        result = _run([*cmd_prefix, "-layout", str(source), "-"])
+        result = _run([*cmd_prefix, "-layout", "--", str(source), "-"])
 
     return result.stdout, f"pdftotext ({version})"
 
@@ -206,6 +209,21 @@ def compute_cache_paths(source: Path, workspace_root: Path) -> tuple[Path, Path]
 # ---------------------------------------------------------------------------
 
 
+def _confined_cache_path(workspace_root: Path, path: Path) -> Path:
+    """Reject paths outside the cache and symlinks anywhere below the workspace."""
+    root = workspace_root.resolve()
+    cache = root / ".cache" / "markdown"
+    path.relative_to(cache)
+    current = root
+    for part in path.relative_to(root).parts:
+        current /= part
+        if current.is_symlink():
+            msg = "Refusing symlink in Markdown cache"
+            raise ValueError(msg)
+    path.resolve().relative_to(cache)
+    return path
+
+
 def _index_path(workspace_root: Path) -> Path:
     return workspace_root / ".cache" / "markdown" / "index.json"
 
@@ -216,14 +234,21 @@ def load_index(workspace_root: Path) -> dict[str, str]:
     if not idx.exists():
         return {}
     try:
-        return json.loads(idx.read_text())
-    except (json.JSONDecodeError, OSError):
+        _confined_cache_path(workspace_root, idx)
+        data = json.loads(idx.read_text())
+        return (
+            {k: v for k, v in data.items() if isinstance(v, str)}
+            if isinstance(data, dict)
+            else {}
+        )
+    except (json.JSONDecodeError, OSError, ValueError):
         return {}
 
 
 def save_index(workspace_root: Path, index: dict[str, str]) -> None:
     """Persist the hash-to-cache-path index."""
     idx = _index_path(workspace_root)
+    _confined_cache_path(workspace_root, idx)
     idx.parent.mkdir(parents=True, exist_ok=True)
     idx.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n")
 
@@ -276,8 +301,18 @@ def check_hash_index(
     cached_path_str = index.get(file_hash)
     if not cached_path_str:
         return None
-    cached_path = Path(cached_path_str)
-    if not cached_path.exists():
+    entry = Path(cached_path_str)
+    if entry.is_absolute():
+        return None
+    try:
+        cached_path = _confined_cache_path(
+            workspace_root,
+            workspace_root / ".cache" / "markdown" / entry,
+        )
+        _confined_cache_path(workspace_root, cached_path.with_suffix(".meta"))
+    except (ValueError, OSError):
+        return None
+    if not cached_path.is_file():
         return None
 
     # Validate backend if forced
@@ -347,10 +382,16 @@ def convert(
 
     # Find workspace root
     if workspace_root is None:
-        workspace_root = find_workspace_root(source.parent) or Path.cwd()
+        workspace_root = find_workspace_root(Path.cwd()) or Path.cwd()
+    workspace_root = workspace_root.resolve()
 
     # Compute cache paths for this source location
-    cache_md, cache_meta = compute_cache_paths(source, workspace_root)
+    try:
+        cache_md, cache_meta = compute_cache_paths(source, workspace_root)
+        for path in (cache_md, cache_meta, _index_path(workspace_root)):
+            _confined_cache_path(workspace_root, path)
+    except ValueError as exc:
+        return {"error": str(exc)}
 
     # Select backend
     available = BACKENDS.get(fmt, [])
@@ -361,7 +402,9 @@ def convert(
         selected = [(n, f) for n, f in available if n == backend_name]
         if not selected:
             names = ", ".join(n for n, _ in available)
-            return {"error": f"Backend '{backend_name}' not available for {fmt}. Available: {names}"}
+            return {
+                "error": f"Backend '{backend_name}' not available for {fmt}. Available: {names}"
+            }
         backend_entry = selected[0]
     else:
         backend_entry = available[0]
@@ -379,7 +422,10 @@ def convert(
     if not cached:
         file_hash = content_hash(source)
         hash_hit_path = check_hash_index(
-            source, file_hash, workspace_root, backend_name=backend_name,
+            source,
+            file_hash,
+            workspace_root,
+            backend_name=backend_name,
         )
         if hash_hit_path and hash_hit_path != cache_md:
             # Same content exists at a different cache path (file was moved).
@@ -394,7 +440,9 @@ def convert(
             _update_meta_stat(cache_meta, source)
             # Update index to point to new location as well
             index = load_index(workspace_root)
-            index[file_hash] = str(cache_md)
+            index[file_hash] = str(
+                cache_md.relative_to(workspace_root / ".cache" / "markdown")
+            )
             save_index(workspace_root, index)
             cached = True
 
@@ -447,7 +495,9 @@ def convert(
 
         # Update hash index
         index = load_index(workspace_root)
-        index[file_hash] = str(cache_md)
+        index[file_hash] = str(
+            cache_md.relative_to(workspace_root / ".cache" / "markdown")
+        )
         save_index(workspace_root, index)
 
         # Ensure .cache/ is gitignored
@@ -496,7 +546,7 @@ def main() -> None:
         "--workspace-root",
         type=Path,
         default=None,
-        help="Workspace root (auto-detected by walking up to find .claude/ dir)",
+        help="Workspace root (defaults to .claude/ ancestor of current directory)",
     )
     parser.add_argument(
         "--limit",

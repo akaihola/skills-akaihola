@@ -16,6 +16,7 @@ import json
 import re
 import shutil
 import subprocess  # noqa: S404
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from email.utils import parsedate_to_datetime
@@ -473,7 +474,9 @@ def fix_attachment_paths_in_body(
     filename_to_relative_path = {}
     for attachment_path in downloaded_files:
         try:
-            relative_path = attachment_path.relative_to(email_output_dir)
+            relative_path = attachment_path.resolve().relative_to(
+                email_output_dir.resolve()
+            )
             filename_to_relative_path[attachment_path.name] = str(relative_path)
             if verbose:
                 console.print(
@@ -494,7 +497,7 @@ def fix_attachment_paths_in_body(
         part_type = match.group(1)
         old_path = match.group(2)
         if old_path:
-            filename = Path(old_path).name
+            filename = _safe_attachment_name(old_path)
             if filename in filename_to_relative_path:
                 replacement_count += 1
                 new_path = filename_to_relative_path[filename]
@@ -519,41 +522,51 @@ def _download_attachments_internal(
         List of downloaded attachment paths
 
     """
-    result = run_himalaya(
-        [
-            "attachment",
-            "download",
-            "--account",
-            ACCOUNT,
-            "--folder",
-            folder,
-            str(message_id),
-        ],
-        verbose=verbose,
-    )
-
+    destination = (attachment_dir or Path.cwd() / f"{message_id}-attachments").resolve()
+    destination.mkdir(parents=True, exist_ok=True)
     downloaded_files = []
-    output_lines = result.stdout + result.stderr
-    for line in output_lines.splitlines():
-        match = re.search(r'Downloading "(.+?)"…', line)
-        if match:
-            downloaded_path = Path(match.group(1))
-            downloaded_files.append(downloaded_path)
-            if verbose:
-                console.print(f"[dim]Found attachment:[/dim] {downloaded_path}")
-
-    if attachment_dir and downloaded_files:
-        attachment_dir.mkdir(parents=True, exist_ok=True)
-        moved_files = []
-        for old_path in downloaded_files:
-            new_path = attachment_dir / old_path.name
-            shutil.move(str(old_path), str(new_path))
-            moved_files.append(new_path)
-            if verbose:
-                console.print(f"[dim]Moved to:[/dim] {new_path}")
-        return moved_files
-
+    with tempfile.TemporaryDirectory(prefix="email-attachments-") as tmpdir:
+        run_himalaya(
+            [
+                "attachment",
+                "download",
+                "--account",
+                ACCOUNT,
+                "--folder",
+                folder,
+                "-d",
+                tmpdir,
+                str(message_id),
+            ],
+            verbose=verbose,
+        )
+        # Only use actual files in our private download directory, never log paths.
+        for source in sorted(Path(tmpdir).iterdir()):
+            if source.is_symlink() or not source.is_file():
+                continue
+            name = _safe_attachment_name(source.name)
+            target = destination / name
+            suffix = 0
+            while True:
+                try:
+                    output = target.open("xb")
+                    break
+                except FileExistsError:
+                    suffix += 1
+                    target = (
+                        destination / f"{Path(name).stem}-{suffix}{Path(name).suffix}"
+                    )
+            with output, source.open("rb") as incoming:
+                shutil.copyfileobj(incoming, output)
+            downloaded_files.append(target)
     return downloaded_files
+
+
+def _safe_attachment_name(name: str) -> str:
+    """Make attachment names safe for later command-line use."""
+    return (
+        re.sub(r"[^A-Za-z0-9._-]", "_", Path(name).name).lstrip("._-") or "attachment"
+    )
 
 
 def format_json(envelope: dict, body: str, folder: str) -> str:
@@ -624,7 +637,9 @@ def _process_attachments(
         return None
 
     console.print("[dim]Downloading attachments...[/dim]")
-    effective_attachment_dir = options.attachment_dir or output_path.parent
+    effective_attachment_dir = (
+        options.attachment_dir or output_path.parent / f"{message_id}-attachments"
+    )
     attachments = _download_attachments_internal(
         message_id, folder, effective_attachment_dir, verbose=options.verbose
     )
@@ -742,6 +757,8 @@ def save(  # noqa: PLR0913, PLR0917
     output_path = _determine_output_path(output, filename)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    _handle_existing_file(output_path, overwrite=overwrite)
+
     attachments = _process_attachments(options, message_id, folder, output_path)
 
     if attachments:
@@ -751,8 +768,6 @@ def save(  # noqa: PLR0913, PLR0917
         )
 
     content = _format_content(options, envelope, body, folder, attachments)
-
-    _handle_existing_file(output_path, overwrite=overwrite)
 
     output_path.write_text(content, encoding="utf-8")
     console.print(

@@ -4,7 +4,6 @@
 import subprocess
 import sys
 from pathlib import Path
-from textwrap import dedent
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -12,193 +11,56 @@ from email_save import _download_attachments_internal, save
 
 
 class TestDownloadAttachmentsInternal:
-    """Test _download_attachments_internal() function with mocked subprocess."""
+    """Exercise staged downloads without a mailbox or a himalaya binary."""
 
-    def test_attachments_moved_to_specified_directory(self, tmp_path) -> None:
-        """Verify attachments are moved to specified directory."""
-        message_id = 57039
-        folder = "INBOX"
+    def test_attachments_copied_from_private_directory(self, tmp_path) -> None:
+        """Use directory entries rather than paths claimed by the download log."""
+        destination = tmp_path / "subdir" / "attachments"
+        outside = tmp_path / "outside.txt"
+        outside.write_text("original")
+        staging_paths = []
 
-        himalaya_output = dedent("""\
-            Downloading "obf_attachment_001.png"…
-            Downloading "obf_attachment_002.png"…
-            Downloading "obf_attachment_003.png"…
-            Downloading "obf_attachment_004.png"…
-            Downloading "obf_attachment_005.png"…
-            """)
+        def download(args, *, verbose=False):
+            staging = Path(args[args.index("-d") + 1])
+            staging_paths.append(staging)
+            (staging / "document.pdf").write_text("synthetic attachment")
+            return subprocess.CompletedProcess(args, 0, f'Downloading "{outside}"…', "")
 
-        moved_files = []
+        with patch("email_save.run_himalaya", side_effect=download):
+            result = _download_attachments_internal(57039, "INBOX", destination)
 
-        def mock_move(src, dst) -> None:
-            moved_files.append((Path(src), Path(dst)))
+        assert result == [destination / "document.pdf"]
+        assert result[0].read_text() == "synthetic attachment"
+        assert outside.read_text() == "original"
+        assert not staging_paths[0].exists()
 
-        with (
-            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
-            patch("email_save.subprocess.run") as mock_run,
-            patch("email_save.shutil.move", side_effect=mock_move),
-            patch("pathlib.Path.mkdir"),
-        ):
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["himalaya"],
-                returncode=0,
-                stdout="",
-                stderr=himalaya_output,
-            )
+    def test_default_attachment_directory(self, tmp_path, monkeypatch) -> None:
+        """Default downloads stay in a folder named after the message ID."""
+        monkeypatch.chdir(tmp_path)
 
-            result = _download_attachments_internal(
-                message_id, folder, tmp_path, verbose=False
-            )
+        def download(args, *, verbose=False):
+            (Path(args[args.index("-d") + 1]) / "document.pdf").write_text("synthetic")
+            return subprocess.CompletedProcess(args, 0, "", "")
 
-            assert len(result) == 5
-            assert all(isinstance(f, Path) for f in result)
-            assert len(moved_files) == 5
-
-            for _src, dst in moved_files:
-                assert dst.parent == tmp_path
-                assert "obf_attachment" in dst.name
-
-    def test_attachments_default_to_current_directory(self, tmp_path) -> None:
-        """Verify attachments move to current directory when dir specified."""
-        message_id = 57039
-        folder = "INBOX"
-
-        himalaya_output = dedent("""\
-            Downloading "obf_img_001.png"…
-            Downloading "obf_img_002.png"…
-            Downloading "obf_img_003.png"…
-            """)
-
-        moved_files = []
-
-        def mock_move(src, dst) -> None:
-            moved_files.append((Path(src), Path(dst)))
-
-        with (
-            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
-            patch("email_save.subprocess.run") as mock_run,
-            patch("email_save.shutil.move", side_effect=mock_move),
-            patch("pathlib.Path.mkdir"),
-        ):
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["himalaya"],
-                returncode=0,
-                stdout="",
-                stderr=himalaya_output,
-            )
-
-            result = _download_attachments_internal(
-                message_id, folder, tmp_path, verbose=False
-            )
-
-            assert len(result) == 3
-            for _src, dst in moved_files:
-                assert dst.parent == tmp_path
+        with patch("email_save.run_himalaya", side_effect=download):
+            result = _download_attachments_internal(57039, "INBOX", None)
+        assert result == [tmp_path / "57039-attachments" / "document.pdf"]
 
     def test_no_attachments_returns_empty_list(self, tmp_path) -> None:
-        """Verify empty list when no attachments found."""
-        message_id = 57039
-        folder = "INBOX"
-
-        himalaya_output = ""
-
-        with (
-            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
-            patch("email_save.subprocess.run") as mock_run,
-            patch("email_save.shutil.move") as mock_move,
-        ):
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["himalaya"],
-                returncode=0,
-                stdout="",
-                stderr=himalaya_output,
-            )
-
-            result = _download_attachments_internal(
-                message_id, folder, tmp_path, verbose=False
-            )
-
-            assert result == []
-            mock_move.assert_not_called()
-
-    def test_attachment_dir_creation(self, tmp_path) -> None:
-        """Verify attachment directory is created if it doesn't exist."""
-        attachment_dir = tmp_path / "subdir" / "attachments"
-        message_id = 57039
-        folder = "INBOX"
-
-        himalaya_output = 'Downloading "obf_file.png"…\n'
-
-        with (
-            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
-            patch("email_save.subprocess.run") as mock_run,
-            patch("email_save.shutil.move"),
-            patch.object(Path, "mkdir") as mock_mkdir,
-            patch.object(Path, "exists", return_value=False),
-        ):
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["himalaya"],
-                returncode=0,
-                stdout="",
-                stderr=himalaya_output,
-            )
-
-            _download_attachments_internal(
-                message_id, folder, attachment_dir, verbose=False
-            )
-
-            mock_mkdir.assert_called_once()
-
-    def test_attachment_names_preserved(self, tmp_path) -> None:
-        """Verify attachment names are preserved from himalaya output."""
-        message_id = 57039
-        folder = "INBOX"
-
-        himalaya_output = dedent("""\
-            Downloading "obf_spreadsheet.xlsx"…
-            Downloading "obf_document.pdf"…
-            """)
-
-        moved_files = []
-
-        def mock_move(src, dst) -> None:
-            moved_files.append((Path(src), Path(dst)))
-
-        with (
-            patch("email_save.shutil.which", return_value="/usr/bin/himalaya"),
-            patch("email_save.subprocess.run") as mock_run,
-            patch("email_save.shutil.move", side_effect=mock_move),
-            patch("pathlib.Path.mkdir"),
-        ):
-            mock_run.return_value = subprocess.CompletedProcess(
-                args=["himalaya"],
-                returncode=0,
-                stdout="",
-                stderr=himalaya_output,
-            )
-
-            result = _download_attachments_internal(
-                message_id, folder, tmp_path, verbose=False
-            )
-
-            assert len(result) == 2
-            assert "spreadsheet.xlsx" in str(result[0])
-            assert "document.pdf" in str(result[1])
+        """An empty download directory produces no attachments."""
+        with patch("email_save.run_himalaya"):
+            assert _download_attachments_internal(57039, "INBOX", tmp_path) == []
 
 
 class TestSaveCommandAttachmentBehavior:
     """Test save() command with attachment downloading."""
 
-    def test_effective_attachment_dir_defaults_to_output_parent_when_output_none(
+    def test_attachment_folder_defaults_to_message_id_when_output_none(
         self,
     ) -> None:
-        """Verify effective_attachment_dir defaults to output_path.parent.
-
-        When output=None and no --attachment-dir specified, attachments should
-        default to output_path.parent, which is the current directory since
-        output_path = Path(filename) when output is None.
-        """
+        """Default attachments stay in the message folder beside the saved email."""
         test_envelope = {
-            "from": {"name": "Jane Smith", "address": "jane@example.org"},
+            "from": {"name": "Unknown sender", "address": "sender@example.org"},
             "to": {"name": "Recipient", "address": "recipient@example.org"},
             "date": "2026-01-17 10:30:00",
             "subject": "Obfuscated Test Email",
@@ -244,12 +106,12 @@ class TestSaveCommandAttachmentBehavior:
                 verbose=False,
             )
 
-            assert captured_attachment_dir == Path()
+            assert captured_attachment_dir == Path("57039-attachments")
 
     def test_explicit_attachment_dir_respected(self) -> None:
         """Verify explicit attachment_dir is used when specified."""
         test_envelope = {
-            "from": {"name": "Jane", "address": "jane@example.org"},
+            "from": {"name": "Unknown sender", "address": "sender@example.org"},
             "to": {"address": "recipient@example.org"},
             "date": "2026-01-17",
             "subject": "Test",
@@ -298,7 +160,7 @@ class TestSaveCommandAttachmentBehavior:
     def test_no_download_when_flag_false(self) -> None:
         """Verify attachments are not downloaded when flag is False."""
         test_envelope = {
-            "from": {"address": "jane@example.org"},
+            "from": {"address": "sender@example.org"},
             "to": {"address": "recipient@example.org"},
             "date": "2026-01-17",
             "subject": "Test",
@@ -334,15 +196,9 @@ class TestSaveCommandAttachmentBehavior:
             mock_download.assert_not_called()
 
     def test_attachments_default_to_output_directory(self) -> None:
-        """Verify attachments download to email output directory when --attachment-dir not specified.
-
-        Regression test: When saving to a different directory than cwd without
-        explicitly specifying --attachment-dir, attachments should default to
-        the email's output directory (output_path.parent), not the current
-        working directory.
-        """
+        """Default attachment folders live beside the saved email."""
         test_envelope = {
-            "from": {"name": "Jane", "address": "jane@example.org"},
+            "from": {"name": "Unknown sender", "address": "sender@example.org"},
             "to": {"address": "recipient@example.org"},
             "date": "2026-01-17",
             "subject": "Obfuscated Test Email",
@@ -389,12 +245,12 @@ class TestSaveCommandAttachmentBehavior:
                 verbose=False,
             )
 
-            assert captured_attachment_dir == output_dir
+            assert captured_attachment_dir == output_dir / "57039-attachments"
 
     def test_format_markdown_with_attachments(self) -> None:
         """Verify markdown formatting includes attachment list."""
         test_envelope = {
-            "from": {"name": "Jane", "address": "jane@example.org"},
+            "from": {"name": "Unknown sender", "address": "sender@example.org"},
             "to": {"address": "recipient@example.org"},
             "date": "2026-01-17",
             "subject": "Test Email",

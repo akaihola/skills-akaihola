@@ -28,7 +28,7 @@ chunks.
 ## How it works
 
 1. Detects format from file extension
-2. Finds workspace root (walks up to find `.claude/` directory)
+2. Finds workspace root from the current working directory (walks up to find `.claude/`)
 3. Checks cache at `<workspace>/.cache/markdown/<relative-path>.md`
    - Fast path: mtime + size match in `.meta` sidecar → cache hit
    - Content-hash fallback: SHA-256 of original file checked against
@@ -46,7 +46,7 @@ positional arguments:
   FILE                    Path to document file (.pdf, .docx, .epub)
 
 options:
-  --workspace-root PATH   Override workspace root (auto-detected via .claude/)
+  --workspace-root PATH   Override workspace root (default: .claude/ ancestor of current directory)
   --limit N               Max lines to return (default: 200)
   --offset N              Line offset for chunked reading (default: 0)
   --backend NAME          Force a specific backend (pandoc, pdftotext)
@@ -71,6 +71,8 @@ On error: `{"error": "description"}`.
 ## Caching
 
 Cache lives at `<workspace>/.cache/markdown/` mirroring the source file tree.
+Symlinks in the cache are refused. Index entries outside the cache are ignored.
+A document’s own `.claude/` directory cannot select the workspace.
 Each cached file has a `.meta` JSON sidecar:
 
 ```json
@@ -86,7 +88,7 @@ Each cached file has a `.meta` JSON sidecar:
 ```
 
 A hash index at `<workspace>/.cache/markdown/index.json` maps content hashes to
-cache paths, enabling cache hits when source files are moved or renamed.
+relative cache paths, enabling cache hits when source files are moved or renamed.
 
 The `toolchain` array records every processing step — the initial conversion and
 any later post-processing (formatting, cleanup, refinement by helper scripts).

@@ -111,7 +111,7 @@ def is_placeholder(line: str) -> bool:
 
 def run_detect_secrets(repo_path: Path, *, all_files: bool) -> dict:
     """Run `uvx detect-secrets scan` and return the parsed JSON baseline."""
-    cmd = ["uvx", "detect-secrets", "scan"]
+    cmd = ["uvx", "detect-secrets", "scan", "--no-verify"]
     if all_files:
         cmd.append("--all-files")
     for pattern in EXCLUDE_DIR_REGEXES:
@@ -126,7 +126,7 @@ def run_detect_secrets(repo_path: Path, *, all_files: bool) -> dict:
     )
 
     if result.returncode not in {0, 1}:
-        print(f"[detect-secrets] stderr: {result.stderr.strip()}", file=sys.stderr)
+        print(f"[detect-secrets] failed (exit {result.returncode})", file=sys.stderr)
         return {}
 
     try:
@@ -159,7 +159,7 @@ def setup_secretlint(tmpdir: Path) -> Path | None:
     proc = subprocess.run(bun_cmd, capture_output=True, cwd=tmpdir, check=False)  # noqa: S603
     if proc.returncode != 0:
         print(
-            f"[secretlint] bun add failed: {proc.stderr.decode()[:200]}",
+            f"[secretlint] bun add failed (exit {proc.returncode})",
             file=sys.stderr,
         )
         return None
@@ -265,7 +265,7 @@ def build_combined(
 ) -> dict:
     """Merge detect-secrets and secretlint findings into a unified structure.
 
-    For each finding, read the flagged line so the agent can classify it.
+    Read flagged lines internally for classification; never return their values.
     """
     findings: list[dict] = []
 
@@ -282,7 +282,6 @@ def build_combined(
                     "line": ln,
                     "type": secret.get("type", ""),
                     "is_verified": secret.get("is_verified", False),
-                    "line_content": line_content,
                     "classification": classify(line_content),
                 }
             )
@@ -298,9 +297,6 @@ def build_combined(
                 "line": f["line"],
                 "type": f["message_id"],
                 "rule_id": f["rule_id"],
-                "message": f["message"],
-                "docs_url": f["docs_url"],
-                "line_content": line_content,
                 "classification": classify(line_content),
             }
         )
@@ -394,14 +390,6 @@ def _append_finding(lines: list[str], f: dict) -> None:
     )
     if "rule_id" in f:
         lines.append(f"- **Rule:** {f['rule_id']}")
-    if "message" in f:
-        lines.append(f"- **Message:** {f['message']}")
-    if f.get("docs_url"):
-        lines.append(f"- **Docs:** {f['docs_url']}")
-    if f.get("line_content"):
-        # Truncate long lines to avoid echoing full secrets into the report
-        content = f["line_content"][:200]
-        lines.append(f"- **Line:** `{content}`")
     lines.append("")
 
 

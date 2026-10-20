@@ -63,9 +63,13 @@ uv run ~/.claude/skills/himalaya-email-manager/scripts/email_save.py <message-id
 - `--format FORMAT` - Output format: markdown, text, or json (default: markdown)
 - `--date-prefix` - Add YYYY-MM-DD date prefix to filename (uses email date)
 - `--no-download-attachments` - Skip downloading email attachments (default: attachments are downloaded)
-- `--attachment-dir PATH` - Directory for attachments (default: current directory, same as email save location)
+- `--attachment-dir PATH` - Directory for attachments (default: a `<message-id>-attachments/` folder beside the saved email)
 - `--overwrite` - Overwrite existing file without confirmation
 - `--help` - Show help message
+
+Downloads require Himalaya’s `attachment download -d PATH` support (v1.2 or
+newer). Files are staged in a private temporary directory, names are sanitized,
+and collisions receive a suffix. Existing attachment files are preserved.
 
 ## Post-Save Attachment Processing
 
