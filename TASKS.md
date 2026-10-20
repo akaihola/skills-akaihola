@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [16] Fix the three high findings of the 2026-10-21 security review
+  <!-- hai:{"id":"simple-05a0bf66-a5a3-4c17-8e7e-157d9eb43a5d","labels":["steward"],"createdAt":"2026-10-20T22:25:34.040Z","updatedAt":"2026-10-20T22:25:34.040Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -68,7 +71,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -97,6 +100,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [14]: docs/tasks/14-send-review-findings-to-the-thread-that-implemented-the-work.md
 
 [15]: docs/tasks/15-security-scan-of-skills-akaihola-credentials-scripts-skill-instruction.md
+
+[16]: docs/tasks/16-fix-the-three-high-findings-of-the-2026-10-21-security-review.md
 
 ## Rules
 
