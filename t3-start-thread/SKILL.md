@@ -5,6 +5,15 @@ description: Route requested T3 Code coordination to child-task delegation, an e
 
 # Coordinate T3 Code tasks and threads
 
+## Apply model-setting preferences
+
+Before creating a thread or delegating a task, read
+`~/my-knowledge/USER.md` → **T3 Code model settings** when present. Explicit user
+preferences override inherited and catalog-default reasoning and service-tier
+options. Pass the resolved options explicitly and verify the created thread's
+saved configuration. With the helper's `start`, use `--settings` when the
+parent's options need overriding; preserve its other settings.
+
 ## Choose the operation first
 
 Decide from the user's intent before choosing a tool or helper command:
