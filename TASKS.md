@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [16] Fix the three high findings of the 2026-10-21 security review
-      <!-- hai:{"id":"simple-05a0bf66-a5a3-4c17-8e7e-157d9eb43a5d","labels":["steward"],"createdAt":"2026-10-20T22:25:34.040Z","updatedAt":"2026-10-20T22:27:01.069Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [16] Fix the three high findings of the 2026-10-21 security review
+      <!-- hai:{"id":"simple-05a0bf66-a5a3-4c17-8e7e-157d9eb43a5d","labels":["steward"],"createdAt":"2026-10-20T22:25:34.040Z","updatedAt":"2026-10-20T22:34:45.664Z"} -->
 
 - [ ] [15] Security scan of skills-akaihola: credentials, scripts, skill
   instructions and history
