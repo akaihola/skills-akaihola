@@ -12,11 +12,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [15] Security scan of skills-akaihola: credentials, scripts, skill
-  instructions and history
-      <!-- hai:{"id":"simple-ca1b151c-d1bf-46fe-b05d-729a31172f8c","labels":["steward","security"],"createdAt":"2026-10-20T19:38:12.045Z","updatedAt":"2026-10-20T21:09:43.577Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [15] Security scan of skills-akaihola: credentials, scripts, skill
+  instructions and history
+      <!-- hai:{"id":"simple-ca1b151c-d1bf-46fe-b05d-729a31172f8c","labels":["steward","security"],"createdAt":"2026-10-20T19:38:12.045Z","updatedAt":"2026-10-20T21:54:09.774Z"} -->
 
 - [x] [14] Send review findings to the thread that implemented the work
       <!-- hai:{"id":"simple-345f3047-2675-4813-b434-f30bf4a8e48e","labels":["steward"],"createdAt":"2026-10-19T17:05:31.441Z","updatedAt":"2026-10-19T18:40:28.077Z"} -->
