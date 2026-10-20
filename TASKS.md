@@ -8,11 +8,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+## Scheduled
+
 - [15] Security scan of skills-akaihola: credentials, scripts, skill
   instructions and history
-  <!-- hai:{"id":"simple-ca1b151c-d1bf-46fe-b05d-729a31172f8c","labels":["steward","security"],"createdAt":"2026-10-20T19:38:12.045Z","updatedAt":"2026-10-20T19:38:12.045Z"} -->
-
-## Scheduled
+  <!-- hai:{"id":"simple-ca1b151c-d1bf-46fe-b05d-729a31172f8c","labels":["steward","security"],"createdAt":"2026-10-20T19:38:12.045Z","updatedAt":"2026-10-20T21:09:15.016Z"} -->
 
 ## In Progress
 
