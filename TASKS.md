@@ -17,9 +17,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 - [ ] [16] Fix the three high findings of the 2026-10-21 security review
       <!-- hai:{"id":"simple-05a0bf66-a5a3-4c17-8e7e-157d9eb43a5d","labels":["steward"],"createdAt":"2026-10-20T22:25:34.040Z","updatedAt":"2026-10-20T22:34:45.664Z"} -->
 
-- [ ] [15] Security scan of skills-akaihola: credentials, scripts, skill
+- [x] [15] Security scan of skills-akaihola: credentials, scripts, skill
   instructions and history
-      <!-- hai:{"id":"simple-ca1b151c-d1bf-46fe-b05d-729a31172f8c","labels":["steward","security"],"createdAt":"2026-10-20T19:38:12.045Z","updatedAt":"2026-10-20T21:54:09.774Z"} -->
+      <!-- hai:{"id":"simple-ca1b151c-d1bf-46fe-b05d-729a31172f8c","labels":["steward","security"],"createdAt":"2026-10-20T19:38:12.045Z","updatedAt":"2026-10-21T05:18:20.861Z"} -->
 
 - [x] [14] Send review findings to the thread that implemented the work
       <!-- hai:{"id":"simple-345f3047-2675-4813-b434-f30bf4a8e48e","labels":["steward"],"createdAt":"2026-10-19T17:05:31.441Z","updatedAt":"2026-10-19T18:40:28.077Z"} -->
