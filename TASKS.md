@@ -44,16 +44,16 @@ they are not pacer inputs. Keep each task in one tracker only.
   and draft the fixes
       <!-- hai:{"id":"simple-2d9cbdb6-f827-4bd2-96e4-eed5462ebd07","labels":["steward"],"createdAt":"2026-10-19T08:08:27.558Z","updatedAt":"2026-10-19T08:53:40.873Z"} -->
 
-- [ ] [8] Gather acceptance evidence for the 2 review-queue items
-      <!-- hai:{"id":"simple-9467a5ab-9645-4aa0-89cc-747c91768be8","labels":["steward"],"createdAt":"2026-10-17T20:09:27.827Z","updatedAt":"2026-10-17T20:30:30.967Z"} -->
+- [x] [8] Gather acceptance evidence for the 2 review-queue items
+      <!-- hai:{"id":"simple-9467a5ab-9645-4aa0-89cc-747c91768be8","labels":["steward"],"createdAt":"2026-10-17T20:09:27.827Z","updatedAt":"2026-10-21T17:12:39.680Z"} -->
 
-- [ ] [7] Add a settle command to the t3-start-thread helper
+- [x] [7] Add a settle command to the t3-start-thread helper
     - Depends on: [6]
 
-      <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-17T12:58:13.794Z"} -->
+      <!-- hai:{"id":"simple-74d6e5ba-0944-485e-97ba-aa94a578d8eb","labels":["steward"],"createdAt":"2026-10-17T12:52:25.981Z","updatedAt":"2026-10-21T17:12:40.467Z"} -->
 
-- [ ] [6] Make the t3-start-thread helper speak T3's V2 protocol as well as V1
-      <!-- hai:{"id":"simple-88599925-e2e3-4c51-af5c-f4b0e9ebe196","labels":["steward"],"createdAt":"2026-10-16T20:05:55.680Z","updatedAt":"2026-10-17T09:02:27.761Z"} -->
+- [x] [6] Make the t3-start-thread helper speak T3's V2 protocol as well as V1
+      <!-- hai:{"id":"simple-88599925-e2e3-4c51-af5c-f4b0e9ebe196","labels":["steward"],"createdAt":"2026-10-16T20:05:55.680Z","updatedAt":"2026-10-21T17:12:41.782Z"} -->
 
 - [x] [5] Discover imported Android bugreports with uppercase ZIP extensions
   <!-- hai:{"id":"simple-f2a552a8-9a18-49f4-8d8e-3334a7c39243","priority":"low","labels":["android-diagnostics","review"],"createdAt":"2026-10-12T03:58:53.488Z","updatedAt":"2026-10-15T15:47:57.923Z"} -->
