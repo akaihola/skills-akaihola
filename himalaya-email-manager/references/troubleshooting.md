@@ -1,93 +1,57 @@
-# Troubleshooting
+# Himalaya troubleshooting
 
-Common issues and solutions for Himalaya Email Manager.
+## Check installation before contacting a mailbox
 
-## Connection Errors
-
-If you see connection errors when running scripts:
-
-```bash
-# Test connection
-himalaya account list
-
-# List folders
-himalaya folder list
-
-# View account details
-cat ~/.config/himalaya/config.toml
-```
-
-## Password Issues
-
-Himalaya uses the system keyring for authentication. If you're prompted for password or see authentication errors:
-
-1. Ensure your system keyring is unlocked
-2. Check that the credentials are stored correctly in the keyring
-3. You may need to re-enter your password through Himalaya
-
-## No Results Found
-
-If searches return no results:
-
-- Verify the folder name is correct (INBOX, Sent, Drafts, Archive, Trash, Junk)
-- Check date format (must be YYYY-MM-DD)
-- Try a broader search with fewer filters
-- Ensure the email exists in the specified folder
-
-## Message ID Not Found
-
-If email-delete.py reports "Message ID not found":
-
-- Verify the message ID is correct (copy from search results)
-- Check you're searching in the correct folder with --folder
-- The email may have been moved or deleted already
-
-## Date Format Errors
-
-If date filters don't work:
-
-- Dates must be in YYYY-MM-DD format (ISO 8601)
-- Example: "2025-12-31" (not "12/31/2025" or "31-12-2025")
-- Ensure --date-start is earlier than --date-end
-
-## Permission Errors
-
-If you see permission denied errors:
+All five wrappers support `--help` without invoking Himalaya. They require
+Python 3.13+ and the dependencies declared in each script.
 
 ```bash
-# Make scripts executable
-chmod +x scripts/*.py
+himalaya --help
+himalaya attachment download --help
+uv run himalaya-email-manager/scripts/email_save.py --help
 ```
 
-## IMAP Server Issues
+Attachment saving needs the `-d` destination option. Inspect the installed
+command’s help rather than assuming compatibility from a version label.
+Commands here run from the repository root; use an absolute script path elsewhere.
+Running via `uv run` does not require executable permission on the Python file.
 
-If IMAP server is slow or unresponsive:
+## Configuration and authentication
 
-- Check your internet connection
-- Verify mail.example.com is accessible
-- Try the connection test commands above
-- The issue may be temporary server-side
+The wrappers pass a fixed `ACCOUNT` constant to Himalaya. They do not select
+Himalaya’s default account or expose an `--account` flag. Inspect the constant
+in the relevant [script] privately and confirm that it names the intended
+configured account.
 
-## Script Execution Issues
+Authentication belongs to Himalaya’s configuration. Do not assume that every
+installation uses a keyring or a particular IMAP host. Check the configured
+credential mechanism without printing its value or dumping the entire
+configuration. Report credential problems by file and line only.
 
-If scripts don't run:
+After authorization for mailbox access, `himalaya account list` can help
+identify configured accounts and `himalaya folder list --account ACCOUNT`
+can check the selected account’s folders.
 
-1. Verify Himalaya is installed: `himalaya --help`
-2. Ensure uv is available for Python environment management
-3. Check that Python 3.13+ is installed
+## Missing search results or messages
 
-## Technical Context
+Search filters run locally over one fetched page (500 envelopes normally,
+10,000 with `--no-limit`). A missing result does not prove that the message is
+absent from the mailbox. Summary also uses one default page per folder and
+matches today/yesterday date prefixes.
 
-This skill uses:
+Check the folder, the numeric message ID, sender/subject spelling, and ISO
+date bounds. Dates are compared as text; supply `YYYY-MM-DD`.
+The script does not implement body search, `--since`, or `--until`.
 
-- **Himalaya v1.1.0** - Rust-based IMAP CLI tool (must be installed)
-- **Python 3.13+** - Script runtime
-- **uv** - Python environment and dependency management
-- **IMAP protocol** - Direct server communication (mail.example.com)
+## Saving and reading
 
-All operations are performed directly on the IMAP server, ensuring:
+Use `text`, `markdown`, `json` or `raw` for reading; `headers` and `body`
+are not accepted formats. Saving supports `markdown`, `text` and `json`.
+See the [script reference] for attachment destinations and filename rules.
 
-- Real-time access to emails
-- Immediate synchronization with other clients (Thunderbird, webmail)
-- No risk of local file corruption
-- Fast server-side search
+Saving creates local files and may prompt before overwriting an email.
+Deletion with `--execute` proceeds without a confirmation prompt in a
+noninteractive terminal; authorization must already be established.
+
+[script]: ../scripts/
+[script reference]: scripts.md

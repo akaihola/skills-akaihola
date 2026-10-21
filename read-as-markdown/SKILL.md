@@ -28,13 +28,14 @@ chunks.
 ## How it works
 
 1. Detects format from file extension
-2. Finds workspace root from the current working directory (walks up to find `.claude/`)
-3. Checks cache at `<workspace>/.cache/markdown/<relative-path>.md`
+2. Finds workspace root from the current working directory (walks up to find `.claude/`; falls back to the current directory)
+3. Checks cache at `<workspace>/.cache/markdown/<relative-source-path>.md`
    - Fast path: mtime + size match in `.meta` sidecar → cache hit
    - Content-hash fallback: SHA-256 of original file checked against
      `index.json` → finds cache even if the source file was moved/renamed
 4. On miss: dispatches to the appropriate converter backend
-5. Writes markdown + `.meta` sidecar + updates `index.json` hash index
+5. Writes Markdown + `.meta` sidecar + updates `index.json` hash index;
+   after conversion, creates or updates the workspace `.gitignore` with `.cache/`
 6. Returns JSON with first N lines (default 200)
 
 ## CLI interface
@@ -52,73 +53,17 @@ options:
   --backend NAME          Force a specific backend (pandoc, pdftotext)
 ```
 
-## Output format
+## Output and cache details
 
-```json
-{
-  "cache_path": "/home/user/.cache/markdown/downloads/paper.md",
-  "total_lines": 847,
-  "content": "first 200 lines...",
-  "source": "/home/user/documents/paper.pdf",
-  "format": "pdf",
-  "backend": "pdftotext",
-  "cached": false
-}
-```
+Read [cache layout and backends](references/cache.md) when inspecting cached
+files, diagnosing conversion errors or adding a converter. The cache retains
+the source extension, mirrors in-workspace paths, and uses only the filename
+for external sources. It is local to the selected workspace.
 
-On error: `{"error": "description"}`.
-
-## Caching
-
-Cache lives at `<workspace>/.cache/markdown/` mirroring the source file tree.
-Symlinks in the cache are refused. Index entries outside the cache are ignored.
-A document’s own `.claude/` directory cannot select the workspace.
-Each cached file has a `.meta` JSON sidecar:
-
-```json
-{
-  "mtime": 1709312456.789,
-  "size": 2048576,
-  "content_hash": "sha256:a1b2c3...",
-  "toolchain": [
-    {"step": "convert", "backend": "pdftotext", "version": "24.04.0", "at": "2026-03-01T12:00:00+00:00"}
-  ],
-  "converted_at": "2026-03-01T12:00:00+00:00"
-}
-```
-
-A hash index at `<workspace>/.cache/markdown/index.json` maps content hashes to
-relative cache paths, enabling cache hits when source files are moved or renamed.
-
-The `toolchain` array records every processing step — the initial conversion and
-any later post-processing (formatting, cleanup, refinement by helper scripts).
-Each step records its name, tool, version, and timestamp.
-
-## Backends
-
-| Format | Default backend | Fallback |
-|--------|----------------|----------|
-| PDF    | pdftotext      | pandoc   |
-| DOCX   | pandoc         | —        |
-| EPUB   | pandoc         | —        |
-
-**pdftotext** uses `-layout` mode for best table/column preservation in academic
-papers. On NixOS, automatically falls back to `nix-shell -p poppler-utils` if
-pdftotext is not in PATH.
-
-**pandoc** uses `--to=markdown --wrap=none` for clean, unwrapped output.
-
-### Adding a new backend
-
-Add a converter function and register it in `BACKENDS`:
-
-```python
-def marker_converter(source: Path) -> tuple[str, str]:
-    # ... convert ...
-    return markdown_text, "marker 1.0"
-
-BACKENDS["pdf"].insert(0, ("marker", marker_converter))
-```
+Conversion writes cached files and may update the workspace ignore file.
+Handled errors are JSON objects with exit status 0; inspect the `error` key.
+PDF uses `pdftotext` first, then the registered `pandoc` fallback; DOCX/EPUB
+use `pandoc`. Forced backends do not fall back.
 
 ## Distinction from pdf/docx skills
 

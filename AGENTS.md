@@ -20,7 +20,7 @@
 | `"Subject: Financial Report Q4"`      | `"Subject: business-related subject"`     |
 | `"Organization Name sent data"`       | `"Unknown sender sent a business report"` |
 | `test_email_from_user_name()`         | `test_email_from_unknown_sender()`        |
-| `{"from": "user@company.example"}`    | `{"from": "sender@company.example"}`      |
+| `{"from": "user@company.example"}`    | `{"from": "sender@example.org"}`      |
 
 ### Guidelines
 
@@ -41,8 +41,10 @@
 
 ## Skills Organization
 
-Skills are stored in the repository root directory (e.g., `tokmanni/`, `clasohlson/`)
-and symlinked into `.claude/skills/` for Claude discovery:
+Skills are stored in root-level directories such as [tokmanni/](tokmanni/)
+and [clasohlson/](clasohlson/). Selected skills have relative symlinks in
+[.claude/skills/](.claude/skills/) for discovery; not every source skill is linked.
+Scripts and references are optional. For example:
 
 ```
 tokmanni/                          # Source directory at repo root
@@ -62,14 +64,14 @@ This structure allows:
 
 ## Task tracking
 
-Use root `TASKS.md` for work queued through the T3 pacer, and read its Rules
+Use root [TASKS.md](TASKS.md) for work queued through the T3 pacer, and read its Rules
 before changing an issue. Use Hai's revision-checked CLI or Python API for
 tracker mutations. The user approves which proposals enter Ordered backlog;
 agents record completion separately from user acceptance.
 
-Keep each task in one tracker. Root `BACKLOG.md` and `library/BACKLOG.md` retain
+Keep each task in one tracker. Root [BACKLOG.md](BACKLOG.md) and [library/BACKLOG.md](library/BACKLOG.md) retain
 their existing planning records until the task-tracking adoption work migrates
-them. New Android diagnostics review fixes belong only in `TASKS.md`.
+them. New Android diagnostics review fixes belong only in [TASKS.md](TASKS.md).
 
 Pacer configuration is local to the machine and stays outside this public
 repository. Scheduling requires a clean `main` checkout. Do implementation in

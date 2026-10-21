@@ -1,149 +1,66 @@
-# Classifying Secrets-Scan Findings
+# Classifying secrets-scan findings
 
-Both `detect-secrets` and `secretlint` produce false positives. This reference
-lists common patterns and how to handle each. Inspect locations, detector kinds
-and surrounding context without displaying flagged lines or secret values.
+This reference describes [secrets-scan/scripts/scan.py], rather than the
+version-dependent CLI or detector inventory of its external tools.
 
-## Decision Criteria
+## Classification
 
-| Signal                                                                                                | Classification  | Action                                    |
-| ----------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------- |
-| Line contains a placeholder string (see table below)                                                  | False positive  | Add `# pragma: allowlist secret`          |
-| File is in `.venv/`, `node_modules/`, `dist/`                                                         | False positive  | Exclude path from scan config             |
-| File is a test fixture with synthetic data                                                            | False positive  | Exclude via `--exclude-files`             |
-| File is documentation or a SKILL.md with example keys                                                 | False positive  | Add allowlist comment or exclude          |
-| Variable name is generic (`key`, `secret`, `password`) but value is empty string or env var reference | False positive  | No action needed                          |
-| Value matches a known vendor format AND is not a placeholder                                          | **Real secret** | Rotate + remove                           |
-| High-entropy string in a `.py` or `.js` file in the project (not a dep)                               | Likely real     | Review non-secret context, then rotate if real |
+`build_combined()` reads the flagged line internally and calls `classify()`.
+`is_placeholder()` performs a case-insensitive substring search over the
+whole line using `PLACEHOLDER_INDICATORS`.
 
-## Common Placeholder Strings (auto-classified by scan.py)
+Recognized indicators include `your_key_here`, `your-key-here`,
+`your_actual_key`, `your-api-key`, hyphenated and underscored variants of
+`your-token` and `your-secret`, `changeme`, `placeholder`, `example.com`,
+the documented Slack placeholder fragment, `username:password@`, canonical
+AWS documentation examples, `<your`, `[your`, `INSERT_`, `TODO:`, and
+`FIXME:`. The source constant is authoritative for the exact list.
 
-These strings cause `scan.py` to mark a finding as `likely-false-positive`:
+A matching line gets `likely-false-positive`; otherwise it gets
+`review-required`. File type, directory and entropy do not participate in
+this classification. Exclusion lists are separate, and a failed line read
+becomes an empty string, hence `review-required`.
 
-| Pattern                          | Why it appears                        |
-| -------------------------------- | ------------------------------------- |
-| `your_key_here`, `your-api-key`  | Documentation template                |
-| `your_actual_key_here`           | SKILL.md / README placeholder         |
-| `changeme`                       | Default config value                  |
-| `AKIAIOSFODNN7EXAMPLE`           | AWS official documentation example    |
-| `wJalrXUtnFEMI/K7MDENG`          | AWS official documentation secret key |
-| `username:password@`             | Generic connection string template    |
-| `xoxb-your-slack-bot-token-here` | Slack MCP example config              |
-| `<your...`, `[your...`           | Documentation prompt                  |
-| `INSERT_`, `TODO:`, `FIXME:`     | Unset placeholder marker              |
+- **Placeholder match:** review non-secret context before suppressing it.
+  A real credential beside a placeholder marker can receive the same label.
+- **Documentation or test fixture:** location alone does not prove that data
+  is synthetic. Confirm provenance without printing the flagged line.
+- **Vendor-format match:** a detector match alone does not prove validity.
+  Keep it under review until there is evidence; the wrapper performs no
+  online credential verification.
 
-## False Positive Examples by Tool
+## Output and coverage
 
-### detect-secrets – HexHighEntropyString
+Combined JSON contains `repo`, `findings` and `summary`. Each finding has
+`source`, `file`, `line`, `type` and `classification`. Detect-secrets
+findings also carry `is_verified`; secretlint findings carry `rule_id`.
+Source lines, hashed secrets and raw scanner messages are omitted.
+The Markdown renderer reports the same safe location/type information.
 
-Very common in third-party libraries (e.g. `yt_dlp`, `youtube_dl`) where
-video site IDs, CSS hashes, and other hex constants trip the entropy detector.
+The wrapper always passes `--no-verify` to detect-secrets. Its
+`--all-files` option applies only to that scanner; secretlint uses
+`get_git_tracked_files()` and batches 200 paths at a time.
 
-**Fix:** Exclude the vendor path:
+`run_detect_secrets()` returns an empty result for some command/JSON failures;
+secretlint setup failure skips that scanner, and malformed or empty batch
+output can be ignored. The summary does not record coverage failures.
+Read stderr before describing a scan as complete.
 
-```bash
-uvx detect-secrets scan --exclude-files '\.venv/' --exclude-files 'node_modules/'
-```
+## Remediation and suppression
 
-Or raise the hex entropy threshold if too many false positives in your own code:
+For a confirmed exposed credential, arrange authorized revocation/rotation
+and replace source literals with a credential mechanism. Never reproduce the
+old value in reports, patches or commands.
 
-```bash
-uvx detect-secrets scan --hex-limit 4.0
-```
+Suppress only verified false positives and prefer narrow suppressions.
+Broadly excluding documentation, test fixtures or dependency directories can
+hide real credentials. History removal is separate repository work and does
+not make an exposed credential safe again.
 
-### detect-secrets – Basic Auth Credentials
+Direct scanner output may contain secrets. Prefer the wrapper’s redacted
+report; if manual scanner use is necessary, capture raw output privately
+and report only locations/types. Consult the installed tools’ help for their
+current options. The wrapper implements neither a persistent baseline nor
+an audit/diff workflow.
 
-Triggered by any URL containing `:` between host and path, or `user:pass@`
-patterns in documentation.
-
-**Common false positives:**
-
-- `postgresql://username:password@localhost/db` – connection string template
-- `https://user:pass@proxy.example.com` – proxy docs
-
-### detect-secrets – Secret Keyword
-
-Triggered when variable names like `password`, `secret`, `token`, `api_key`
-are assigned any value (including empty strings and env var lookups).
-
-**False positive examples:**
-
-```python
-password = os.getenv("DB_PASSWORD")   # reads from env, not a secret
-api_key = ""                           # empty default
-SECRET_KEY = config.get("secret_key") # reads from config
-```
-
-### secretlint – SLACK_TOKEN
-
-Triggered by the `xoxb-` prefix. The full string `xoxb-your-slack-bot-token-here`
-is a placeholder but still fires because the prefix matches.
-
-**Fix:** Add to `.secretlintignore`:
-
-```
-mcp-to-skill/assets/examples/
-docs/
-```
-
-### secretlint – GCP_SERVICE_ACCOUNT / GITHUB_TOKEN patterns
-
-These are pattern-matched against well-known prefixes. Any placeholder that
-uses the same prefix (e.g. `ghp_yourTokenHere`) will trigger.
-
-## Suppressing False Positives
-
-### Inline suppression (detect-secrets)
-
-```python
-EXAMPLE_KEY = "AKIAIOSFODNN7EXAMPLE"  # pragma: allowlist secret
-```
-
-### Exclude a file or directory (detect-secrets)
-
-Add to your scan command or `.secrets.baseline`:
-
-```bash
-uvx detect-secrets scan \
-  --exclude-files '\.venv/' \
-  --exclude-files 'tests/fixtures/' \
-  --exclude-files 'docs/'
-```
-
-### Exclude paths (secretlint)
-
-Create `.secretlintignore` in the repo root:
-
-```
-.venv/
-node_modules/
-docs/
-tests/fixtures/
-```
-
-### Persist allowlist via baseline
-
-After reviewing all findings and marking false positives:
-
-```bash
-uvx detect-secrets scan > .secrets.baseline
-uvx detect-secrets audit .secrets.baseline
-# Mark each finding; baseline stores your decisions
-git add .secrets.baseline
-git commit -m "chore: add detect-secrets baseline"
-```
-
-Future scans diff against the baseline and only report new findings.
-
-## Verified vs Unverified Findings
-
-`detect-secrets` can attempt live verification for some secret types (e.g.
-AWS keys via STS `GetCallerIdentity`). A finding marked `"is_verified": true`
-is definitely a live credential. `"is_verified": false` means either:
-
-- Verification was skipped (`--no-verify`)
-- The token format matched but the key is no longer active
-- It is a false positive
-
-Use `--no-verify` to speed up scans in CI where network calls are undesirable.
-Use `--only-verified` to focus only on confirmed live secrets.
+[secrets-scan/scripts/scan.py]: ../scripts/scan.py

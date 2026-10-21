@@ -1,101 +1,70 @@
 ---
 name: library
-description: Private skill distribution system. Use when the user wants to install, use, add, push, sync, list, or search for skills, agents, or prompts from the shared library catalog. Triggers on /library commands or mentions of library, skill distribution, or agentic management.
+description: Manage the shared skills, agents and prompts catalog through /library install, add, use, push, remove, list, sync or search workflows.
 argument-hint: "[command] [name or details]"
 ---
 
 # The Library
 
-A meta-skill for private-first distribution of agentics (skills, agents, and prompts) across workspaces, agents, and devices.
+This is an agent-run workflow over [library/library.yaml](library.yaml), with
+step-by-step [cookbooks](cookbook/). There is no bundled CLI, source-format
+parser, dependency resolver or install-status script. Commands below instruct
+the agent to perform those steps; they are not executable shell commands.
 
-## Inspiration
-
-This skill was adopted after watching Dan Dubiel's video
-[**The Library Meta-Skill: How I Distribute PRIVATE Skills, Agents and Prompts**](https://youtu.be/_vpNQ6IwP9w)
-(Agentic Engineer, 2026).
-
-The original template repository is [disler/the-library](https://github.com/disler/the-library) on GitHub.
-Our version is adapted for a symlink-based multi-workspace setup (see *Install Mechanism* below)
-rather than the copy-based approach in the original.
-
-## Variables
-
-- **LIBRARY_REPO_URL**: `https://github.com/akaihola/skills-akaihola.git`
-- **LIBRARY_YAML_PATH**: `~/prg/skills-akaihola/library/library.yaml`
-- **LIBRARY_SKILL_DIR**: `~/prg/skills-akaihola/library/`
-- **SKILLS_BASE_DIR**: `~/prg/skills-akaihola/`
-
-## How It Works
-
-The Library is a catalog of references to your agentics. The `library.yaml` file points to where skills, agents, and prompts live (local filesystem or GitHub repos). Nothing is fetched until you ask for it.
-
-**Our setup uses symlinks, not copies.** When you `use` a skill, it creates a symlink from the workspace's `.claude/skills/<name>` → the source directory. This means:
-- Updates to `skills-akaihola` propagate instantly — no manual sync needed for already-installed skills
-- `sync` just does a `git pull` in `skills-akaihola/`
-- A single `library.yaml` in `skills-akaihola/library/` serves all workspaces
+The repository is public. The catalog can reference private local material,
+but “private-first” describes source placement, not a confidentiality guarantee
+for committed catalog entries. Keep private content out of public changes.
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/library install` | First-time setup: clone skills-akaihola and configure |
-| `/library add <details>` | Register a new entry in the catalog |
-| `/library use <name>` | Symlink a skill into the current workspace |
-| `/library push <name>` | Push local changes back to source |
-| `/library remove <name>` | Remove from catalog and optionally unlink locally |
-| `/library list` | Show full catalog with install status |
-| `/library sync` | Pull latest from skills-akaihola (symlinks auto-propagate) |
-| `/library search <keyword>` | Find entries by keyword |
+Read the matching cookbook before executing a command.
 
-## Cookbook
+| Command | Cookbook |
+| --- | --- |
+| `/library install` | [library/cookbook/install.md](cookbook/install.md) |
+| `/library add <details>` | [library/cookbook/add.md](cookbook/add.md) |
+| `/library use <name>` | [library/cookbook/use.md](cookbook/use.md) |
+| `/library push <name>` | [library/cookbook/push.md](cookbook/push.md) |
+| `/library remove <name>` | [library/cookbook/remove.md](cookbook/remove.md) |
+| `/library list` | [library/cookbook/list.md](cookbook/list.md) |
+| `/library sync` | [library/cookbook/sync.md](cookbook/sync.md) |
+| `/library search <keyword>` | [library/cookbook/search.md](cookbook/search.md) |
 
-Each command has a detailed step-by-step guide. **Read the relevant cookbook file before executing a command.**
+The cookbooks assume this checkout location:
 
-| Command | Cookbook | Use When |
-|---------|---------|---------|
-| install | [cookbook/install.md](cookbook/install.md) | First-time setup on a new device |
-| add | [cookbook/add.md](cookbook/add.md) | Register a new skill/agent/prompt in catalog |
-| use | [cookbook/use.md](cookbook/use.md) | Symlink a skill into the current workspace |
-| push | [cookbook/push.md](cookbook/push.md) | Push local skill improvements back to source |
-| remove | [cookbook/remove.md](cookbook/remove.md) | Remove an entry from the catalog |
-| list | [cookbook/list.md](cookbook/list.md) | See what's available and installed |
-| sync | [cookbook/sync.md](cookbook/sync.md) | Pull latest versions from origin |
-| search | [cookbook/search.md](cookbook/search.md) | Find a skill by keyword |
-
-**When a user invokes a `/library` command, read the matching cookbook file first, then execute the steps.**
-
-## Source Format
-
-The `source` field in `library.yaml` supports these formats (auto-detected):
-
-- `/absolute/path/to/SKILL.md` — local filesystem path
-- `~/relative/path/to/SKILL.md` — home-relative path (expand `~` → `/home/user`)
-- `https://github.com/org/repo/blob/main/path/to/SKILL.md` — GitHub browser URL
-- `https://raw.githubusercontent.com/org/repo/main/path/to/SKILL.md` — GitHub raw URL
-
-The `source` always points to the **SKILL.md file** (or AGENT.md for agents). The library installs the entire parent directory.
-
-## Install Mechanism (Symlinks)
-
-Unlike the upstream template which copies files, we use symlinks so updates propagate automatically:
-
-```bash
-# For skills in skills-akaihola:
-ln -sfn ~/prg/skills-akaihola/<skill-name> <target_dir>/<skill-name>
-
-# For skills at arbitrary local paths:
-ln -sfn <parent_dir_of_SKILL.md> <target_dir>/<skill-name>
+```text
+~/prg/skills-akaihola/
+  library/library.yaml
+  library/cookbook/
 ```
 
-The workspace `.claude/skills/` directory is the default target.
+Those are workflow assumptions, not environment variables read by a program.
+Resolve the actual installation before running commands. Capture the caller’s
+workspace root before any cookbook step changes directory to the library repo.
 
-## Target Directories
+## Catalog and installation model
+
+The catalog groups entries under `library.skills`, `library.agents` and
+`library.prompts`. Each entry has `name`, `description` and `source`;
+optional `requires` entries use `skill:name`, `agent:name` or `prompt:name`.
+The agents/prompts lists are currently empty.
+
+Local sources are absolute or home-relative file paths. For skills, the
+source points to the skill instruction file and installation links its
+parent directory. GitHub source URLs are described in the cookbooks, but
+remote installation uses copies and needs a separate refresh.
+
+Local symlinks reflect edits in their actual source checkout immediately.
+Pulling this repository updates sources located here; it does not update
+local sources in other repositories or remote copies.
+
+The catalog’s `default_dirs` selects workspace or global destinations:
 
 ```yaml
 default_dirs:
   skills:
-    - default: .claude/skills/       # workspace-level (relative to CWD)
-    - global: ~/.claude/skills/      # user-level (all sessions)
+    - default: .claude/skills/
+    - global: ~/.claude/skills/
   agents:
     - default: .claude/agents/
     - global: ~/.claude/agents/
@@ -104,19 +73,8 @@ default_dirs:
     - global: ~/.claude/commands/
 ```
 
-- If user says "global" or "globally" → use the `global` directory
-- Otherwise → use the `default` directory (relative to current workspace root)
+Use global destinations only when requested. Script-backed list/search,
+source-health checks, multi-workspace installation and cataloging agents or
+prompts remain proposals in [library/BACKLOG.md](BACKLOG.md).
 
-## Library Repo Sync
-
-The library skill itself lives in `LIBRARY_SKILL_DIR` inside the `skills-akaihola` git repo. When `add` modifies `library.yaml`:
-1. `git pull` in `LIBRARY_SKILL_DIR` first
-2. Make the changes
-3. `git add library.yaml && git commit -m "library: added <type> <name>" && git push`
-
-## Typed Dependencies
-
-The `requires` field uses typed references:
-- `skill:name` — references a skill in the library catalog
-- `agent:name` — references an agent in the library catalog
-- `prompt:name` — references a prompt in the library catalog
+Adapted from the [upstream library template](https://github.com/disler/the-library).

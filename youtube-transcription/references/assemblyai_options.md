@@ -1,192 +1,52 @@
-# AssemblyAI Advanced Options Reference
+# Transcription integration and extension notes
 
-Extended configuration options for the transcription script.
+The bundled [youtube-transcription/scripts/transcribe_video.py] exposes only
+one positional input. The SDK features previously listed here are not
+implemented CLI options, and their availability or pricing cannot be inferred
+from this script.
 
-## TranscriptionConfig Parameters
+## What the code configures
 
-The `TranscriptionConfig` class accepts these parameters:
+`transcribe_with_assemblyai()` constructs
+`TranscriptionConfig(language_code="en")`, then
+`Transcriber(config=config)`. It returns only `transcript.text`.
+There is no language detection, diarization, entity extraction, moderation,
+sentiment analysis, chapters, summaries, webhook, vocabulary or PII-redaction
+configuration in the wrapper.
 
-### Basic Options
+The function creates a local `Settings(api_key=api_key)` object but does not
+pass it to `Transcriber` or assign it to module-level SDK settings. Whether
+the installed SDK picks up the environment independently remains unverified.
+Do not present that local object as proof of working authentication.
 
-```python
-TranscriptionConfig(
-    language_code="en",              # Language of audio (default: auto-detect)
-    language_confidence_threshold=0.5  # Minimum confidence for language detection
-)
-```
+**Proposed follow-up:** wire credentials through the supported SDK interface,
+add an offline assertion for that wiring, and expose explicit language/output
+options before documenting additional features. Check the installed SDK and
+current service documentation when implementing them.
 
-### Speaker Identification
+## Download and output limitations
 
-```python
-TranscriptionConfig(
-    speaker_labels=True,              # Identify and label different speakers
-    speakers_expected=2                # Expected number of speakers (optional)
-)
-```
+`get_youtube_audio()` runs yt-dlp with MP3 extraction and Firefox cookies.
+It writes an ID-based filename under the shared temporary directory, then
+chooses the newest MP3 from that directory without tying it to the current
+download. Concurrent or stale files can select the wrong audio.
 
-Output includes `[SPEAKER A]:` and `[SPEAKER B]:` labels in transcript.
+The output is plain text in `/tmp/transcript.txt`, overwritten on each run.
+There is no per-run output directory, cleanup or batch command.
+A shell loop must preserve each transcript before the next invocation.
 
-### Entity Detection
+Authentication failures should be diagnosed without printing API keys or
+browser cookies. The script does not supply alternative cookie browsers,
+JavaScript runtimes or download flags; changing those requires separate work.
 
-```python
-TranscriptionConfig(
-    entity_detection=True              # Identify people, places, organizations, etc.
-)
-```
+## Unsupported claims removed
 
-Returns a list of detected entities with confidence scores.
+The repository does not establish current service prices, free-tier quotas,
+per-feature surcharges or comparative language accuracy. It also does not
+validate combinations of advanced SDK features. Do not use the former example
+percentages or constructor snippets as an operational contract.
 
-### Content Moderation
+There is no safe `--help` branch. Source inspection can establish these
+limitations without contacting YouTube or AssemblyAI.
 
-```python
-TranscriptionConfig(
-    content_safety=True                # Flag potentially unsafe content
-)
-```
-
-Flags explicit content (profanity, violence, etc.) in transcript.
-
-### Sentiment Analysis
-
-```python
-TranscriptionConfig(
-    sentiment_analysis=True            # Analyze sentiment per sentence
-)
-```
-
-Returns sentiment scores (positive, negative, neutral) for each sentence.
-
-### Auto Chapters
-
-```python
-TranscriptionConfig(
-    auto_chapters=True                 # Generate chapter headings
-)
-```
-
-Automatically creates sections/chapters from the transcript.
-
-### Summarization
-
-```python
-TranscriptionConfig(
-    summarization=True,
-    summary_type="bullets"             # "bullets", "gist", or "headline"
-)
-```
-
-Generates automatic summaries of the transcript.
-
-## Usage Example
-
-```python
-from assemblyai import Transcriber, TranscriptionConfig
-
-config = TranscriptionConfig(
-    language_code="en",
-    speaker_labels=True,
-    entity_detection=True,
-    auto_chapters=True,
-    summarization=True,
-    summary_type="bullets"
-)
-
-transcriber = Transcriber(config=config)
-transcript = transcriber.transcribe("audio.mp3")
-
-# Access results
-print(f"Text: {transcript.text}")
-print(f"Entities: {transcript.entities}")
-print(f"Summary: {transcript.summary}")
-print(f"Chapters: {transcript.chapters}")
-```
-
-## Webhook Integration
-
-For long transcriptions, use webhooks to get notified when complete:
-
-```python
-config = TranscriptionConfig(
-    webhook_url="https://example.com/transcription-webhook",
-    webhook_auth_header_value="your-secret-key"
-)
-```
-
-AssemblyAI will POST to your webhook when transcription completes.
-
-## Cost Implications
-
-- **Base transcription:** ~$0.60-1.00/hour
-- **Speaker labels:** +20% cost
-- **Entity detection:** +5% cost
-- **Auto chapters:** +10% cost
-- **Summarization:** +5% cost
-
-Example: 1-hour video with all options = ~$1.40
-
-## Supported Languages
-
-- English (en)
-- Spanish (es)
-- French (fr)
-- German (de)
-- Italian (it)
-- Portuguese (pt)
-- Dutch (nl)
-- And many more
-
-Check https://www.assemblyai.com/docs/concepts/supported-languages for full list.
-
-## Custom Vocabulary
-
-Improve accuracy for domain-specific terms:
-
-```python
-config = TranscriptionConfig(
-    word_boost=[
-        {"word": "Obsidian", "boost": 1.5},
-        {"word": "Zapier", "boost": 1.5},
-        {"word": "Claude", "boost": 1.5}
-    ]
-)
-```
-
-Boosts recognition of these words (values 1.0-2.0).
-
-## Redaction Options
-
-Remove sensitive information from transcript:
-
-```python
-config = TranscriptionConfig(
-    redact_pii=True,                   # Redact personally identifiable info
-    redact_pii_policies=[
-        "credit_card",
-        "ssn",
-        "phone_number",
-        "email_address"
-    ]
-)
-```
-
-Replaces detected PII with `[REDACTED]`.
-
-## Testing & Debugging
-
-Check transcription status and errors:
-
-```python
-if transcript.status == "error":
-    print(f"Transcription failed: {transcript.error}")
-else:
-    print(f"Confidence: {transcript.confidence}")
-    print(f"Words: {len(transcript.words)}")
-    print(f"Duration: {transcript.duration}s")
-```
-
-## Performance Tips
-
-1. **Batch processing:** Upload multiple files in sequence with rate limiting
-2. **Check costs:** Monitor usage at https://www.assemblyai.com/dashboard
-3. **Test first:** Start with basic transcription, add features as needed
-4. **Use webhooks:** For long videos (>2 hours), use async webhooks instead of polling
+[youtube-transcription/scripts/transcribe_video.py]: ../scripts/transcribe_video.py

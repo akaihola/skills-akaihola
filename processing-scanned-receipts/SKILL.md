@@ -28,12 +28,13 @@ The script processes all `*.pdf` files in the directory in parallel (4 workers b
 
 ## What It Does
 
-1. **Extracts** the embedded image from each PDF using `pdfimages -j` (keeps JPEG as-is, converts B&W ccitt/PBM to JPG via ImageMagick).
+1. **Extracts** the embedded image from each PDF using `pdfimages -j`; keeps the first JPEG or converts the first non-JPEG via ImageMagick.
 2. **OCRs** each JPG by sending it to `gpt-5.4-nano` via `llm -m openrouter/openai/gpt-5.4-nano … -a image.jpg`, asking for a structured JSON response with date, payee, route, amounts, VAT, card, vehicle details, etc.
-3. **Caches** OCR JSON in `<dir>/.receipt-work/` so re-runs are fast. Use `--force` to re-OCR.
+3. **Caches** OCR JSON in `<dir>/.receipt-work/` keyed by the input PDF stem. Reuse requires that stem to stay unchanged;
+   renamed outputs do not match the original cache keys. `--force` repeats extraction and OCR.
 4. **Generates** a formatted plaintext `.txt` receipt (TAKSIKUITTI / KUITTI sections).
 5. **Renames** all three files to `YYYY-MM-DD Payee description.ext`.
-6. **Flags** potential duplicate scans (same date+payee) with `(2)` suffix and a warning.
+6. **Flags** potential duplicate scans (same complete sanitized date/payee/description basename) with `(2)` suffix and a warning.
 
 ## Options
 
@@ -50,70 +51,19 @@ cached JPG. It reports cache misses and unreadable metadata and skips those
 PDFs. It creates no directories or files, runs no extraction or OCR commands,
 and ignores `--force`. Run normal processing first to populate missing caches.
 
-## Post-Processing: Manual Corrections
+## Review and correction
 
-OCR is good but not perfect. After the script runs, review for:
+Read [receipt review and output details](references/review.md) when correcting
+OCR, comparing duplicate scans or inspecting the generated text. Only the
+first embedded image is OCRed. Duplicate suffixes are based on the complete
+sanitized basename within one run, not on date/payee alone.
 
-| Issue | What to fix |
-|-------|-------------|
-| Unreadable date | Rename files; edit `Päivämäärä:` in `.txt` |
-| Company name cut off in scan | Rename files; edit `Yritys:` and `payee_short` in `.txt` |
-| Typo in payee | Rename files; edit `.txt` |
-| Wrong date format (e.g. month/day confused) | Same as above |
+Existing destination files are not protected against overwrites. Caches use
+the original input stem, so rerunning renamed PDFs can perform OCR again.
+Preserve corrections before another processing run.
 
-**Rename all three extensions in one command:**
-```bash
-cd "<receipt-dir>"
-for ext in pdf jpg txt; do
-  mv "OLD NAME.$ext" "NEW NAME.$ext"
-done
-```
-
-**Edit a single field in a `.txt`:** use the Edit tool (exact text replacement).
-
-## Duplicate Handling
-
-When the same trip is scanned twice (e.g. meter receipt + card terminal receipt), the script names them `… (2)`. To clean up:
-
-1. View both JPGs to identify which is colour (preferred) and which is B&W.
-2. The colour one usually has better information; its `.txt` may say "toinen skannaus" (second scan) – copy the primary's `.txt` content over it if the primary has cleaner notes.
-3. Delete the B&W set; rename the colour `(2)` files to drop the `(2)` suffix.
+Offline checks from the repository root:
 
 ```bash
-# Keep colour (2), replace its .txt with primary's, delete primary, rename
-trip="2030-01-01 Example taxi synthetic trip"
-cp "$trip.txt" "$trip (2).txt"
-rm "$trip.jpg" "$trip.pdf" "$trip.txt"
-for ext in jpg pdf txt; do mv "$trip (2).$ext" "$trip.$ext"; done
-```
-
-## OCR Prompt Notes
-
-The prompt instructs the model to:
-- Distinguish "Asiakkaan kappale" ("customer copy") from the actual company name.
-- Return `null` for any field not visible rather than guessing.
-- Use Finnish for the `description` field.
-- Return plain JSON (no markdown fences).
-
-The script strips accidental markdown fences before parsing.
-
-## Output Format (.txt)
-
-```
-================================================
-              TAKSIKUITTI / TAXI RECEIPT
-================================================
-Yritys:        Example taxi
-Y-tunnus:      XXXXXXX-X
-
-Päivämäärä:    2030-01-01
-Kellonaika:    12:00
-
-------------------------------------------------
-MATKAN TIEDOT
-------------------------------------------------
-Mistä:         Synthetic origin
-Minne:         Synthetic destination
-Matka:         10.00 km
-…
+uv run --no-project --with pytest pytest processing-scanned-receipts/tests -q
 ```
