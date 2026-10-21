@@ -8,6 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [18] Check skills-akaihola's README and the skills changed since 10-19 against
+  their scripts
+  <!-- hai:{"id":"simple-1d542bfe-f9d6-4bf2-a423-4d485640c4f0","labels":["steward","review"],"createdAt":"2026-10-21T23:15:03.957Z","updatedAt":"2026-10-21T23:15:03.957Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -74,7 +78,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -107,6 +111,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [16]: docs/tasks/16-fix-the-three-high-findings-of-the-2026-10-21-security-review.md
 
 [17]: docs/tasks/17-run-the-four-safe-help-probes-the-skill-review-could-not-run.md
+
+[18]: docs/tasks/18-check-skills-akaihola-s-readme-and-the-skills-changed-since-10-19-agai.md
 
 ## Rules
 
