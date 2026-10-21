@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [17] Run the four safe help probes the skill review could not run
-      <!-- hai:{"id":"simple-9882987d-c9c5-4325-b2b0-f9055f920051","labels":["steward"],"createdAt":"2026-10-21T11:21:20.385Z","updatedAt":"2026-10-21T12:36:14.921Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [17] Run the four safe help probes the skill review could not run
+      <!-- hai:{"id":"simple-9882987d-c9c5-4325-b2b0-f9055f920051","labels":["steward"],"createdAt":"2026-10-21T11:21:20.385Z","updatedAt":"2026-10-21T12:38:50.140Z"} -->
 
 - [ ] [16] Fix the three high findings of the 2026-10-21 security review
       <!-- hai:{"id":"simple-05a0bf66-a5a3-4c17-8e7e-157d9eb43a5d","labels":["steward"],"createdAt":"2026-10-20T22:25:34.040Z","updatedAt":"2026-10-20T22:34:45.664Z"} -->
