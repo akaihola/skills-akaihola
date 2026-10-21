@@ -8,10 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [17] Run the four safe help probes the skill review could not run
-  <!-- hai:{"id":"simple-9882987d-c9c5-4325-b2b0-f9055f920051","labels":["steward"],"createdAt":"2026-10-21T11:21:20.385Z","updatedAt":"2026-10-21T11:21:20.385Z"} -->
-
 ## Scheduled
+
+- [17] Run the four safe help probes the skill review could not run
+  <!-- hai:{"id":"simple-9882987d-c9c5-4325-b2b0-f9055f920051","labels":["steward"],"createdAt":"2026-10-21T11:21:20.385Z","updatedAt":"2026-10-21T12:35:57.943Z"} -->
 
 ## In Progress
 
