@@ -8,11 +8,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+## Scheduled
+
 - [18] Check skills-akaihola's README and the skills changed since 10-19 against
   their scripts
-  <!-- hai:{"id":"simple-1d542bfe-f9d6-4bf2-a423-4d485640c4f0","labels":["steward","review"],"createdAt":"2026-10-21T23:15:03.957Z","updatedAt":"2026-10-21T23:15:03.957Z"} -->
-
-## Scheduled
+  <!-- hai:{"id":"simple-1d542bfe-f9d6-4bf2-a423-4d485640c4f0","labels":["steward","review"],"createdAt":"2026-10-21T23:15:03.957Z","updatedAt":"2026-10-21T23:23:45.386Z"} -->
 
 ## In Progress
 
