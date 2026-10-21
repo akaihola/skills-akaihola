@@ -41,3 +41,89 @@ steward uses on every run, lives here.
 - Every finding cites a file and line on `main` and says what changes if it
   is fixed.
 - The report names the three drafts it would do first, and why.
+
+## Follow-up verification, 2026-10-21
+
+The four dependency-blocked help probes in the [review report]'s
+"Offline validation and limits" section now pass. This follow-up implements
+[the help-probe task]; it does not change the original review's historical
+results or validate live services.
+
+Dependencies were installed in a disposable Python 3.14.7 environment with
+`uv venv` and `uv pip install`: `google-genai==2.32.0`, `Pillow==13.0.0`,
+`httpx==0.28.1`, `beautifulsoup4==4.15.0`, and `lxml==6.1.3`.
+Only dependency provisioning used networking. Each script ran sequentially
+using the environment's Python under `unshare -Urn`, with a fresh temporary
+home and an allowlisted environment containing no credentials. Source
+inspection confirmed that argument parsing precedes client creation, file
+processing, downloads and requests. No private database, mailbox, model call
+or external message was used.
+
+- **Gemini vision:** [the vision helper] with `--help` exited 0, with usage,
+  positional prompt/images and model/token/system options; stderr empty.
+- **Nano Banana image:** [the image helper] with `--help` exited 0, with usage,
+  prompt and input/output/model options; stderr empty. Help bypasses the
+  required output argument without generating or writing an image.
+- **YouTube frame analysis:** [the frame helper] with `--help` exited 0, with
+  usage, URL and threshold/frame/prompt/model/format/time options; stderr
+  empty. No video download, ffmpeg operation or model call occurred.
+- **Kuluttaja:** [the extraction helper] with `--help` exited 0, with usage,
+  search/article/listing and output options; stderr empty. No article request
+  or output directory creation occurred.
+
+All four outputs were checked for both `usage:` and `--help`. No help path
+among these four remains unsupported. No script changes were necessary.
+
+### Manual-parser limitations
+
+The review's manual-parser exceptions were inspected, not executed:
+
+- **Whitespace cleanup:** [the whitespace helper]'s `main` recognizes only
+  `--dry-run`; `--help` becomes a working directory before Git operations.
+- **PDF conversion:** [the converter]'s `main` treats the first argument as
+  a TOML configuration path, then processes files and uploads the PDF.
+- **Transcription:** [the transcription helper]'s `main` treats the first
+  argument as a URL or local audio path and proceeds toward transcription
+  when credentials are available. There is no help branch.
+- **Zed threads:** [the Zed helper] reads the database before inspecting the
+  index and `--no-color` arguments; it has no help branch.
+- **Mailbox analysis:** [the mailbox helper] calls `main` unconditionally;
+  it has no option parser and reads profile configuration before mailbox work.
+- **ECB rates:** [the rates helper] has since gained argparse in the
+  [completed CLI repair]. Source inspection confirms parsing precedes the
+  fetch. The original review's unsupported-help finding is historical;
+  this helper is outside the four dependency-blocked probes.
+
+### Resource checks
+
+Each command had a 300-second limit, ran alone, and was monitored for
+available memory below 1024 MiB or swap growth above 512 MiB. All were
+**started at once**, with 0-second admission waits and exit code 0. Values
+below are MiB; swap growth is the maximum observed increase during the run.
+
+- **uv venv:** available 3318.1 at admission, 3322.6 final; starting swap
+  2123.0, growth 0.0; elapsed 0.20 seconds.
+- **uv pip install:** available 3322.6 at admission, 3302.8 final; starting
+  swap 2123.0, growth 0.0; elapsed 4.62 seconds.
+- **Gemini vision help:** available 3303.0 at admission, 3311.9 final;
+  starting swap 2123.0, growth 0.0; elapsed 2.41 seconds.
+- **Nano Banana help:** available 3311.9 at admission, 3335.8 final;
+  starting swap 2123.0, growth 0.0; elapsed 2.22 seconds.
+- **YouTube frame help:** available 3335.8 at admission, 3332.4 final;
+  starting swap 2123.0, growth 0.0; elapsed 3.41 seconds.
+- **Kuluttaja help:** available 3332.4 at admission, 3337.9 final;
+  starting swap 2123.0, growth 0.0; elapsed 0.80 seconds.
+
+[review report]: ../reviews/2026-10-19-skills-review.md
+[the help-probe task]: 17-run-the-four-safe-help-probes-the-skill-review-could-not-run.md
+[the vision helper]: ../../gemini-vision/scripts/gemini_vision.py
+[the image helper]: ../../nano-banana-image/scripts/nano_banana_edit.py
+[the frame helper]: ../../youtube-frame-analysis/scripts/yt_frame_analysis.py
+[the extraction helper]: ../../kuluttaja/scripts/extract.py
+[the whitespace helper]: ../../discard-whitespace-hunks/scripts/discard_ws_hunks.py
+[the converter]: ../../pdf-to-markdown/scripts/convert.py
+[the transcription helper]: ../../youtube-transcription/scripts/transcribe_video.py
+[the Zed helper]: ../../zed-threads/scripts/read_zed_threads.py
+[the mailbox helper]: ../../email-mailbox-analyzer/scripts/email-mailbox-analyzer.sh
+[the rates helper]: ../../ecb-rates/fetch_ecb_rates.py
+[completed CLI repair]: 13-fix-the-skills-review-s-next-three-library-argument-hint-asana-discove.md
