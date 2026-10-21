@@ -170,6 +170,15 @@ unshare -rn uv run --offline --no-project --script t3-start-thread/scripts/start
 git diff --check
 ```
 
+## Integration evidence
+
+The start move was committed on shared main as `872546a`. Documentation
+commit `0a087d2` was fast-forwarded to main before completion commit
+`21d0ffd`. A fresh Hai read confirmed `Completed / Accepted` with
+`accepted: false`, 18 unique issues and resolving detail links. The shared
+checkout was clean. The task branch and worktree were retained.
+No remote push, new issue, thread launch or coordination message was needed.
+
 ## Resource record
 
 Every command used a memory admission guard: wait up to 600 seconds for
