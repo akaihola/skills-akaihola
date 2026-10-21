@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [17] Run the four safe help probes the skill review could not run
+  <!-- hai:{"id":"simple-9882987d-c9c5-4325-b2b0-f9055f920051","labels":["steward"],"createdAt":"2026-10-21T11:21:20.385Z","updatedAt":"2026-10-21T11:21:20.385Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -71,7 +74,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -102,6 +105,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [15]: docs/tasks/15-security-scan-of-skills-akaihola-credentials-scripts-skill-instruction.md
 
 [16]: docs/tasks/16-fix-the-three-high-findings-of-the-2026-10-21-security-review.md
+
+[17]: docs/tasks/17-run-the-four-safe-help-probes-the-skill-review-could-not-run.md
 
 ## Rules
 
