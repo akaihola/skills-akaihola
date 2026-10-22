@@ -21,10 +21,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [19] Make secrets-scan fail when a requested scanner doesn't finish
-  <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:27:25.643Z"} -->
-
 ## In Progress
+
+- [~] [19] Make secrets-scan fail when a requested scanner doesn't finish
+      <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:27:59.552Z"} -->
 
 ## Completed / Accepted
 
