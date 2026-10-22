@@ -130,6 +130,39 @@ memory/swap monitoring.
   MemAvailable 2974 MiB; final 2975 MiB; starting swap 2152 MiB;
   growth 0 MiB (peak 0); elapsed 4.3 s; exit 0.
 
+## Merge and evidence
+
+Fast-forwarded `main` from `ce57f4c64997f9879dfcf90160c4fa4b8e67bf37` to
+`32cb1fce1b46528a23eefafa34e16e124473de0d`. Delivery commits, oldest first:
+
+- `32cb1fce1b46528a23eefafa34e16e124473de0d`
+
+The task worktree remains detached at the merged commit for clean-checkout
+recording; its branch is retained. The shared checkout remains on `main`.
+
+Both checks were recorded against that clean commit and passed (exit 0):
+
+- **`helper-fake-suite`:** all 81 helper tests with networking disabled.
+- **`lint-format-whitespace`:** Ruff lint and formatting, plus whitespace
+  validation of the complete delivery diff.
+
+The [machine receipt] records exact commands, commit identity and SHA-256
+fingerprints of the helper, tests, reference and lint configuration.
+This helper has no lockfile; its offline test dependencies were explicitly
+pinned in the command. No editable local checkout is used.
+
+- **Recorder `helper-fake-suite` — started at once:** wait 0.0 s; admission
+  MemAvailable 2955 MiB; final 2843 MiB; starting swap 2171 MiB;
+  growth 0 MiB (peak 0); elapsed 6.1 s; exit 0.
+- **Recorder `lint-format-whitespace` — started at once:** wait 0.0 s; admission
+  MemAvailable 2877 MiB; final 2863 MiB; starting swap 2171 MiB;
+  growth 0 MiB (peak 0); elapsed 0.6 s; exit 0.
+
+No acceptance conditions remain unmet. Completion is recorded unchecked;
+user acceptance stays separate. The steward owns the later deployed-server
+read-only inspection. No owner action is required.
+
 [architecture-review]: ../reviews/2026-10-22-t3-start-thread-architecture-review.md#draft-issues
 [tracker]: ../../TASKS.md
 [tests]: ../../t3-start-thread/tests/test_start_thread.py
+[machine receipt]: 27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wire-fix.evidence.json
