@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [24] Retire the T3 helper's V1 transport while keeping saved requests readable
+  <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:03:28.860Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -96,7 +99,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -141,6 +144,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [22]: docs/tasks/22-make-the-himalaya-email-manager-readme-match-its-five-wrappers.md
 
 [23]: docs/tasks/23-review-the-t3-start-thread-helper-s-architecture-for-deep-modules-and-.md
+
+[24]: docs/tasks/24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-reada.md
 
 ## Rules
 
