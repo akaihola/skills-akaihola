@@ -16,12 +16,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [26] Stop the T3 helper re-reading thread shells it already has
+## In Progress
+
+- [~] [26] Stop the T3 helper re-reading thread shells it already has
     - Depends on: [25]
 
-  <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:48:47.722Z"} -->
-
-## In Progress
+      <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:49:12.778Z"} -->
 
 ## Completed / Accepted
 
