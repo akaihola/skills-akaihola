@@ -114,6 +114,16 @@ once**. Readings are MiB; elapsed time is seconds.
 | Bash loop invoking each wrapper with `--help` | 2556 / 2484 | 2374 / 10 | 2.66 | exit 0 |
 | Topology `git grep -lIE` with the CI pattern and exclusion | 2484 / 2484 | 2384 / 0 | 0.22 | exit 1 |
 
+### Merge and completion
+
+Fast-forwarded shared `main` to implementation commit `0f0280d`, including the
+backlog amendment. Then moved this issue through Hai to Completed / Accepted
+in `73164a0`, leaving `[ ]` for user acceptance. The final Hai read confirmed
+22 unique issues and resolving detail links; shared `main` had no uncommitted
+tracker changes. The worktree and branch are retained. The only check failure
+is the pre-existing topology debt documented above; no implementation
+acceptance conditions remain unmet.
+
 [the README]: ../../himalaya-email-manager/README.md
 [the backlog]: ../../BACKLOG.md
 [the JMAP skill]: ../../jmap/SKILL.md
