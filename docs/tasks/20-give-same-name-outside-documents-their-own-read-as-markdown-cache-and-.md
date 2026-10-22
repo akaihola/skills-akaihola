@@ -68,10 +68,10 @@ Implemented 2026-10-22 in the isolated task worktree.
 
 ### Memory record
 
-Commands ran serially under a memory monitor with a 300-second timeout, a
+Test commands ran serially under a memory monitor with a 300-second timeout, a
 600-second admission window, process-group termination below 1024 MiB available
 or above 512 MiB swap growth, and Bash subprocess environments. The following
-are the guarded test commands; other checks were short read-only commands.
+are the guarded test commands; no heavy command was stopped or skipped.
 
 - `pytest tests/test_read_as_markdown.py -q` (before the fix): **started at once**,
   wait 0.00 s; admission MemAvailable 2926 MiB, final 2911 MiB; starting swap
@@ -81,6 +81,13 @@ are the guarded test commands; other checks were short read-only commands.
   swap 2384 MiB, growth 0 MiB; elapsed 2.88 s; exit 0.
 - `pytest tests -q`: **started at once**, wait 0.00 s; admission 2870 MiB, final
   2876 MiB; starting swap 2384 MiB, growth 0 MiB; elapsed 2.51 s; exit 0.
+
+### Merge and completion
+
+Implementation commit `5fb1387` was fast-forward merged into `main`. Completion
+was recorded afterward in `649f458`, with acceptance left unchecked. A fresh Hai
+read confirms 22 unique issues, resolving detail links and the completed state;
+the tracker is clean. The task branch and worktree are retained.
 
 [the converter]: ../../read-as-markdown/scripts/read_as_markdown.py
 [the skill]: ../../read-as-markdown/SKILL.md
