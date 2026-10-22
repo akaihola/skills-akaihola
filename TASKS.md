@@ -15,11 +15,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [21] Keep the library cookbooks in the caller's workspace, create targets and
-  honour the source branch
-      <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T01:17:27.866Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [21] Keep the library cookbooks in the caller's workspace, create targets and
+  honour the source branch
+      <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T01:25:44.187Z"} -->
 
 - [ ] [20] Give same-name outside documents their own read-as-markdown cache, and
   fail on conversion errors
