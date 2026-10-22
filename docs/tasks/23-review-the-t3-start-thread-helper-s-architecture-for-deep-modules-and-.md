@@ -23,3 +23,51 @@ The `t3-start-thread` helper (`t3-start-thread/scripts/start_thread.py`, about 6
 - Handoff: a short outcome; details go in the report and this task record.
 
 Tracker: [the skills-akaihola tracker](../../TASKS.md).
+
+
+## Review outcome, 2026-10-22
+
+The [architecture report] ranks four unfiled drafts. Do V1 server retirement,
+shared launch/send reconciliation, and redundant snapshot removal first;
+consolidate overlapping test fakes afterward. Preserve saved request IDs,
+resume behavior, settlement refusals and the five-command CLI. The report
+identifies one launch/recovery asymmetry and distinguishes its correction
+from behavior-preserving simplification.
+
+Read the complete helper, tests, skill/reference and the requested historical
+tasks at main commit `b7848fd0d595a306f3f5e1ef451b5fffa744049e`. Checked all
+tracker sections and both older backlogs for overlap. No drafts were filed,
+no implementation or test files changed, and no T3 calls or messages were made.
+V2-only deployment is the task's premise; the V1-retirement draft explicitly
+requires a later authorized live check before rollout. That future check is
+not an acceptance requirement for this review.
+
+## Validation
+
+- **Helper baseline:** 100 tests passed with networking disabled. The command
+  below uses fake ticket/WebSocket transport and temporary request records.
+- **Report acceptance:** all four findings cite baseline code and explain
+  the resulting behavior; each has a title, bounded work, acceptance, overlap
+  status and live-verification label. The final section is Draft issues and
+  recommends D1, D2 and D3 with reasons. Relative links and citation bounds
+  passed the offline document check; the reviewed sources match the baseline.
+- **Tracker:** Hai loaded all 23 issues, with unique stable IDs and resolving
+  detail links. User acceptance remains unchecked.
+- **Scope:** no production behavior was exercised. No full collection test
+  suite, build, external capability check or vulnerability probe was needed
+  for this documentation-only review.
+
+```bash
+unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest --with websocket-client pytest -p no:cacheprovider t3-start-thread/tests -q
+git diff --check
+```
+
+## Resource record
+
+- **Helper suite — started at once:** wait 0.00 s; admission MemAvailable
+  2141.5 MiB; final 2195.4 MiB; starting swap 2302.4 MiB; final swap growth
+  -6.0 MiB (peak growth 0.0 MiB); elapsed 10.67 s; exit 0. Guard checked memory
+  throughout, with a 180-second command bound and process-group cleanup.
+  No other heavy command ran concurrently.
+
+[architecture report]: ../reviews/2026-10-22-t3-start-thread-architecture-review.md
