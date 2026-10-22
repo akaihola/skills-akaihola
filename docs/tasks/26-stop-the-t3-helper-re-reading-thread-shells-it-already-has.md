@@ -116,3 +116,40 @@ exit codes; test results are recorded above.
 - **Helper suite (83 tests) — started at once:** wait 0.00 s; admission
   MemAvailable 2976.8 MiB; final 2943.7 MiB; starting swap 2165.7 MiB; swap
   growth -2.2 MiB (peak 0.0 MiB); elapsed 2.88 s; exit 0.
+
+## Merge and recorded evidence
+
+Fast-forwarded `main` from `4eed49cfc5ee9ecd9ab66f8c656fd39bf7eed59a` to
+`b10db5be7b2cc402366c27237a6756a1c76c442c`. Delivery commits, oldest first:
+
+- `b10db5be7b2cc402366c27237a6756a1c76c442c`
+
+The task branch and worktree remain. The worktree is detached at that merged
+commit for clean-checkout evidence recording; the shared checkout stays on
+`main`. All three recorded checks passed (exit 0):
+
+- **`rpc-trace-and-summary-pins`:** the 11 pin cases listed above, with
+  networking disabled.
+- **`helper-fake-suite`:** all 83 helper tests with networking disabled.
+- **`lint-format-whitespace`:** Ruff lint and format checks on the helper and
+  tests, plus whitespace validation of the delivery commit.
+
+The [machine receipt](26-stop-the-t3-helper-re-reading-thread-shells-it-already-has.evidence.json)
+holds the exact commands, tested commit and SHA-256 fingerprints for the
+helper, tests, reference and lint configuration. No lockfile exists for this
+helper; the test dependencies are pinned in the offline command. No editable
+local package checkout is used.
+
+- **Recorder `rpc-trace-and-summary-pins` — started at once:** wait 0.00 s;
+  admission MemAvailable 2754.7 MiB; final 2949.5 MiB; starting swap
+  2156.2 MiB; swap growth 0.0 MiB (peak 0.0 MiB); elapsed 4.89 s; exit 0.
+- **Recorder `helper-fake-suite` — started at once:** wait 0.00 s; admission
+  MemAvailable 3046.7 MiB; final 2941.9 MiB; starting swap 2156.2 MiB; swap
+  growth 0.0 MiB (peak 0.0 MiB); elapsed 6.39 s; exit 0.
+- **Recorder `lint-format-whitespace` — started at once:** wait 0.00 s;
+  admission MemAvailable 2950.7 MiB; final 3026.8 MiB; starting swap
+  2156.2 MiB; swap growth 0.0 MiB (peak 0.0 MiB); elapsed 0.80 s; exit 0.
+
+No acceptance condition remains unmet. The steward's read-only `inspect`
+against the deployed server after the merge is outside this fake-server scope.
+Completion is recorded with `[ ]`; user acceptance remains separate.
