@@ -26,10 +26,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [24] Retire the T3 helper's V1 transport while keeping saved requests readable
-  <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:10:30.735Z"} -->
-
 ## In Progress
+
+- [~] [24] Retire the T3 helper's V1 transport while keeping saved requests readable
+      <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:10:53.754Z"} -->
 
 ## Completed / Accepted
 
