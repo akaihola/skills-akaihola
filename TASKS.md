@@ -10,11 +10,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [23] Review the t3-start-thread helper's architecture for deep modules and
-  over-engineering
-  <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T05:14:30.753Z"} -->
-
 ## In Progress
+
+- [~] [23] Review the t3-start-thread helper's architecture for deep modules and
+  over-engineering
+      <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T05:14:50.126Z"} -->
 
 ## Completed / Accepted
 
