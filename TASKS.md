@@ -8,14 +8,14 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [21] Keep the library cookbooks in the caller's workspace, create targets and
-  honour the source branch
-  <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T00:16:23.005Z"} -->
-
 - [22] Make the himalaya-email-manager README match its five wrappers
   <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T00:16:24.586Z"} -->
 
 ## Scheduled
+
+- [21] Keep the library cookbooks in the caller's workspace, create targets and
+  honour the source branch
+  <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T01:17:06.284Z"} -->
 
 ## In Progress
 
