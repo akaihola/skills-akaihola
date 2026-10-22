@@ -100,6 +100,41 @@ test results are recorded separately above.
   swap 2122.2 MiB; swap growth 0.0 MiB
   (peak 0.0 MiB); elapsed 5.49 s; exit 0.
 
+## Merge and recorded evidence
+
+Fast-forwarded `main` from `564d595960de81d0dd99915acebdaece99e233b0` to
+`b293300736421f230f0c2ee0c9c7c525f1d29cb7`. Delivery commits, oldest first:
+
+- `b293300736421f230f0c2ee0c9c7c525f1d29cb7`
+
+The task branch and worktree remain. The worktree is detached at that merged
+commit for clean-checkout evidence recording; the shared checkout stays on
+`main`. Both recorded checks passed (exit 0):
+
+- **`helper-fake-suite`:** all 73 tests with networking disabled, including
+  every recovery and output acceptance condition listed above.
+- **`lint-format-whitespace`:** Ruff lint and format checks on the helper and
+  tests, plus whitespace validation of the delivery commit.
+
+The [machine receipt] contains exact check commands, tested commit and SHA-256
+fingerprints for the helper, tests, reference and lint configuration. No lockfile
+exists for this helper; the third-party test dependencies were pinned explicitly
+in the offline command. No editable local package checkout is used.
+
+- **Recorder `helper-fake-suite` — started at once:** wait 0.00 s; admission
+  MemAvailable 2441.0 MiB; final 2507.3 MiB; starting
+  swap 2127.7 MiB; swap growth 4.8 MiB
+  (peak 4.8 MiB); elapsed 10.60 s; exit 0.
+
+- **Recorder `lint-format-whitespace` — started at once:** wait 0.00 s; admission
+  MemAvailable 2419.3 MiB; final 2388.9 MiB; starting
+  swap 2132.5 MiB; swap growth 0.0 MiB
+  (peak 0.0 MiB); elapsed 1.01 s; exit 0.
+
+No acceptance condition remains unmet. Completion is recorded with `[ ]`;
+user acceptance remains separate. No owner action is required.
+
 [architecture-review]: ../reviews/2026-10-22-t3-start-thread-architecture-review.md#draft-issues
 [tracker]: ../../TASKS.md
 [helper reference]: ../../t3-start-thread/references/helper.md
+[machine receipt]: 25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-path.evidence.json
