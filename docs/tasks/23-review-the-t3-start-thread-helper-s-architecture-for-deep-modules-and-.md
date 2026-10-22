@@ -24,7 +24,6 @@ The `t3-start-thread` helper (`t3-start-thread/scripts/start_thread.py`, about 6
 
 Tracker: [the skills-akaihola tracker](../../TASKS.md).
 
-
 ## Review outcome, 2026-10-22
 
 The [architecture report] ranks four unfiled drafts. Do V1 server retirement,
@@ -69,5 +68,50 @@ git diff --check
   -6.0 MiB (peak growth 0.0 MiB); elapsed 10.67 s; exit 0. Guard checked memory
   throughout, with a 180-second command bound and process-group cleanup.
   No other heavy command ran concurrently.
+
+
+## Merge and recorded checks
+
+Fast-forwarded from `b7848fd0d595a306f3f5e1ef451b5fffa744049e` to delivery
+commit `dcd733fcca382836733a3653f2d0cc452e5e1cf0`. Retained the task branch
+and worktree; the task worktree is detached at the tested delivery commit.
+
+- **Report acceptance:** the evidence recorder ran the document checks and
+  committed-diff whitespace check against the clean merged checkout; exit 0.
+  It verifies source equality with the reviewed baseline, citation bounds,
+  relative links, ranked findings, complete drafts, overlap/live labels,
+  first-three order and the final Draft issues section. Judgment about each
+  finding's usefulness remains the written review, not a mechanical assertion.
+- **Helper fake suite:** the recorder reran all 100 tests with networking
+  disabled and pinned pytest 9.1.1 and websocket-client 1.9.2; exit 0. No lockfile
+  exists for this standalone helper. The receipt declares its script metadata
+  as a SHA-256 dependency; no editable package checkouts are used. The document
+  check uses only Python's standard library and Git, with its command embedded
+  in the receipt rather than depending on a temporary verifier file.
+- **Evidence helper suite — started at once:** wait 0.00 s; admission
+  MemAvailable 2797.3 MiB; final 2818.4 MiB; starting swap 2221.5 MiB; final
+  growth 2.0 MiB (peak 2.2 MiB); elapsed 8.80 s; exit 0. This includes the
+  evidence recorder around the command below. The same 180-second guard,
+  memory thresholds and process-group cleanup applied; one heavy command ran
+  at a time.
+
+```bash
+unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q
+```
+
+## Pending receipt decision
+
+The report acceptance criteria are met. Both recorded checks passed at the
+merged commit, and the full receipt is retained outside the repository.
+Completion is waiting on a user clarification: this task forbids private paths
+in committed files, while its supplied evidence workflow requires committing
+an unchanged receipt containing absolute machine paths. No such paths have
+been added to this repository. The user was asked whether to keep the full
+receipt private with a path-free public summary, or permit its machine paths
+in the committed receipt.
+
+After that decision, apply the chosen receipt handling and make the
+revision-checked completion move; leave user acceptance unchecked. Do not
+rerun the architecture review or file its drafts. No checks failed or stopped.
 
 [architecture report]: ../reviews/2026-10-22-t3-start-thread-architecture-review.md
