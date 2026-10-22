@@ -189,13 +189,15 @@ def compute_cache_paths(source: Path, workspace_root: Path) -> tuple[Path, Path]
 
     The original extension is preserved in the cached filename to avoid
     collisions between e.g. ``paper.pdf`` and ``paper.docx``.  A ``.md``
-    suffix is appended: ``paper.pdf.md``, ``paper.pdf.meta``.
+    suffix is appended: ``paper.pdf.md``, ``paper.pdf.meta``. External
+    sources are grouped by a hash of their resolved absolute path.
     """
+    resolved = source.resolve()
     try:
-        rel = source.resolve().relative_to(workspace_root.resolve())
+        rel = resolved.relative_to(workspace_root.resolve())
     except ValueError:
-        # Source is outside workspace — use filename only
-        rel = Path(source.name)
+        path_hash = hashlib.sha256(str(resolved).encode()).hexdigest()[:16]
+        rel = Path("_external") / path_hash / resolved.name
 
     cache_dir = workspace_root / ".cache" / "markdown"
     # Append .md/.meta to the full name (keeps original extension for disambiguation)
@@ -537,7 +539,8 @@ def _update_meta_stat(cache_meta: Path, source: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
+def main() -> int:
+    """Print the conversion result and return a failure status for errors."""
     parser = argparse.ArgumentParser(
         description="Convert PDF/DOCX/EPUB to cached Markdown.",
     )
@@ -580,7 +583,8 @@ def main() -> None:
 
     json.dump(result, sys.stdout, indent=2, ensure_ascii=False)
     sys.stdout.write("\n")
+    return 1 if "error" in result else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

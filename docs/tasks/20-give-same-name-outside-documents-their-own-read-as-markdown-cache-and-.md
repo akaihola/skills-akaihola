@@ -18,3 +18,71 @@ Steward issue, 2026-10-22 03:00 refill. Goal: agentic-leverage (skills-akaihola 
 - Acceptance: the two tests pass, in-workspace cache paths are unchanged (a test shows it), and SKILL.md matches the code.
 
 Tracker: [the skills-akaihola tracker](../../TASKS.md).
+
+
+## Task record
+
+Implemented 2026-10-22 in the isolated task worktree.
+
+- **Cache identity:** [the converter] preserves workspace-relative paths and
+  puts external documents under `_external/<path-hash>/<filename>.md` with
+  matching metadata. The hash is the first 16 hex digits of SHA-256 of the
+  resolved absolute path. Symlink aliases resolve to the same identity.
+- **Exit status:** `main()` returns 1 for a handled JSON error and 0 for success;
+  the script entry point propagates it with `sys.exit(main())`.
+- **Compatibility:** the content-hash index and its trust rules are unchanged.
+  Old external caches remain available through content-hash lookup; existing
+  workspace-relative caches still pass the fast path.
+- **Documentation:** [the skill] and [cache reference] describe the layout and
+  exit statuses.
+- **Regression evidence:** [the offline tests] use two different documents with
+  equal sizes and mtimes, verify separate Markdown and metadata paths and cache
+  hits, check resolved aliases, reuse a pre-existing in-workspace cache, and run
+  the actual CLI with fake pandoc executables for success and failure. Against
+  the original code, the two bug regressions failed and two compatibility/success
+  cases passed. No real document converter or network was used.
+
+### Checks and review
+
+- `pytest tests/test_read_as_markdown.py tests/test_security_boundaries.py -q`:
+  31 passed after the fix, including the existing confinement and rename tests.
+- `pytest tests -q`: all 55 root tests passed. These runs used the existing shared
+  checkout's virtual environment, without installing dependencies.
+- `python scripts/check_skill_metadata.py`: all 48 skill frontmatters valid.
+- `python .github/scripts/check_symlinks.py`: passed.
+- `ruff check tests/test_read_as_markdown.py`: passed after fixing test style.
+  Direct lint of the converter still reports 16 pre-existing findings; comparing
+  rule/message counts against `main` found zero additions (17 findings before).
+  Graylint is unavailable, so the comparison used Ruff JSON output.
+- `ruff format --check` on both changed Python files: passed.
+- `git diff --check`: passed. Reviewed the complete implementation and test diff
+  against the requirements and the PII checklist; only synthetic document content
+  and generic examples were added. The index implementation was not changed.
+- Hai loaded all 22 issues with unique stable IDs; every numbered detail link
+  resolves. The required start move was committed on shared `main` as `af7aa44`
+  and left no uncommitted tracker changes. The worktree was rebased onto it.
+- **Existing check failure:** the repository topology check fails on five
+  pre-existing task documents. Comparing matched filenames with `main` confirms
+  this change adds no failure. These unrelated documents were left untouched;
+  this is an agent-owned follow-up for the steward, not an owner decision.
+
+### Memory record
+
+Commands ran serially under a memory monitor with a 300-second timeout, a
+600-second admission window, process-group termination below 1024 MiB available
+or above 512 MiB swap growth, and Bash subprocess environments. The following
+are the guarded test commands; other checks were short read-only commands.
+
+- `pytest tests/test_read_as_markdown.py -q` (before the fix): **started at once**,
+  wait 0.00 s; admission MemAvailable 2926 MiB, final 2911 MiB; starting swap
+  2385 MiB, growth 0 MiB; elapsed 2.13 s; exit 1 (two expected regressions).
+- `pytest tests/test_read_as_markdown.py tests/test_security_boundaries.py -q`:
+  **started at once**, wait 0.00 s; admission 2915 MiB, final 2914 MiB; starting
+  swap 2384 MiB, growth 0 MiB; elapsed 2.88 s; exit 0.
+- `pytest tests -q`: **started at once**, wait 0.00 s; admission 2870 MiB, final
+  2876 MiB; starting swap 2384 MiB, growth 0 MiB; elapsed 2.51 s; exit 0.
+
+[the converter]: ../../read-as-markdown/scripts/read_as_markdown.py
+[the skill]: ../../read-as-markdown/SKILL.md
+[cache reference]: ../../read-as-markdown/references/cache.md
+[the offline tests]: ../../tests/test_read_as_markdown.py

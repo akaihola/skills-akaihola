@@ -16,15 +16,20 @@ Implementation: [read-as-markdown/scripts/read_as_markdown.py].
 }
 ```
 
-Handled conversion errors return `{"error": "description"}` with exit status 0.
+Handled conversion errors return `{"error": "description"}` with exit status 1.
+Successful conversions and cache hits exit 0.
 Argument errors exit nonzero; uncaught exceptions can still produce a traceback.
 
 ## Caching
 
 Cache lives at `<workspace>/.cache/markdown/` mirroring in-workspace source paths.
 It retains the original extension: `paper.pdf.md` and `paper.pdf.meta`. Sources
-outside the workspace use only the filename. Files with the same filename
-outside the workspace therefore share a cache location.
+outside the workspace use `_external/<path-hash>/<filename>.md` and the matching
+`.meta` sidecar. The path hash is the first 16 hex digits of SHA-256 of the resolved
+absolute source path, keeping same-name external documents separate. Symlink
+aliases of one source use the same cache path. Existing in-workspace cache paths
+are unchanged; old basename-only external caches are no longer used by the fast
+path, but remain eligible for content-hash reuse.
 Symlinks in the cache are refused. Index entries outside the cache are ignored.
 A document’s own `.claude/` directory cannot select the workspace.
 Each cached file has a `.meta` JSON sidecar:

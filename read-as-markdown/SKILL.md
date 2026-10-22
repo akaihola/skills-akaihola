@@ -30,6 +30,9 @@ chunks.
 1. Detects format from file extension
 2. Finds workspace root from the current working directory (walks up to find `.claude/`; falls back to the current directory)
 3. Checks cache at `<workspace>/.cache/markdown/<relative-source-path>.md`
+   for in-workspace sources, or
+   `<workspace>/.cache/markdown/_external/<path-hash>/<filename>.md` for external
+   sources (first 16 hex digits of SHA-256 of the resolved absolute source path)
    - Fast path: mtime + size match in `.meta` sidecar → cache hit
    - Content-hash fallback: SHA-256 of original file checked against
      `index.json` → finds cache even if the source file was moved/renamed
@@ -57,11 +60,13 @@ options:
 
 Read [cache layout and backends](references/cache.md) when inspecting cached
 files, diagnosing conversion errors or adding a converter. The cache retains
-the source extension, mirrors in-workspace paths, and uses only the filename
-for external sources. It is local to the selected workspace.
+the source extension, mirrors in-workspace paths, and groups external sources
+under `_external/<path-hash>/` so same-name documents have separate caches.
+It is local to the selected workspace.
 
 Conversion writes cached files and may update the workspace ignore file.
-Handled errors are JSON objects with exit status 0; inspect the `error` key.
+Success exits 0. Handled errors are JSON objects with an `error` key and exit
+status 1.
 PDF uses `pdftotext` first, then the registered `pandoc` fallback; DOCX/EPUB
 use `pandoc`. Forced backends do not fall back.
 
