@@ -21,12 +21,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [25] Bring the T3 helper's launch and send recovery under one record path
+## In Progress
+
+- [~] [25] Bring the T3 helper's launch and send recovery under one record path
     - Depends on: [24]
 
-  <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T06:26:43.769Z"} -->
-
-## In Progress
+      <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T06:27:09.271Z"} -->
 
 ## Completed / Accepted
 
