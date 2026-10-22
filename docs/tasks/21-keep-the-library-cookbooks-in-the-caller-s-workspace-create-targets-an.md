@@ -136,6 +136,13 @@ treated as heavy. Nothing was stopped or skipped.
   0.50 s; exit 0 for the counting pipeline (the grep matched the pre-existing
   files above).
 
+### Merge and completion
+
+Fast-forwarded `main` to the implementation commit `240fac1`, then moved the
+issue to Completed / Accepted through Hai in `a87473f`, with the acceptance
+box left unchecked. The tracker then loaded with 22 unique issues and left no
+uncommitted changes. The task worktree and branch are kept.
+
 ### Follow-ups for the steward
 
 - [The skill] still says to capture the workspace root "before any cookbook
