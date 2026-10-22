@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [22] Make the himalaya-email-manager README match its five wrappers
-      <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T01:28:59.836Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [22] Make the himalaya-email-manager README match its five wrappers
+      <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T01:31:48.157Z"} -->
 
 - [ ] [21] Keep the library cookbooks in the caller's workspace, create targets and
   honour the source branch
