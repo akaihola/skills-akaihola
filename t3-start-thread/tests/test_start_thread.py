@@ -37,9 +37,10 @@ class LostReplyServer:
         """Return fixture state, including any accepted thread."""
         return self.data
 
-    def thread_snapshot(self, thread_id: str) -> dict:
+    def thread_projection(self, thread_id: str) -> dict:
         """Return an accepted thread with its persisted initial message."""
-        return next(t for t in self.data["threads"] if t["id"] == thread_id)
+        thread = next(t for t in self.data["threads"] if t["id"] == thread_id)
+        return {"thread": thread, "messages": thread["messages"]}
 
     def call(self, method: str, command: dict) -> dict:
         """Simulate acceptance followed by a lost reply."""  # ruff: ignore[docstring-missing-exception]
@@ -182,10 +183,14 @@ class MessageServer:
         self.lose_before_accept = False
         self.lose_after_accept = False
 
-    def thread_snapshot(self, thread_id: str) -> dict:
+    def snapshot(self) -> dict:
+        """Return the target's shell for its summary."""
+        return {"threads": [self.thread]}
+
+    def thread_projection(self, thread_id: str) -> dict:
         """Return the target's persisted messages."""
         assert thread_id == self.thread["id"]
-        return self.thread
+        return {"thread": self.thread, "messages": self.thread["messages"]}
 
     def call(self, method: str, command: dict) -> dict:
         """Persist a message, with optional simulated transport loss.
@@ -472,7 +477,12 @@ class WireServer:
                     )
                     value = {
                         "projection": {
-                            "thread": {"id": thread["id"]},
+                            # Shell fields win where both describe the thread.
+                            "thread": {
+                                "id": thread["id"],
+                                "title": "Projection title",
+                                "latestTurn": {"turnId": "projection"},
+                            },
                             "messages": thread["messages"],
                         }
                     }
@@ -860,6 +870,122 @@ def test_newly_accepted_message_must_be_visible(
     )
 
 
+SHELL = "orchestration.subscribeShell"
+THREAD = "orchestration.subscribeThread"
+
+
+def submit_fixture(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, action: str
+) -> None:
+    """Start or send to the parent thread through the CLI."""
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture task.")
+    target = (
+        ["--parent-thread", "parent", "--title", "Fixture", "--shared-checkout"]
+        if action == "start"
+        else ["--thread", "parent"]
+    )
+    invoke(
+        monkeypatch, action, "--workspace", tmp_path, "--prompt-file", prompt, *target
+    )
+
+
+@pytest.mark.parametrize(
+    ("action", "methods"),
+    [
+        ("start", [SHELL, SHELL, "orchestration.launchThread", SHELL, THREAD]),
+        ("send", [SHELL, THREAD, "orchestration.dispatchCommand", THREAD, SHELL]),
+    ],
+)
+def test_fresh_submission_reads(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    action: str,
+    methods: list[str],
+) -> None:
+    """Message checks need no shell; the summary comes from reads after dispatch."""
+    submit_fixture(monkeypatch, tmp_path, action)
+    assert [m for m, _ in wire_server.requests] == methods
+    assert wire_server.tickets == len(methods)
+
+
+@pytest.mark.parametrize(
+    ("action", "methods"), [("start", [SHELL, THREAD]), ("send", [THREAD, SHELL])]
+)
+def test_visible_resume_reads(  # ruff: ignore[too-many-arguments] - fixture matrix.
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    *,
+    action: str,
+    methods: list[str],
+) -> None:
+    """Resuming a visible result reuses the shell it already read."""
+    wire_server.lose_reply = True
+    with pytest.raises(TimeoutError):
+        submit_fixture(monkeypatch, tmp_path, action)
+    record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
+    capsys.readouterr()
+    wire_server.requests.clear()
+    invoke(monkeypatch, "resume", record)
+    assert [m for m, _ in wire_server.requests] == methods
+    output = json.loads(capsys.readouterr().out)
+    assert (
+        output["thread"]["id"] == json.loads(record.read_text())["command"]["threadId"]
+    )
+    assert output["thread"]["active"] is True
+
+
+@pytest.mark.parametrize("action", ["start", "send"])
+def test_summary_reads_state_after_dispatch(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    action: str,
+) -> None:
+    """A state change made by the dispatch appears in the reported summary."""
+    dispatch = wire_server.dispatch
+
+    def finish_run(method: str, command: dict) -> dict:
+        result = dispatch(method, command)
+        thread = next(t for t in wire_server.threads if t["id"] == command["threadId"])
+        thread.update(
+            status="completed",
+            activeRunId=None,
+            activityRunStatus=None,
+            branch="after-dispatch",
+        )
+        return result
+
+    monkeypatch.setattr(wire_server, "dispatch", finish_run)
+    submit_fixture(monkeypatch, tmp_path, action)
+    output = json.loads(capsys.readouterr().out.split("\n", 1)[1])
+    assert output["thread"]["active"] is False
+    assert output["thread"]["branch"] == "after-dispatch"
+    record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
+    assert json.loads(record.read_text())["thread"] == output["thread"]
+
+
+@pytest.mark.usefixtures("wire_server")
+@pytest.mark.parametrize("action", ["start", "send"])
+def test_summary_merge_precedence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    action: str,
+) -> None:
+    """A launch summary comes from its shell; a send adds projection-only fields."""
+    submit_fixture(monkeypatch, tmp_path, action)
+    thread = json.loads(capsys.readouterr().out.split("\n", 1)[1])["thread"]
+    assert thread["title"] == "Fixture"
+    assert thread["latestTurn"] == (
+        None if action == "start" else {"turnId": "projection"}
+    )
+
+
 def test_first_socket_requests_v2_with_one_ticket(
     wire_server: WireServer,
     tmp_path: Path,
@@ -949,24 +1075,24 @@ def test_accepted_missing_result_is_not_resent(
     assert not wire_server.receipts
 
 
-def test_archived_launch_stays_resumable(
+@pytest.mark.parametrize("action", ["start", "send"])
+def test_archived_result_stays_resumable(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
+    action: str,
 ) -> None:
-    """Archived threads reconcile without a replacement launch."""
+    """Archived threads reconcile without a replacement launch or message."""
     thread = wire_server.threads.pop()
     thread.update(
         {"status": "completed", "activeRunId": None, "activityRunStatus": None}
     )
     thread["messages"] = [{"id": "initial", "runId": "run"}]
     wire_server.archived.append(thread)
-    command = {
-        "threadId": "parent",
-        "message": {"messageId": "initial"},
-        "bootstrap": {},
-    }
+    command = {"threadId": "parent", "message": {"messageId": "initial"}}
+    if action == "start":
+        command["bootstrap"] = {}
     record = tmp_path / "archived.json"
     record.write_text(
         json.dumps(
@@ -974,7 +1100,9 @@ def test_archived_launch_stays_resumable(
         )
     )
     invoke(monkeypatch, "resume", record)
-    assert json.loads(capsys.readouterr().out)["thread"]["active"] is False
+    summary = json.loads(capsys.readouterr().out)["thread"]
+    assert summary["active"] is False
+    assert summary["status"] == "completed"
     assert not wire_server.receipts
     invoke(monkeypatch, "inspect", "--workspace", tmp_path)
     assert json.loads(capsys.readouterr().out)["threads"] == []
@@ -1115,6 +1243,33 @@ def test_settle_server_error_continues(
     assert results[0]["status"] == "error"
     assert "OrchestrationThreadSettleBlockedError" in results[0]["error"]
     assert results[1]["status"] == "settled"
+
+
+def test_settle_reads_a_fresh_shell_per_target(
+    wire_server: WireServer,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A change after one target's settlement decides the next target's outcome."""
+    wire_server.threads = [idle_thread(wire_server, t) for t in ("first", "second")]
+    dispatch = wire_server.dispatch
+
+    def start_second(method: str, command: dict) -> dict:
+        result = dispatch(method, command)
+        wire_server.threads[1]["status"] = "running"
+        return result
+
+    monkeypatch.setattr(wire_server, "dispatch", start_second)
+    with pytest.raises(SystemExit):
+        invoke(monkeypatch, "settle", "--thread", "first", "--thread", "second")
+    results = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [r["status"] for r in results] == ["settled", "refused"]
+    assert results[1]["reason"] == "active"
+    assert [m for m, _ in wire_server.requests] == [
+        SHELL,
+        "orchestration.dispatchCommand",
+        SHELL,
+    ]
 
 
 def test_inspect_settled_timestamp(

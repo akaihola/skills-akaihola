@@ -164,14 +164,11 @@ class Server:
         """Read the shell snapshot without printing other projects or messages."""
         return self.call("orchestration.subscribeShell", {}, stream=True)
 
-    def thread_snapshot(self, thread_id: str) -> dict:
+    def thread_projection(self, thread_id: str) -> dict:
         """Read one thread to verify a submitted message by its identifier."""
-        projection = self.call(
+        return self.call(
             "orchestration.subscribeThread", {"threadId": thread_id}, stream=True
         )["projection"]
-        shell = self.snapshot()
-        thread = next((t for t in all_threads(shell) if t["id"] == thread_id), {})
-        return {**projection["thread"], **thread, "messages": projection["messages"]}
 
 
 def all_threads(snapshot: dict) -> list[dict]:
@@ -316,29 +313,38 @@ def save_record(path: Path, record: dict, *, create: bool = False) -> None:
         output.write("\n")
 
 
-def submission_result(server: Server, command: dict) -> tuple[dict | None, dict | None]:
-    """Observe the saved message and retain each operation's summary source."""
-    thread_id = command["threadId"]
+def submission_result(
+    server: Server, command: dict
+) -> tuple[dict | None, dict | None, dict | None]:
+    """Observe the saved message, returning the shell a launch needed to find it."""
+    shell = None
     if "bootstrap" in command:
-        snapshot = server.snapshot()
-        thread = next((t for t in all_threads(snapshot) if t["id"] == thread_id), None)
-        if thread is None:
-            return None, None
-        detail = server.thread_snapshot(thread_id)
-    else:
-        thread = detail = server.thread_snapshot(thread_id)
+        shell = server.snapshot()
+        if not any(t["id"] == command["threadId"] for t in all_threads(shell)):
+            return shell, None, None
+    projection = server.thread_projection(command["threadId"])
     message = next(
-        (m for m in detail["messages"] if m["id"] == command["message"]["messageId"]),
+        (
+            m
+            for m in projection["messages"]
+            if m["id"] == command["message"]["messageId"]
+        ),
         None,
     )
-    return thread, message
+    return shell, projection, message
+
+
+def submitted_thread(command: dict, shell: dict, projection: dict) -> dict:
+    """Summarize a launch from its shell; shell fields override a send's projection."""
+    thread = next((t for t in all_threads(shell) if t["id"] == command["threadId"]), {})
+    return thread if "bootstrap" in command else {**projection["thread"], **thread}
 
 
 def submit(server: Server, path: Path, record: dict) -> None:
     """Reconcile saved IDs before dispatch and persist acknowledgements before reads."""
     command = record["command"]
     launch = "bootstrap" in command
-    thread, message = submission_result(server, command)
+    shell, projection, message = submission_result(server, command)
     if message is None and record.get("accepted"):
         msg = (
             "Accepted thread or initial message is absent; inspect T3 before retrying"
@@ -351,15 +357,20 @@ def submit(server: Server, path: Path, record: dict) -> None:
         record["acknowledgement"] = dispatch(server, command)
         record["accepted"] = True
         save_record(path, record)
-        thread, message = submission_result(server, command)
-    if message is None:
+        # Observe again so the summary reflects state after the dispatch.
+        shell, projection, message = submission_result(server, command)
+    if projection is None or message is None:
         missing = (
-            ("thread" if thread is None else "initial message") if launch else "message"
+            ("thread" if projection is None else "initial message")
+            if launch
+            else "message"
         )
         msg = f"Command accepted but {missing} is not yet visible; resume"
         raise RuntimeError(msg)
     record["accepted"] = True
-    record["thread"] = thread_summary(thread)
+    record["thread"] = thread_summary(
+        submitted_thread(command, shell or server.snapshot(), projection)
+    )
     output = {"record": str(path), "thread": record["thread"]}
     if not launch:
         record["messageId"] = command["message"]["messageId"]

@@ -26,3 +26,93 @@ Separate projection and message reads from shell-summary composition inside the 
 - Handoff: a short outcome; details go in this task record.
 
 Tracker: [the skills-akaihola tracker](../../TASKS.md).
+
+
+## Outcome
+
+Implemented F3 / D3. `Server.thread_projection()` now only reads a thread's
+projection (`orchestration.subscribeThread`), which is all a message-ID check
+needs. `submission_result()` returns the shell a launch read to find its
+thread, the projection and the saved message. `submitted_thread()` is the one
+place that composes the summary source: a launch uses its shell entry, a send
+lays shell fields over the projection's thread, and both look up archived
+threads. `submit()` reuses the observation's shell when it has one and reads a
+fresh shell only for a send's summary. After a dispatch it observes again, so
+the summary always reflects post-dispatch state. No connection reuse or
+snapshot cache was added, and settlement is unchanged.
+
+Successful RPCs per invocation (each RPC uses its own ticket and socket):
+
+| Path                               | Before | After |
+| ---------------------------------- | -----: | ----: |
+| Fresh send                         |      6 |     5 |
+| Fresh launch                       |      6 |     5 |
+| Already-visible launch resume      |      3 |     2 |
+| Already-visible send resume        |      2 |     2 |
+
+The CLI, saved record format, output fields, refusal messages and exit codes
+are unchanged. The two direct test fakes (`LostReplyServer`, `MessageServer`)
+gained the narrower `thread_projection()` read and, for `MessageServer`, a
+shell; their consolidation stays with D4.
+
+## Verification
+
+- **Pins first:** added the tests below before changing production code. On
+  the unchanged script, the three RPC-count cases failed (6, 6 and 3 RPCs) and
+  every behaviour pin passed:
+  - `test_fresh_submission_reads` — exact method traces and ticket counts for
+    a fresh send (shell, thread, dispatch, thread, shell) and a fresh launch
+    (shell, shell, launch, shell, thread).
+  - `test_visible_resume_reads` — an already-visible launch resume reads shell
+    then thread; a send resume reads thread then shell.
+  - `test_summary_reads_state_after_dispatch` — a fake state change made
+    during dispatch (run finished, new branch) appears in the printed and
+    saved summary, for launch and send.
+  - `test_summary_merge_precedence` — the fake projection now carries a
+    conflicting title and a projection-only `latestTurn`; the shell title wins
+    for both operations, and only a send takes `latestTurn`.
+  - `test_archived_result_stays_resumable` — now parametrized over launch and
+    send; the summary status comes from the archived shell entry.
+  - `test_settle_reads_a_fresh_shell_per_target` — a change after settling the
+    first target makes the second one refused as active; the trace is shell,
+    settle, shell.
+- **Re-check on the baseline:** copied the baseline script beside the new test
+  file in a temporary directory and ran the pins: 3 failed (the RPC counts),
+  8 passed.
+- **Helper suite:** 83 tests passed with networking disabled after the change,
+  including message-ID checks, accepted-but-missing refusals, lost-reply
+  recovery, archived recovery, settlement refusals and errors, and all five
+  CLI actions. No live server was called.
+- **Lint:** Ruff lint and format checks and `git diff --check` passed. `ty`
+  reports only the environment's unresolved `websocket` import; the earlier
+  optional-summary diagnostic in `submit()` is gone.
+
+Commands (one test command at a time):
+
+```bash
+# Pins before implementation: expected exit 1, three RPC-count failures.
+unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q -k 'fresh_submission or visible_resume or after_dispatch or fresh_shell_per_target'
+# All pins against a temporary copy of the baseline script: exit 1, 3 failed, 8 passed.
+unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider "$TMPDIR/head/tests" -q -k 'merge_precedence or archived_result or after_dispatch or fresh_shell_per_target or visible_resume or fresh_submission'
+# Helper suite after implementation: exit 0.
+unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q
+ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py
+ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py
+git diff --check
+```
+
+## Resource record
+
+Every guarded command ran alone with a 300-second bound, memory/swap
+monitoring and process-group cleanup. Measurements describe resources and
+exit codes; test results are recorded above.
+
+- **Pins before implementation — started at once:** wait 0.00 s; admission
+  MemAvailable 3037.4 MiB; final 3016.8 MiB; starting swap 2170.2 MiB; swap
+  growth 0.0 MiB (peak 0.0 MiB); elapsed 3.06 s; exit 1.
+- **Pins on the baseline copy — started at once:** wait 0.00 s; admission
+  MemAvailable 2731.7 MiB; final 2980.8 MiB; starting swap 2165.7 MiB; swap
+  growth 0.0 MiB (peak 0.0 MiB); elapsed 4.42 s; exit 1.
+- **Helper suite (83 tests) — started at once:** wait 0.00 s; admission
+  MemAvailable 2976.8 MiB; final 2943.7 MiB; starting swap 2165.7 MiB; swap
+  growth -2.2 MiB (peak 0.0 MiB); elapsed 2.88 s; exit 0.
