@@ -105,3 +105,35 @@ deployed server after the merge confirms the V2-only premise.
   2767.4 MiB; final 2579.3 MiB; starting swap 2156.2 MiB; swap growth
   0.0 MiB (peak 0.0 MiB); elapsed 4.51 s; exit 0. A 180-second bound and
   process-group cleanup applied; no other heavy command ran at the same time.
+
+## Merge and recorded checks
+
+Fast-forwarded `main` from `6a6ffeab9fd88859e38221619722a6d32bc4a2e3` to
+delivery commit `a671c38434aa8a3d21cfb27f2b76562d71418fd7`. The task branch
+and worktree are kept. The evidence recorder ran four checks against the task
+worktree, detached at the delivery commit, and all four passed (exit 0):
+
+- **`v2-first-socket-no-retry`:** the handshake pins; 7 tests.
+- **`helper-fake-suite`:** the full helper suite with networking disabled;
+  67 tests.
+- **`old-record-recovery`:** old-record, pending, acknowledged, archived and
+  lost-reply recovery, plus the start and send CLI resume tests; 16 tests.
+- **`reference-compatibility`:** checks that the reference separates V2-only
+  server support from old-record support, and that the "either protocol" and
+  handshake-detection claims are gone.
+
+This helper has no lockfile. The receipt declares SHA-256 dependencies on the
+helper script, its tests and the reference instead; no editable checkouts are
+used. Ruff lint and format checks also passed before the merge; they are not
+an acceptance criterion and are not in the receipt.
+
+- **Recorder runs — all started at once:** wait 0.00 s each, one at a time,
+  with a 300-second bound.
+  - `v2-first-socket-no-retry`: admission MemAvailable 2685.5 MiB; final
+    2565.2 MiB; starting swap 2142.7 MiB; growth 0.0 MiB; 4.05 s; exit 0.
+  - `helper-fake-suite`: admission 2559.4 MiB; final 2759.9 MiB; starting
+    swap 2142.7 MiB; growth 0.5 MiB; 5.01 s; exit 0.
+  - `old-record-recovery`: admission 2680.6 MiB; final 2704.1 MiB; starting
+    swap 2143.2 MiB; growth 0.0 MiB; 5.08 s; exit 0.
+  - `reference-compatibility`: admission 2704.1 MiB; final 2665.9 MiB;
+    starting swap 2143.2 MiB; growth 0.0 MiB; 1.00 s; exit 0.
