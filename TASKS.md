@@ -23,10 +23,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [19] Make secrets-scan fail when a requested scanner doesn't finish
-      <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:27:59.552Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [19] Make secrets-scan fail when a requested scanner doesn't finish
+      <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:41:30.108Z"} -->
 
 - [ ] [18] Check skills-akaihola's README and the skills changed since 10-19 against
   their scripts
