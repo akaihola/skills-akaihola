@@ -8,6 +8,20 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [19] Make secrets-scan fail when a requested scanner doesn't finish
+  <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:16:20.104Z"} -->
+
+- [20] Give same-name outside documents their own read-as-markdown cache, and
+  fail on conversion errors
+  <!-- hai:{"id":"simple-3f84bf2c-1de8-4af4-9933-73b5b7e9e239","labels":["steward"],"createdAt":"2026-10-22T00:16:21.764Z","updatedAt":"2026-10-22T00:16:21.764Z"} -->
+
+- [21] Keep the library cookbooks in the caller's workspace, create targets and
+  honour the source branch
+  <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T00:16:23.005Z"} -->
+
+- [22] Make the himalaya-email-manager README match its five wrappers
+  <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T00:16:24.586Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -78,7 +92,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -113,6 +127,14 @@ they are not pacer inputs. Keep each task in one tracker only.
 [17]: docs/tasks/17-run-the-four-safe-help-probes-the-skill-review-could-not-run.md
 
 [18]: docs/tasks/18-check-skills-akaihola-s-readme-and-the-skills-changed-since-10-19-agai.md
+
+[19]: docs/tasks/19-make-secrets-scan-fail-when-a-requested-scanner-doesn-t-finish.md
+
+[20]: docs/tasks/20-give-same-name-outside-documents-their-own-read-as-markdown-cache-and-.md
+
+[21]: docs/tasks/21-keep-the-library-cookbooks-in-the-caller-s-workspace-create-targets-an.md
+
+[22]: docs/tasks/22-make-the-himalaya-email-manager-readme-match-its-five-wrappers.md
 
 ## Rules
 
