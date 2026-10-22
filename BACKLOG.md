@@ -23,6 +23,14 @@ High-level plan:
 - Define failure handling for partial results, unavailable accounts, auth failures, and rate/size limits.
 - After verifying the proxy’s multi-account capabilities, replace the workspace-specific guidance and bundle any helper scripts the skill needs.
 
+Amendment from [the README alignment task] (2026-10-22):
+
+- [jmap/SKILL.md] directs agents to a workspace-relative sync helper
+  that is not bundled in this repository, and assumes a fixed account and a reverse SSH tunnel on port
+  8895. Treat helper packaging, configurable account/base URL and tunnel
+  prerequisites as portability acceptance criteria for this existing proposal.
+  Verify these against the actual proxy before replacing the guidance.
+
 ## Ordered backlog
 
 ### Adopt modern task-tracking principles
@@ -39,3 +47,5 @@ Reconcile that proposal before changing its acceptance criteria.
 [AGENTS.md]: AGENTS.md
 [library/BACKLOG.md]: library/BACKLOG.md
 [adoption task]: docs/tasks/adopt-task-tracking-principles.md
+
+[the README alignment task]: docs/tasks/22-make-the-himalaya-email-manager-readme-match-its-five-wrappers.md

@@ -1,117 +1,56 @@
 # Himalaya Email Manager
 
-Natural language interface for email management using Himalaya IMAP CLI tool.
+Five Python wrappers for email management through the Himalaya CLI. Read the
+[skill instructions] for account checks and agent workflow, and the
+[script reference] for all options, examples and limitations.
 
-## Quick Start
+## Setup
 
-### Get Daily Summary
+Install and configure Himalaya, plus `uv`. The wrappers declare Python 3.13+
+and their dependencies in PEP 723 metadata; invoke them with `uv run`.
+All five use a fixed `ACCOUNT` constant and expose no account-selection flag.
+Confirm that the configured account is the intended mailbox before use.
+See [troubleshooting] for setup and connection problems.
 
-Get a summary of emails from the past 24 hours:
+## Choose a wrapper
 
-```bash
-uv run scripts/email-summary.py
-```
+| Wrapper | Behaviour |
+| --- | --- |
+| [Summary wrapper] | Fetch one default page from each of INBOX and Sent; show envelopes whose date strings start with today or yesterday, rather than a rolling 24-hour window. |
+| [Search wrapper] | Filter one page of headers locally by `--from`, `--subject`, `--date-start` and `--date-end`, in `--folder` (default INBOX). Filters combine with AND. |
+| [Read wrapper] | Display a message ID using `--format text` (default), `markdown`, `json` or `raw`. |
+| [Save wrapper] | Save a message ID using `--format markdown` (default), `text` or `json`. `--output` defaults to the current directory; attachments download by default into `<message-id>-attachments/` beside the saved email. |
+| [Delete wrapper] | Read a live preview by message ID; delete only with `--execute`. Confirmation is prompted only in interactive terminals. |
 
-### Search Emails
+Search defaults to `--limit 20`, capped at 100, over up to 500 fetched headers.
+`--no-limit` searches up to 10,000 headers in one page; neither mode paginates
+the whole mailbox. Body search is not implemented.
 
-Search by sender, subject, date, or folder:
+Save accepts `--attachment-dir` for a custom attachment directory and
+`--no-download-attachments` to skip downloads. Existing email files prompt
+before replacement unless `--overwrite` is enabled.
 
-```bash
-# Basic search (latest 20)
-uv run scripts/email-search.py
+## Quick start
 
-# By sender
-uv run scripts/email-search.py --from "example.com"
-
-# By subject
-uv run scripts/email-search.py --subject "invoice"
-
-# By date range
-uv run scripts/email-search.py --date-start "2025-12-01" --date-end "2025-12-31"
-
-# Multiple filters
-uv run scripts/email-search.py --from "@newsletter.com" --subject "unsubscribe" --limit 5
-```
-
-### Save Emails
-
-Save email content to file (attachments are downloaded by default):
+Run from the repository root, or substitute an absolute script path:
 
 ```bash
-# Save as markdown (attachments downloaded)
-uv run scripts/email_save.py 56873
-
-# Save to specific directory (attachments downloaded)
-uv run scripts/email_save.py 56873 --output ~/saved-emails
-
-# Save with date prefix (attachments downloaded)
-uv run scripts/email_save.py 56873 --date-prefix
-
-# Save as JSON (attachments downloaded)
-uv run scripts/email_save.py 56873 --format json
-
-# Save from Sent folder (attachments downloaded)
-uv run scripts/email_save.py --folder Sent 12345
-
-# Save without attachments
-uv run scripts/email_save.py 56873 --no-download-attachments
+uv run himalaya-email-manager/scripts/email-summary.py
+uv run himalaya-email-manager/scripts/email-search.py --from sender@example.org --limit 5
+uv run himalaya-email-manager/scripts/email-read.py 57039 --format markdown
+uv run himalaya-email-manager/scripts/email_save.py 57039 --no-download-attachments
+uv run himalaya-email-manager/scripts/email-delete.py 57039
 ```
 
-### Delete Emails
+The deletion example previews only. Obtain authorization before using
+`--execute`. For an offline check, all five wrappers support `--help` before
+contacting Himalaya.
 
-Delete with safety preview:
-
-```bash
-# Preview deletion
-uv run scripts/email-delete.py 56838
-
-# Actually delete
-uv run scripts/email-delete.py 56838 --execute
-```
-
-## Natural Language Queries
-
-- "Show me emails from Example Shop from the last week"
-- "Find all emails about invoices"
-- "Save email ID 56873"
-- "Save email with attachments to ~/documents"
-- "Delete email ID 56838"
-- "What did I send yesterday?"
-
-## Installation
-
-Himalaya must be installed on your system. Test your installation:
-
-```bash
-himalaya --help
-```
-
-The IMAP account is configured in `~/.config/himalaya/config.toml`.
-
-All scripts use PEP 723 inline metadata and require Python 3.13+. Invoke with `uv run` to automatically handle Python environment and dependencies.
-
-- ✅ Fast IMAP search (server-side)
-- ✅ Safe deletion with preview (dry-run by default)
-- ✅ Save emails to file (markdown, text, JSON formats)
-- ✅ Download email attachments with custom directory support
-- ✅ Folder support (INBOX, Sent, Drafts, Archive, etc.)
-- ✅ Unicode support (Finnish characters, emojis)
-- ✅ Date range filtering
-- ✅ Multiple search criteria
-- ✅ Message ID-based safe deletion
-
-## Safety
-
-- Delete operations show preview before execution (dry-run by default)
-- Save operations prompt before overwriting existing files (use --overwrite to skip)
-- Attachment downloads default to current directory, matching email save location (customize with --attachment-dir)
-- Uses message UIDs for safe identification
-- Changes sync immediately with IMAP server
-
-## Troubleshooting
-
-For connection issues, see [references/troubleshooting.md](references/troubleshooting.md).
-
-## Script Reference
-
-For detailed script documentation, see [references/scripts.md](references/scripts.md).
+[skill instructions]: SKILL.md
+[script reference]: references/scripts.md
+[troubleshooting]: references/troubleshooting.md
+[Summary wrapper]: scripts/email-summary.py
+[Search wrapper]: scripts/email-search.py
+[Read wrapper]: scripts/email-read.py
+[Save wrapper]: scripts/email_save.py
+[Delete wrapper]: scripts/email-delete.py
