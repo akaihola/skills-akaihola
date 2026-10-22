@@ -14,16 +14,16 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Completed / Accepted
 
-- [ ] [22] Make the himalaya-email-manager README match its five wrappers
-      <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T01:31:48.157Z"} -->
+- [x] [22] Make the himalaya-email-manager README match its five wrappers
+      <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T03:25:25.871Z"} -->
 
-- [ ] [21] Keep the library cookbooks in the caller's workspace, create targets and
+- [x] [21] Keep the library cookbooks in the caller's workspace, create targets and
   honour the source branch
-      <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T01:25:44.187Z"} -->
+      <!-- hai:{"id":"simple-4c4bd8cd-f4e3-4dca-9166-b0d8498f7eb8","labels":["steward"],"createdAt":"2026-10-22T00:16:23.005Z","updatedAt":"2026-10-22T03:25:28.160Z"} -->
 
-- [ ] [20] Give same-name outside documents their own read-as-markdown cache, and
+- [x] [20] Give same-name outside documents their own read-as-markdown cache, and
   fail on conversion errors
-      <!-- hai:{"id":"simple-3f84bf2c-1de8-4af4-9933-73b5b7e9e239","labels":["steward"],"createdAt":"2026-10-22T00:16:21.764Z","updatedAt":"2026-10-22T01:12:50.255Z"} -->
+      <!-- hai:{"id":"simple-3f84bf2c-1de8-4af4-9933-73b5b7e9e239","labels":["steward"],"createdAt":"2026-10-22T00:16:21.764Z","updatedAt":"2026-10-22T03:25:30.555Z"} -->
 
 - [ ] [19] Make secrets-scan fail when a requested scanner doesn't finish
       <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:41:30.108Z"} -->
