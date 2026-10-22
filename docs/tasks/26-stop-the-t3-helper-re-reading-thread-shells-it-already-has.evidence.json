@@ -1,0 +1,181 @@
+{
+  "items": [
+    {
+      "issue": "skills-akaihola [26]",
+      "hai_id": "simple-d88e8d1c-78f9-434c-81ef-96a84ed74406",
+      "title": "Stop the T3 helper re-reading thread shells it already has",
+      "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
+      "source_repository": "/home/agent/prg/skills-akaihola",
+      "base_commit": "4eed49cfc5ee9ecd9ab66f8c656fd39bf7eed59a",
+      "delivery_commits": [
+        "b10db5be7b2cc402366c27237a6756a1c76c442c"
+      ],
+      "checks": [
+        {
+          "id": "rpc-trace-and-summary-pins",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q -k 'fresh_submission or visible_resume or after_dispatch or merge_precedence or archived_result or fresh_shell_per_target'",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "t3-start-thread/references/helper.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "helper-fake-suite",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "t3-start-thread/references/helper.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "lint-format-whitespace",
+          "command": "ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && git show --format= --check HEAD",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "t3-start-thread/references/helper.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "rpc-trace-and-summary-pins": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
+          "tested_commit": "b10db5be7b2cc402366c27237a6756a1c76c442c",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/scripts/start_thread.py",
+              "value": "754f1501ddbc0b20d8331879eb5b3fa6c229d375bb2b1d9429ae89c55ee2968d"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/tests/test_start_thread.py",
+              "value": "100af265c891387f81a4b36d0656e3597a5474a1fd9f2acf41becfc588121223"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/references/helper.md",
+              "value": "34c9cd7c467d34bc67b367ec787991f70f296ccd8893cd34c87f16b2febd5106"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [26]",
+          "check": "rpc-trace-and-summary-pins",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q -k 'fresh_submission or visible_resume or after_dispatch or merge_precedence or archived_result or fresh_shell_per_target'",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-22T06:57:14.854978+00:00"
+        },
+        "helper-fake-suite": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
+          "tested_commit": "b10db5be7b2cc402366c27237a6756a1c76c442c",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/scripts/start_thread.py",
+              "value": "754f1501ddbc0b20d8331879eb5b3fa6c229d375bb2b1d9429ae89c55ee2968d"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/tests/test_start_thread.py",
+              "value": "100af265c891387f81a4b36d0656e3597a5474a1fd9f2acf41becfc588121223"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/references/helper.md",
+              "value": "34c9cd7c467d34bc67b367ec787991f70f296ccd8893cd34c87f16b2febd5106"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [26]",
+          "check": "helper-fake-suite",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-22T06:57:28.779127+00:00"
+        },
+        "lint-format-whitespace": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
+          "tested_commit": "b10db5be7b2cc402366c27237a6756a1c76c442c",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/scripts/start_thread.py",
+              "value": "754f1501ddbc0b20d8331879eb5b3fa6c229d375bb2b1d9429ae89c55ee2968d"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/tests/test_start_thread.py",
+              "value": "100af265c891387f81a4b36d0656e3597a5474a1fd9f2acf41becfc588121223"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/t3-start-thread/references/helper.md",
+              "value": "34c9cd7c467d34bc67b367ec787991f70f296ccd8893cd34c87f16b2febd5106"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [26]",
+          "check": "lint-format-whitespace",
+          "command": "ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && git show --format= --check HEAD",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-22T06:57:35.877222+00:00"
+        }
+      }
+    }
+  ]
+}
