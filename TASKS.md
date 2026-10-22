@@ -8,9 +8,6 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [19] Make secrets-scan fail when a requested scanner doesn't finish
-  <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:16:20.104Z"} -->
-
 - [20] Give same-name outside documents their own read-as-markdown cache, and
   fail on conversion errors
   <!-- hai:{"id":"simple-3f84bf2c-1de8-4af4-9933-73b5b7e9e239","labels":["steward"],"createdAt":"2026-10-22T00:16:21.764Z","updatedAt":"2026-10-22T00:16:21.764Z"} -->
@@ -23,6 +20,9 @@ they are not pacer inputs. Keep each task in one tracker only.
   <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T00:16:24.586Z"} -->
 
 ## Scheduled
+
+- [19] Make secrets-scan fail when a requested scanner doesn't finish
+  <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:27:25.643Z"} -->
 
 ## In Progress
 
