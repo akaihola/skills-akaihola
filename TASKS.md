@@ -14,28 +14,28 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Completed / Accepted
 
-- [ ] [27] Fold the T3 helper's duplicate handoff test fakes into the V2 wire
+- [x] [27] Fold the T3 helper's duplicate handoff test fakes into the V2 wire
   fixture
     - Depends on: [24], [25]
 
-      <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T07:03:06.971Z"} -->
+      <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T08:11:21.952Z"} -->
 
-- [ ] [26] Stop the T3 helper re-reading thread shells it already has
+- [x] [26] Stop the T3 helper re-reading thread shells it already has
     - Depends on: [25]
 
-      <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:58:04.884Z"} -->
+      <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T08:11:23.182Z"} -->
 
-- [ ] [25] Bring the T3 helper's launch and send recovery under one record path
+- [x] [25] Bring the T3 helper's launch and send recovery under one record path
     - Depends on: [24]
 
-      <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T06:34:00.662Z"} -->
+      <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T08:11:24.749Z"} -->
 
-- [ ] [24] Retire the T3 helper's V1 transport while keeping saved requests readable
-      <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:21:34.457Z"} -->
+- [x] [24] Retire the T3 helper's V1 transport while keeping saved requests readable
+      <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T08:11:26.074Z"} -->
 
-- [ ] [23] Review the t3-start-thread helper's architecture for deep modules and
+- [x] [23] Review the t3-start-thread helper's architecture for deep modules and
   over-engineering
-      <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T06:02:03.961Z"} -->
+      <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T08:11:27.661Z"} -->
 
 - [x] [22] Make the himalaya-email-manager README match its five wrappers
       <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T03:25:25.871Z"} -->
