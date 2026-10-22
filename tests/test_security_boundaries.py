@@ -1,5 +1,6 @@
 """Offline regressions for document, attachment and scanner trust boundaries."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -245,23 +246,37 @@ def test_secret_values_stay_out_of_both_reports(tmp_path: Path) -> None:
     """Both scanner sources retain classifications without raw values/messages."""
     token = "ghp_" + "SyntheticOnly0123456789" * 2
     (tmp_path / "config.txt").write_text(f"TOKEN={token}\nTOKEN=your_key_here\n")
+    values = [(1, token), (2, "your_key_here")]
     ds = {
         "results": {
-            "config.txt": [{"line_number": n, "type": "Secret Keyword"} for n in [1, 2]]
+            "config.txt": [
+                {
+                    "line_number": n,
+                    "type": "Secret Keyword",
+                    "hashed_secret": hashlib.sha1(
+                        value.encode(), usedforsecurity=False
+                    ).hexdigest(),
+                }
+                for n, value in values
+            ]
         }
     }
     sl = [
         {
             "file": "config.txt",
             "line": n,
+            "col": 6,
+            "end_line": n,
+            "end_col": 6 + len(value),
             "message_id": "TOKEN",
             "rule_id": "rule",
             "message": token,
             "docs_url": token,
         }
-        for n in [1, 2]
+        for n, value in values
     ]
-    combined = scan.build_combined(tmp_path, ds, sl)
+    scanners = {"detect-secrets": scan.RAN, "secretlint": scan.RAN}
+    combined = scan.build_combined(tmp_path, ds, sl, scanners)
     for report in [json.dumps(combined), scan.render_markdown(combined)]:
         assert token not in report, "Secret appeared in report"
         assert "SyntheticOnly" not in report, "Secret fragment appeared in report"
@@ -292,23 +307,27 @@ def test_scanner_cli_redacts_output(
     monkeypatch.setattr(
         scan,
         "run_secretlint",
-        lambda *a: [
-            {
-                "file": "config.txt",
-                "line": 1,
-                "message_id": "TOKEN",
-                "rule_id": "rule",
-                "message": token,
-                "docs_url": token,
-            }
-        ],
+        lambda *a: (
+            [
+                {
+                    "file": "config.txt",
+                    "line": 1,
+                    "col": 6,
+                    "end_line": 1,
+                    "end_col": 6 + len(token),
+                    "message_id": "TOKEN",
+                    "rule_id": "rule",
+                    "message": token,
+                    "docs_url": token,
+                }
+            ],
+            None,
+        ),
     )
     monkeypatch.setattr(
         sys, "argv", ["scan.py", str(tmp_path), *(["--json"] if as_json else [])]
     )
-    with pytest.raises(SystemExit) as exc:
-        scan.main()
-    assert exc.value.code == 1
+    assert scan.main() == 1
     captured = capsys.readouterr()
     assert token not in captured.out + captured.err, "Secret appeared in CLI output"
     assert "OfflineSynthetic" not in captured.out + captured.err
@@ -330,10 +349,13 @@ def test_scanner_errors_are_redacted(
         return subprocess.CompletedProcess(args, 2, "", token)
 
     monkeypatch.setattr(scan.subprocess, "run", run)
-    assert scan.run_detect_secrets(tmp_path, all_files=True) == {}
+    with pytest.raises(scan.ScannerError) as ds_error:
+        scan.run_detect_secrets(tmp_path, all_files=True)
     assert "--no-verify" in commands[0]
     assert "--all-files" in commands[0]
-    assert scan.setup_secretlint(tmp_path) is None
+    with pytest.raises(scan.ScannerError) as sl_error:
+        scan.setup_secretlint(tmp_path)
+    assert token not in str(ds_error.value) + str(sl_error.value)
     assert token not in capsys.readouterr().err
 
 

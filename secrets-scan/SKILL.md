@@ -38,14 +38,25 @@ The two scanners use different exclusion lists; see
 ## Interpret a result
 
 Read [classification and limits](references/classifying-findings.md) before
-triaging findings. A placeholder substring anywhere on a flagged line causes
-`likely-false-positive`; every other line is `review-required`. Neither label
-proves that a credential is live or harmless.
+triaging findings. A finding is `likely-false-positive` only when the detected
+value itself contains a placeholder marker; words elsewhere on its line do not
+count. Every other finding is `review-required`. Neither label proves that a
+credential is live or harmless.
 
-Exit 1 means at least one reported finding needs review (or the path is invalid).
-Exit 0 means no reported finding needs review. Some scanner failures are logged
-and converted to empty results, so exit 0 alone does not prove a complete scan.
-Check stderr for installation, scanner and parse failures.
+The report names each scanner's outcome: `ran`, `skipped` on request
+(`--no-secretlint`) or `failed` with a reason. A failure covers an unexpected
+exit status, unparsable output, a setup failure (`bun add`, `git ls-files`)
+or a secretlint batch that was not scanned. A requested skip is not a failure.
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | Every requested scanner finished and no finding needs review |
+| 1 | Every requested scanner finished and a finding needs review |
+| 2 | A requested scanner failed, or the arguments are invalid |
+
+Exit 2 outranks exit 1: the report still lists findings from the scanners that
+finished, but the scan is incomplete. Rerun it after fixing the named scanner
+before calling a repository clean.
 
 Never print flagged source lines, credential values, or raw secretlint messages.
 Use file/line and detector kind when reporting or handing off findings.
@@ -55,9 +66,11 @@ rotation; deleting it from source does not revoke it.
 
 ## Offline validation
 
-`--help` exits before installing or launching either scanner. Existing
-redaction and attachment/cache regression tests use synthetic data:
+`--help` exits before installing or launching either scanner. The scanner
+tests put fake `uvx`, `bun`, `git` and secretlint executables first on `PATH`;
+they and the redaction and attachment/cache regression tests use synthetic
+data:
 
 ```bash
-uv run --no-project --with pytest --with typer --with rich pytest tests/test_security_boundaries.py -q
+uv run --no-project --with pytest --with typer --with rich pytest tests/test_secrets_scan.py tests/test_security_boundaries.py -q
 ```

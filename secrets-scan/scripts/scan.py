@@ -7,13 +7,17 @@
 
 Scans a git repository for leaked credentials and produces a combined
 Markdown report, classifying findings as needing review vs. likely false
-positives.
+positives, and recording whether each scanner ran, was skipped or failed.
 
 Usage:
     ./scan.py [path]              # scan repo at path (default: current directory)
     ./scan.py --json              # emit raw JSON instead of Markdown
     ./scan.py --no-secretlint     # skip secretlint (faster, but misses token patterns)
     ./scan.py --all-files         # scan all files, not just git-tracked ones
+
+Exit status: 0 when every requested scanner finished and nothing needs review,
+1 when every requested scanner finished and a finding needs review, 2 when a
+requested scanner failed or the arguments are invalid.
 
 Excluded by default: .venv/ .git/ node_modules/ __pycache__ dist/ build/
 .ruff_cache/ .mypy_cache/
@@ -22,8 +26,9 @@ Excluded by default: .venv/ .git/ node_modules/ __pycache__ dist/ build/
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 import sys
 import tempfile
 from pathlib import Path
@@ -60,6 +65,12 @@ EXCLUDE_DIR_PREFIXES = (
 
 SECRETLINT_CONFIG = {"rules": [{"id": "@secretlint/secretlint-rule-preset-recommend"}]}
 
+# Paths per secretlint invocation, to stay below ARG_MAX on large repos
+SECRETLINT_BATCH_SIZE = 200
+
+# Longest line searched for the value behind a detect-secrets hash
+MAX_HASH_SEARCH_LINE = 1000
+
 # Strings that strongly indicate a placeholder / documentation example
 PLACEHOLDER_INDICATORS = [
     "your_key_here",
@@ -84,6 +95,21 @@ PLACEHOLDER_INDICATORS = [
     "FIXME:",
 ]
 
+EXIT_CLEAN = 0
+EXIT_REVIEW = 1
+EXIT_INCOMPLETE = 2
+
+RAN = {"status": "ran"}
+
+
+class ScannerError(Exception):
+    """A requested scanner did not finish; the message is a redacted reason."""
+
+
+def failed(reason: str) -> dict:
+    """Return the outcome of a requested scanner that did not finish."""
+    return {"status": "failed", "reason": reason}
+
 
 # -- helpers -------------------------------------------------------------------
 
@@ -100,10 +126,48 @@ def read_line(filepath: Path, line_number: int) -> str:
     return ""
 
 
-def is_placeholder(line: str) -> bool:
-    """Return True when line looks like a template or documentation example."""
-    lower = line.lower()
+def is_placeholder(value: str) -> bool:
+    """Return True when a detected value looks like a template or example."""
+    lower = value.lower()
     return any(p.lower() in lower for p in PLACEHOLDER_INDICATORS)
+
+
+def detect_secrets_value(line: str, hashed_secret: str) -> str | None:
+    """Return the part of line whose SHA-1 is detect-secrets' hashed_secret.
+
+    Candidates start and end at the line ends or beside a non-alphanumeric
+    character. Return None when nothing matches or the line is too long.
+    """
+    if not hashed_secret or len(line) > MAX_HASH_SEARCH_LINE:
+        return None
+    bounds = sorted(
+        {0, len(line)}
+        | {k for i, ch in enumerate(line) if not ch.isalnum() for k in (i, i + 1)}
+    )
+    for n, start in enumerate(bounds):
+        for end in bounds[n + 1 :]:
+            value = line[start:end]
+            digest = hashlib.sha1(value.encode(), usedforsecurity=False).hexdigest()
+            if digest == hashed_secret:
+                return value
+    return None
+
+
+def secretlint_value(line: str, finding: dict) -> str | None:
+    """Return the span secretlint flagged on line (0-based columns)."""
+    end = finding["end_col"] if finding["end_line"] == finding["line"] else len(line)
+    return line[finding["col"] : end] or None
+
+
+def run_tool(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    """Run a scanner command; raise ScannerError when it cannot start."""
+    try:
+        return subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
+            cmd, capture_output=True, text=True, cwd=cwd, check=False
+        )
+    except OSError as exc:
+        msg = f"could not start {Path(cmd[0]).name}"
+        raise ScannerError(msg) from exc
 
 
 # -- detect-secrets ------------------------------------------------------------
@@ -117,32 +181,29 @@ def run_detect_secrets(repo_path: Path, *, all_files: bool) -> dict:
     for pattern in EXCLUDE_DIR_REGEXES:
         cmd += ["--exclude-files", pattern]
 
-    result = subprocess.run(  # noqa: S603
-        cmd,
-        capture_output=True,
-        text=True,
-        cwd=repo_path,
-        check=False,
-    )
-
+    result = run_tool(cmd, repo_path)
     if result.returncode not in {0, 1}:
-        print(f"[detect-secrets] failed (exit {result.returncode})", file=sys.stderr)
-        return {}
+        msg = f"exit status {result.returncode}"
+        raise ScannerError(msg)
 
     try:
-        return json.loads(result.stdout)
+        data = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        print(f"[detect-secrets] JSON parse error: {exc}", file=sys.stderr)
-        return {}
+        msg = "output was not valid JSON"
+        raise ScannerError(msg) from exc
+    if not isinstance(data, dict) or not isinstance(data.get("results"), dict):
+        msg = "output had no results object"
+        raise ScannerError(msg)
+    return data
 
 
 # -- secretlint ----------------------------------------------------------------
 
 
-def setup_secretlint(tmpdir: Path) -> Path | None:
+def setup_secretlint(tmpdir: Path) -> Path:
     """Install secretlint + recommended preset into a temp dir.
 
-    Returns the path to the secretlint binary, or None on failure.
+    Returns the path to the secretlint binary.
     """
     (tmpdir / "package.json").write_text(
         '{"name":"sl-check","version":"1.0.0","private":true}'
@@ -156,88 +217,93 @@ def setup_secretlint(tmpdir: Path) -> Path | None:
         "secretlint",
         "@secretlint/secretlint-rule-preset-recommend",
     ]
-    proc = subprocess.run(bun_cmd, capture_output=True, cwd=tmpdir, check=False)  # noqa: S603
+    proc = run_tool(bun_cmd, tmpdir)
     if proc.returncode != 0:
-        print(
-            f"[secretlint] bun add failed (exit {proc.returncode})",
-            file=sys.stderr,
-        )
-        return None
+        msg = f"bun add failed (exit {proc.returncode})"
+        raise ScannerError(msg)
 
     sl_bin = tmpdir / "node_modules" / ".bin" / "secretlint"
-    return sl_bin if sl_bin.exists() else None
+    if not sl_bin.exists():
+        msg = "bun add did not install the secretlint binary"
+        raise ScannerError(msg)
+    return sl_bin
 
 
 def get_git_tracked_files(repo_path: Path) -> list[str]:
     """Return git-tracked files relative to repo_path, minus excluded dirs."""
-    git_cmd = ["git", "ls-files"]
-    result = subprocess.run(  # noqa: S603
-        git_cmd,
-        capture_output=True,
-        text=True,
-        cwd=repo_path,
-        check=False,
-    )
+    result = run_tool(["git", "ls-files"], repo_path)
     if result.returncode != 0:
-        # Not a git repo - fall back to empty list
-        return []
+        msg = f"git ls-files failed (exit {result.returncode})"
+        raise ScannerError(msg)
     files = result.stdout.strip().splitlines()
     return [f for f in files if not f.startswith(EXCLUDE_DIR_PREFIXES)]
 
 
+def parse_secretlint_batch(result: subprocess.CompletedProcess[str]) -> list:
+    """Return the JSON results of one secretlint run; raise if it failed.
+
+    secretlint exits 0 when clean (its output may be empty) and 1 with
+    findings; any other result means the batch was not scanned.
+    """
+    if result.returncode not in {0, 1}:
+        msg = f"exit status {result.returncode}"
+        raise ScannerError(msg)
+    raw = result.stdout.strip()
+    if not raw:
+        if result.returncode == 0:
+            return []
+        msg = "exit status 1 without JSON output"
+        raise ScannerError(msg)
+    try:
+        items = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        msg = "output was not valid JSON"
+        raise ScannerError(msg) from exc
+    if not isinstance(items, list):
+        msg = "output was not a JSON list"
+        raise ScannerError(msg)
+    return items
+
+
 def run_secretlint(
     repo_path: Path, sl_bin: Path, rc_path: Path, files: list[str]
-) -> list[dict]:
-    """Run secretlint on the given files and return a list of finding dicts.
+) -> tuple[list[dict], str | None]:
+    """Run secretlint on the given files in batches.
 
-    Each dict has: file, line, col, rule_id, message_id, message.
+    Return the finding dicts and a failure reason, or None when every batch
+    was scanned. Each dict has: file, line, col, end_line, end_col, rule_id,
+    message_id, message.
     """
-    if not files:
-        return []
-
     # secretlint needs absolute paths when run from a temp dir
     abs_files = [str(repo_path / f) for f in files]
-
-    # Run in batches to avoid ARG_MAX limits on large repos
-    batch_size = 200
+    batches = [
+        abs_files[i : i + SECRETLINT_BATCH_SIZE]
+        for i in range(0, len(abs_files), SECRETLINT_BATCH_SIZE)
+    ]
     all_findings: list[dict] = []
+    failures: list[str] = []
 
-    for i in range(0, len(abs_files), batch_size):
-        batch = abs_files[i : i + batch_size]
-        result = subprocess.run(  # noqa: S603
-            [
-                str(sl_bin),
-                "--format",
-                "json",
-                "--secretlintrc",
-                str(rc_path),
-                *batch,
-            ],
-            capture_output=True,
-            text=True,
-            cwd=repo_path,
-            check=False,
-        )
-
-        raw = result.stdout.strip()
-        if not raw:
-            continue
-
+    for batch in batches:
+        cmd = [str(sl_bin), "--format", "json", "--secretlintrc", str(rc_path), *batch]
         try:
-            items = json.loads(raw)
-        except json.JSONDecodeError:
+            items = parse_secretlint_batch(run_tool(cmd, repo_path))
+        except ScannerError as exc:
+            failures.append(str(exc))
             continue
 
         for item in items:
             fp = item.get("filePath", "")
             rel = fp.replace(str(repo_path) + "/", "")
             for msg in item.get("messages", []):
-                loc = msg.get("loc", {}).get("start", {})
+                loc = msg.get("loc", {})
+                start, end = loc.get("start", {}), loc.get("end", {})
                 all_findings.append(
                     {
                         "file": rel,
-                        "line": loc.get("line", 0),
-                        "col": loc.get("column", 0),
+                        "line": start.get("line", 0),
+                        "col": start.get("column", 0),
+                        "end_line": end.get("line", 0),
+                        "end_col": end.get("column", 0),
                         "rule_id": msg.get("ruleId", ""),
                         "message_id": msg.get("messageId", ""),
                         "message": msg.get("message", ""),
@@ -245,23 +311,50 @@ def run_secretlint(
                     }
                 )
 
-    return all_findings
+    if failures:
+        return all_findings, (
+            f"{len(failures)} of {len(batches)} batches not scanned "
+            f"(first: {failures[0]})"
+        )
+    return all_findings, None
+
+
+def scan_with_secretlint(repo_path: Path) -> tuple[list[dict], dict]:
+    """Install and run secretlint; return its findings and outcome."""
+    print("[scan] setting up secretlint (bun add)...", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as tmpdir_str:
+        tmpdir = Path(tmpdir_str)
+        try:
+            sl_bin = setup_secretlint(tmpdir)
+            tracked = get_git_tracked_files(repo_path)
+        except ScannerError as exc:
+            return [], failed(str(exc))
+        print(
+            f"[scan] running secretlint on {len(tracked)} git-tracked files...",
+            file=sys.stderr,
+        )
+        findings, failure = run_secretlint(
+            repo_path, sl_bin, tmpdir / ".secretlintrc.json", tracked
+        )
+    print(f"[scan] secretlint: {len(findings)} findings", file=sys.stderr)
+    return findings, failed(failure) if failure else RAN
 
 
 # -- report assembly -----------------------------------------------------------
 
 
-def classify(line_content: str) -> str:
-    """Return 'likely-false-positive' or 'review-required'."""
-    return (
-        "likely-false-positive" if is_placeholder(line_content) else "review-required"
-    )
+def classify(value: str | None) -> str:
+    """Return 'likely-false-positive' or 'review-required' for a detected value."""
+    if value and is_placeholder(value):
+        return "likely-false-positive"
+    return "review-required"
 
 
 def build_combined(
     repo_path: Path,
     ds_data: dict,
     sl_findings: list[dict],
+    scanners: dict[str, dict],
 ) -> dict:
     """Merge detect-secrets and secretlint findings into a unified structure.
 
@@ -274,7 +367,9 @@ def build_combined(
         abs_path = repo_path / filename
         for secret in secrets:
             ln = secret.get("line_number", 0)
-            line_content = read_line(abs_path, ln)
+            value = detect_secrets_value(
+                read_line(abs_path, ln), secret.get("hashed_secret", "")
+            )
             findings.append(
                 {
                     "source": "detect-secrets",
@@ -282,14 +377,14 @@ def build_combined(
                     "line": ln,
                     "type": secret.get("type", ""),
                     "is_verified": secret.get("is_verified", False),
-                    "classification": classify(line_content),
+                    "classification": classify(value),
                 }
             )
 
     # secretlint findings
     for f in sl_findings:
         abs_path = repo_path / f["file"]
-        line_content = read_line(abs_path, f["line"])
+        value = secretlint_value(read_line(abs_path, f["line"]), f)
         findings.append(
             {
                 "source": "secretlint",
@@ -297,12 +392,13 @@ def build_combined(
                 "line": f["line"],
                 "type": f["message_id"],
                 "rule_id": f["rule_id"],
-                "classification": classify(line_content),
+                "classification": classify(value),
             }
         )
 
     return {
         "repo": str(repo_path),
+        "scanners": scanners,
         "findings": findings,
         "summary": {
             "total": len(findings),
@@ -316,8 +412,19 @@ def build_combined(
                 1 for f in findings if f["source"] == "detect-secrets"
             ),
             "secretlint_count": sum(1 for f in findings if f["source"] == "secretlint"),
+            "failed_scanners": [
+                name for name, o in scanners.items() if o["status"] == "failed"
+            ],
         },
     }
+
+
+def exit_status(combined: dict) -> int:
+    """Return 2 for a failed scanner, else 1 when a finding needs review, else 0."""
+    summary = combined["summary"]
+    if summary["failed_scanners"]:
+        return EXIT_INCOMPLETE
+    return EXIT_REVIEW if summary["review_required"] else EXIT_CLEAN
 
 
 def render_markdown(combined: dict) -> str:
@@ -335,11 +442,25 @@ def render_markdown(combined: dict) -> str:
                 f"({summary['review_required']} need review, "
                 f"{summary['likely_false_positive']} likely false positives)\n"
             ),
+            "**Scanners:**\n",
         ]
     )
+    labels = {"ran": "ran", "skipped": "skipped on request", "failed": "**failed**"}
+    for name, outcome in combined["scanners"].items():
+        reason = f" — {outcome['reason']}" if "reason" in outcome else ""
+        lines.append(f"- `{name}`: {labels[outcome['status']]}{reason}")
+    lines.append("")
+
+    if summary["failed_scanners"]:
+        names = ", ".join(f"`{n}`" for n in summary["failed_scanners"])
+        lines.append(
+            f"\n❌ **Scan incomplete:** {names} did not finish, "
+            "so findings may be missing.\n"
+        )
 
     if not findings:
-        lines.append("\n✅ **No secrets detected.**")
+        if not summary["failed_scanners"]:
+            lines.append("\n✅ **No secrets detected.**")
         return "\n".join(lines)
 
     # Group by classification
@@ -364,7 +485,7 @@ def render_markdown(combined: dict) -> str:
                 "\n---\n",
                 f"## ✅ Likely False Positives ({len(false_positives)} findings)\n",
                 (
-                    "_These matched secret patterns but appear to be placeholders or "
+                    "_The detected values look like placeholders or "
                     "documentation examples. Verify manually._\n"
                 ),
             ]
@@ -396,8 +517,8 @@ def _append_finding(lines: list[str], f: dict) -> None:
 # -- main ----------------------------------------------------------------------
 
 
-def main() -> None:
-    """Entry point: parse arguments, run scanners, print report."""
+def main() -> int:
+    """Entry point: parse arguments, run scanners, print report, return status."""
     parser = argparse.ArgumentParser(
         description="Scan a git repository for leaked credentials.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -408,6 +529,11 @@ def main() -> None:
               ./scan.py --json            # JSON output for programmatic use
               ./scan.py --no-secretlint   # detect-secrets only (faster)
               ./scan.py --all-files       # include non-git-tracked files
+
+            Exit status:
+              0  every requested scanner finished; nothing needs review
+              1  every requested scanner finished; a finding needs review
+              2  a requested scanner failed, or the arguments are invalid
         """),
     )
     parser.add_argument(
@@ -427,53 +553,46 @@ def main() -> None:
     repo_path = Path(args.path).resolve()
     if not repo_path.is_dir():
         print(f"error: {repo_path} is not a directory", file=sys.stderr)
-        sys.exit(1)
+        return EXIT_INCOMPLETE
 
     print(f"[scan] repository: {repo_path}", file=sys.stderr)
+    scanners: dict[str, dict] = {}
 
     # -- detect-secrets -------------------------------------------------------
     print("[scan] running detect-secrets...", file=sys.stderr)
-    ds_data = run_detect_secrets(repo_path, all_files=args.all_files)
+    try:
+        ds_data = run_detect_secrets(repo_path, all_files=args.all_files)
+        scanners["detect-secrets"] = RAN
+    except ScannerError as exc:
+        ds_data = {}
+        scanners["detect-secrets"] = failed(str(exc))
     ds_count = len(ds_data.get("results") or {})
     print(f"[scan] detect-secrets: {ds_count} files with findings", file=sys.stderr)
 
     # -- secretlint -----------------------------------------------------------
     sl_findings: list[dict] = []
-    if not args.no_secretlint:
-        print("[scan] setting up secretlint (bun add)...", file=sys.stderr)
-        with tempfile.TemporaryDirectory() as tmpdir_str:
-            tmpdir = Path(tmpdir_str)
-            sl_bin = setup_secretlint(tmpdir)
-            if sl_bin:
-                tracked = get_git_tracked_files(repo_path)
-                print(
-                    f"[scan] running secretlint on {len(tracked)} git-tracked files...",
-                    file=sys.stderr,
-                )
-                sl_findings = run_secretlint(
-                    repo_path, sl_bin, tmpdir / ".secretlintrc.json", tracked
-                )
-                print(
-                    f"[scan] secretlint: {len(sl_findings)} findings",
-                    file=sys.stderr,
-                )
-            else:
-                print("[scan] secretlint setup failed, skipping", file=sys.stderr)
+    if args.no_secretlint:
+        scanners["secretlint"] = {"status": "skipped", "reason": "--no-secretlint"}
     else:
-        print("[scan] secretlint skipped (--no-secretlint)", file=sys.stderr)
+        sl_findings, scanners["secretlint"] = scan_with_secretlint(repo_path)
+
+    for name, outcome in scanners.items():
+        if outcome["status"] != "ran":
+            print(
+                f"[scan] {name} {outcome['status']}: {outcome['reason']}",
+                file=sys.stderr,
+            )
 
     # -- combine & output -----------------------------------------------------
-    combined = build_combined(repo_path, ds_data, sl_findings)
+    combined = build_combined(repo_path, ds_data, sl_findings, scanners)
 
     if args.json:
         print(json.dumps(combined, indent=2))
     else:
         print(render_markdown(combined))
 
-    # Exit 1 when any finding needs human review
-    if combined["summary"]["review_required"] > 0:
-        sys.exit(1)
+    return exit_status(combined)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -5,9 +5,19 @@ version-dependent CLI or detector inventory of its external tools.
 
 ## Classification
 
-`build_combined()` reads the flagged line internally and calls `classify()`.
-`is_placeholder()` performs a case-insensitive substring search over the
-whole line using `PLACEHOLDER_INDICATORS`.
+`build_combined()` reads the flagged line internally, recovers the detected
+value and passes only that value to `classify()`. `is_placeholder()` performs
+a case-insensitive substring search over the value using
+`PLACEHOLDER_INDICATORS`; words elsewhere on the line do not count.
+
+- **detect-secrets:** the baseline holds only `hashed_secret`, a SHA-1 of the
+  value. `detect_secrets_value()` hashes substrings of the line that start
+  and end at a line end or beside a non-alphanumeric character, and keeps the
+  one that matches. Lines longer than `MAX_HASH_SEARCH_LINE` (1,000
+  characters) are not searched.
+- **secretlint:** `secretlint_value()` takes the span between the message's
+  start and end columns (0-based), or to the end of the line when the match
+  spans lines.
 
 Recognized indicators include `your_key_here`, `your-key-here`,
 `your_actual_key`, `your-api-key`, hyphenated and underscored variants of
@@ -16,13 +26,15 @@ the documented Slack placeholder fragment, `username:password@`, canonical
 AWS documentation examples, `<your`, `[your`, `INSERT_`, `TODO:`, and
 `FIXME:`. The source constant is authoritative for the exact list.
 
-A matching line gets `likely-false-positive`; otherwise it gets
+A matching value gets `likely-false-positive`; otherwise the finding gets
 `review-required`. File type, directory and entropy do not participate in
-this classification. Exclusion lists are separate, and a failed line read
-becomes an empty string, hence `review-required`.
+this classification. Exclusion lists are separate. When the value cannot be
+recovered (a failed line read, no hash match, an over-long line or an empty
+span), the finding is `review-required`.
 
 - **Placeholder match:** review non-secret context before suppressing it.
-  A real credential beside a placeholder marker can receive the same label.
+  A marker inside a longer value, such as a real credential embedded in an
+  `example.com` URL, still makes the finding `likely-false-positive`.
 - **Documentation or test fixture:** location alone does not prove that data
   is synthetic. Confirm provenance without printing the flagged line.
 - **Vendor-format match:** a detector match alone does not prove validity.
@@ -31,20 +43,36 @@ becomes an empty string, hence `review-required`.
 
 ## Output and coverage
 
-Combined JSON contains `repo`, `findings` and `summary`. Each finding has
-`source`, `file`, `line`, `type` and `classification`. Detect-secrets
-findings also carry `is_verified`; secretlint findings carry `rule_id`.
-Source lines, hashed secrets and raw scanner messages are omitted.
-The Markdown renderer reports the same safe location/type information.
+Combined JSON contains `repo`, `scanners`, `findings` and `summary`. Each
+finding has `source`, `file`, `line`, `type` and `classification`.
+Detect-secrets findings also carry `is_verified`; secretlint findings carry
+`rule_id`. Source lines, detected values, hashed secrets and raw scanner
+messages are omitted. The Markdown renderer reports the same safe
+location/type information and the scanner outcomes.
 
 The wrapper always passes `--no-verify` to detect-secrets. Its
 `--all-files` option applies only to that scanner; secretlint uses
-`get_git_tracked_files()` and batches 200 paths at a time.
+`get_git_tracked_files()` and batches `SECRETLINT_BATCH_SIZE` (200) paths at
+a time.
 
-`run_detect_secrets()` returns an empty result for some command/JSON failures;
-secretlint setup failure skips that scanner, and malformed or empty batch
-output can be ignored. The summary does not record coverage failures.
-Read stderr before describing a scan as complete.
+`scanners` maps each scanner name to `{"status": "ran"}`,
+`{"status": "skipped", "reason": "--no-secretlint"}` or
+`{"status": "failed", "reason": ...}`, and `summary.failed_scanners` lists
+the failed names. Reasons name exit statuses and parse errors, never raw
+scanner stderr. A scanner fails when:
+
+- **detect-secrets:** `uvx` cannot start, exits with a status other than 0
+  or 1, or prints output that is not JSON with a `results` object.
+- **secretlint setup:** `bun add` cannot start or fails, it leaves no
+  secretlint binary, or `git ls-files` fails (for example outside a Git
+  repository).
+- **secretlint batch:** a batch cannot start, exits with a status other than
+  0 or 1, exits 1 with empty output, or prints output that is not a JSON list.
+  Empty output with exit 0 counts as a clean batch. Findings from the other
+  batches are kept, and the reason counts the batches not scanned.
+
+`exit_status()` returns 2 when any requested scanner failed, else 1 when a
+finding needs review, else 0. An invalid path also exits 2.
 
 ## Remediation and suppression
 
