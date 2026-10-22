@@ -99,19 +99,18 @@ and worktree; the task worktree is detached at the tested delivery commit.
 unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q
 ```
 
-## Pending receipt decision
+## Receipt publication
 
-The report acceptance criteria are met. Both recorded checks passed at the
-merged commit, and the full receipt is retained outside the repository.
-Completion is waiting on a user clarification: this task forbids private paths
-in committed files, while its supplied evidence workflow requires committing
-an unchanged receipt containing absolute machine paths. No such paths have
-been added to this repository. The user was asked whether to keep the full
-receipt private with a path-free public summary, or permit its machine paths
-in the committed receipt.
+The user explicitly authorized committing the required receipt unchanged,
+including its machine paths, on 2026-10-22. This resolves the earlier conflict
+with the task's private-path restriction for this receipt only. The
+[recorded check receipt] contains both passing checks at the clean merged
+commit. Its freshness check passed before publication; no implementation or
+review changes required rerunning the suite.
 
-After that decision, apply the chosen receipt handling and make the
-revision-checked completion move; leave user acceptance unchecked. Do not
-rerun the architecture review or file its drafts. No checks failed or stopped.
+The report acceptance criteria are met. No checks failed or stopped. Complete
+this item with user acceptance unchecked; the steward handles the unfiled
+drafts in the report.
 
 [architecture report]: ../reviews/2026-10-22-t3-start-thread-architecture-review.md
+[recorded check receipt]: 23-review-the-t3-start-thread-helper-s-architecture-for-deep-modules-and-.evidence.json
