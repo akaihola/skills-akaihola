@@ -1,11 +1,9 @@
 """Exercise interrupted handoffs and messaging without live agent sessions."""
 
-import argparse
 import importlib.util
 import io
 import json
 import stat
-import tempfile
 from email.message import Message
 from pathlib import Path
 from typing import Protocol
@@ -21,362 +19,6 @@ assert SPEC is not None
 assert SPEC.loader is not None
 helper = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(helper)
-
-
-class LostReplyServer:
-    """Accept the first request, then lose its reply as a transport could."""
-
-    url = "http://127.0.0.1:3773"
-
-    def __init__(self, snapshot: dict) -> None:
-        """Keep only the scoped fixture snapshot and submitted commands."""
-        self.data = snapshot
-        self.commands: list[dict] = []
-
-    def snapshot(self) -> dict:
-        """Return fixture state, including any accepted thread."""
-        return self.data
-
-    def thread_projection(self, thread_id: str) -> dict:
-        """Return an accepted thread with its persisted initial message."""
-        thread = next(t for t in self.data["threads"] if t["id"] == thread_id)
-        return {"thread": thread, "messages": thread["messages"]}
-
-    def call(self, method: str, command: dict) -> dict:
-        """Simulate acceptance followed by a lost reply."""  # ruff: ignore[docstring-missing-exception]
-        if method != "orchestration.launchThread":
-            msg = "Unexpected test method"
-            raise ValueError(msg)
-        self.commands.append(command)
-        thread = {key: command[key] for key in ("projectId", "title", *helper.SETTINGS)}
-        thread["id"] = command["threadId"]
-        thread["status"] = "running"
-        thread["messages"] = [{"id": command["initialMessage"]["messageId"]}]
-        self.data["threads"].append(thread)
-        msg = "Connection lost after acceptance"
-        raise TimeoutError(msg)
-
-
-def test_resume_after_lost_reply_does_not_submit_again() -> None:
-    """An accepted request survives a lost reply without a second turn."""
-    with tempfile.TemporaryDirectory() as directory:
-        root = Path(directory)
-        prompt = root / "prompt.txt"
-        prompt.write_text("Perform the requested fixture task.", encoding="utf-8")
-        settings = {
-            "modelSelection": {
-                "instanceId": "codex",
-                "model": "fixture-model",
-                "options": [{"id": "reasoningEffort", "value": "medium"}],
-            },
-            "runtimeMode": "approval-required",
-            "interactionMode": "plan",
-        }
-        snapshot = {
-            "projects": [{"id": "project", "workspaceRoot": str(root)}],
-            "threads": [{"id": "parent", "projectId": "project", **settings}],
-        }
-        server = LostReplyServer(snapshot)
-        args = argparse.Namespace(
-            workspace=str(root),
-            parent_thread="parent",
-            settings=None,
-            prompt_file=str(prompt),
-            title="Fixture task",
-            base_dir=None,
-            shared_checkout=False,
-            branch="fixture-task",
-            base_branch="main",
-        )
-        with (
-            patch.object(helper.Path, "home", return_value=root),
-            pytest.raises(TimeoutError),
-        ):
-            helper.start(args, server, snapshot)
-        record_path = next((root / ".local/state/t3-start-thread").glob("*.json"))
-        record = json.loads(record_path.read_text(encoding="utf-8"))
-        assert stat.S_IMODE(record_path.stat().st_mode) == 0o600
-        assert "token" not in record
-        command = record["command"]
-        for key, value in settings.items():
-            assert command[key] == value
-            assert command["bootstrap"]["createThread"][key] == value
-        assert command["bootstrap"]["prepareWorktree"]["requireWorktree"]
-        with patch("builtins.print"):
-            helper.submit(server, record_path, record)
-        assert len(server.commands) == 1
-        assert record["thread"]["active"] is True
-
-
-def test_settings_file_replaces_parent() -> None:
-    """A settings file starts a thread when no parent thread is available."""
-    with tempfile.TemporaryDirectory() as directory:
-        root = Path(directory)
-        prompt = root / "prompt.txt"
-        prompt.write_text("Perform the scheduled fixture task.", encoding="utf-8")
-        settings = {
-            "modelSelection": {"instanceId": "claudeAgent", "model": "fixture"},
-            "runtimeMode": "full-access",
-            "interactionMode": "default",
-        }
-        settings_file = root / "settings.json"
-        settings_file.write_text(json.dumps(settings), encoding="utf-8")
-        snapshot = {
-            "projects": [{"id": "project", "workspaceRoot": str(root)}],
-            "threads": [],
-        }
-        server = LostReplyServer(snapshot)
-        args = argparse.Namespace(
-            workspace=str(root),
-            parent_thread=None,
-            settings=str(settings_file),
-            prompt_file=str(prompt),
-            title="Scheduled task",
-            base_dir=None,
-            shared_checkout=True,
-            branch=None,
-            base_branch=None,
-        )
-        with (
-            patch.object(helper.Path, "home", return_value=root),
-            pytest.raises(TimeoutError),
-        ):
-            helper.start(args, server, snapshot)
-        command = server.commands[0]
-        record_path = next((root / ".local/state/t3-start-thread").glob("*.json"))
-        bootstrap = json.loads(record_path.read_text(encoding="utf-8"))["command"][
-            "bootstrap"
-        ]
-        for key, value in settings.items():
-            assert command[key] == value
-            assert bootstrap["createThread"][key] == value
-        assert "prepareWorktree" not in bootstrap
-        assert command["workspaceStrategy"] == {"type": "root"}
-
-        settings_file.write_text(json.dumps({"runtimeMode": "x"}), encoding="utf-8")
-        with pytest.raises(ValueError, match="Settings file must hold exactly"):
-            helper.start(args, server, snapshot)
-        assert len(server.commands) == 1
-
-
-def test_accepted_but_missing_thread_is_not_recreated() -> None:
-    """A removed or temporarily hidden accepted thread is not resurrected."""
-    server = LostReplyServer({"threads": []})
-    record = {
-        "command": {"threadId": "missing", "bootstrap": {}},
-        "accepted": True,
-    }
-    with pytest.raises(RuntimeError):
-        helper.submit(server, Path("unused.json"), record)
-    assert server.commands == []
-
-
-class MessageServer:
-    """Track messages separately from the already existing target thread."""
-
-    url = "http://127.0.0.1:3773"
-
-    def __init__(self, thread: dict) -> None:
-        """Keep a target and switches for transport failures around acceptance."""
-        self.thread = thread
-        self.commands: list[dict] = []
-        self.lose_before_accept = False
-        self.lose_after_accept = False
-
-    def snapshot(self) -> dict:
-        """Return the target's shell for its summary."""
-        return {"threads": [self.thread]}
-
-    def thread_projection(self, thread_id: str) -> dict:
-        """Return the target's persisted messages."""
-        assert thread_id == self.thread["id"]
-        return {"thread": self.thread, "messages": self.thread["messages"]}
-
-    def call(self, method: str, command: dict) -> dict:
-        """Persist a message, with optional simulated transport loss.
-
-        :raises TimeoutError: When simulating loss before or after acceptance.
-        """  # ruff: ignore[docstring-missing-exception] - Sphinx field is above.
-        assert method == "orchestration.dispatchCommand"
-        assert command["type"] == "message.dispatch"
-        assert command["threadId"] == self.thread["id"]
-        self.commands.append(command)
-        if self.lose_before_accept:
-            msg = "Connection lost before acceptance"
-            raise TimeoutError(msg)
-        self.thread["messages"].append(
-            {
-                "id": command["messageId"],
-                "role": "user",
-                "text": command["text"],
-                "runId": "fixture-run",
-            }
-        )
-        if self.lose_after_accept:
-            msg = "Connection lost after acceptance"
-            raise TimeoutError(msg)
-        return {"accepted": True}
-
-
-@pytest.fixture
-def message_setup(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> tuple[argparse.Namespace, dict, MessageServer]:
-    """Scope private request files and an existing thread to one fixture."""
-    prompt = tmp_path / "message.txt"
-    text = "Hand off the shared fixture resource."
-    prompt.write_text(text, encoding="utf-8")
-    thread = {
-        "id": "target",
-        "projectId": "project",
-        "title": "Fixture target",
-        "modelSelection": {
-            "instanceId": "codex",
-            "model": "fixture-model",
-            "options": [{"id": "reasoningEffort", "value": "xhigh"}],
-        },
-        "runtimeMode": "approval-required",
-        "interactionMode": "plan",
-        # Identical text from an earlier send must not count as this delivery.
-        "messages": [{"id": "earlier", "role": "user", "text": text}],
-    }
-    snapshot = {
-        "projects": [{"id": "project", "workspaceRoot": str(tmp_path)}],
-        "threads": [thread],
-    }
-    args = argparse.Namespace(
-        workspace=str(tmp_path),
-        thread="target",
-        prompt_file=str(prompt),
-        base_dir=None,
-        dry_run=False,
-    )
-    monkeypatch.setattr(helper.Path, "home", lambda: tmp_path)
-    return args, snapshot, MessageServer(thread)
-
-
-def test_send_preserves_settings_and_verifies_exact_message(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer],
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """Sending to an existing thread preserves settings and confirms persistence."""
-    args, snapshot, server = message_setup
-    helper.send(args, server, snapshot)
-    command = server.commands[0]
-    assert command["modelSelection"] == server.thread["modelSelection"]
-    assert command["text"] == Path(args.prompt_file).read_text(encoding="utf-8")
-    assert len(snapshot["threads"]) == 1
-    assert len(server.thread["messages"]) == 2
-    path = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
-    record = json.loads(path.read_text(encoding="utf-8"))
-    for key in helper.SETTINGS:
-        assert record["command"][key] == server.thread[key]
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
-    assert "token" not in record
-    assert record["messageId"] == command["messageId"]
-    assert record["messageTurnId"] == "fixture-run"
-    result = json.loads(capsys.readouterr().out.split("\n", 1)[1])
-    assert result["delivered"] is True
-    assert result["messageId"] != "earlier"
-    assert command["text"] not in json.dumps(result)
-
-
-def test_send_dry_run_has_no_submission_record_or_prompt_output(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer],
-    tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """A capability probe validates its target without sending or leaking text."""
-    args, snapshot, server = message_setup
-    args.dry_run = True
-    helper.send(args, server, snapshot)
-    output = capsys.readouterr().out
-    assert json.loads(output)["dryRun"] is True
-    assert json.loads(output)["thread"]["id"] == args.thread
-    assert server.commands == []
-    assert not (tmp_path / ".local/state/t3-start-thread").exists()
-    assert Path(args.prompt_file).read_text(encoding="utf-8") not in output
-
-
-def test_send_rejects_missing_target(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer],
-) -> None:
-    """A nonexistent thread never becomes a new thread implicitly."""
-    args, snapshot, server = message_setup
-    args.thread = "missing"
-    with pytest.raises(helper.SendTargetError, match="gone or archived"):
-        helper.send(args, server, snapshot)
-    assert server.commands == []
-
-
-def test_send_rejects_target_in_another_project(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer],
-) -> None:
-    """A valid ID cannot bypass the workspace restriction."""
-    args, snapshot, server = message_setup
-    server.thread["projectId"] = "other-project"
-    with pytest.raises(ValueError, match="Target thread must belong"):
-        helper.send(args, server, snapshot)
-    assert server.commands == []
-
-
-def test_send_rejects_empty_prompt(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer],
-) -> None:
-    """Whitespace never starts an accidental empty user turn."""
-    args, snapshot, server = message_setup
-    Path(args.prompt_file).write_text(" \n", encoding="utf-8")
-    with pytest.raises(ValueError, match="Prompt file is empty"):
-        helper.send(args, server, snapshot)
-    assert server.commands == []
-
-
-def test_resume_send_after_lost_reply_does_not_duplicate_message(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer], tmp_path: Path
-) -> None:
-    """A lost acknowledgement is recovered by the exact persisted message ID."""
-    args, snapshot, server = message_setup
-    server.lose_after_accept = True
-    with pytest.raises(TimeoutError):
-        helper.send(args, server, snapshot)
-    path = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
-    record = json.loads(path.read_text(encoding="utf-8"))
-    helper.submit(server, path, record)
-    assert len(server.commands) == 1
-    assert len(server.thread["messages"]) == 2
-    assert record["accepted"] is True
-
-
-def test_resume_send_before_acceptance_reuses_command_and_message_ids(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer], tmp_path: Path
-) -> None:
-    """Resuming a failed attempt does not generate a fresh user turn request."""
-    args, snapshot, server = message_setup
-    server.lose_before_accept = True
-    with pytest.raises(TimeoutError):
-        helper.send(args, server, snapshot)
-    path = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
-    record = json.loads(path.read_text(encoding="utf-8"))
-    server.lose_before_accept = False
-    helper.submit(server, path, record)
-    assert len(server.commands) == 2
-    assert server.commands[0] == server.commands[1]
-    assert len(server.thread["messages"]) == 2
-
-
-def test_resume_accepted_but_missing_message_does_not_resend(
-    message_setup: tuple[argparse.Namespace, dict, MessageServer], tmp_path: Path
-) -> None:
-    """Removing an acknowledged message does not trigger a replacement turn."""
-    args, snapshot, server = message_setup
-    helper.send(args, server, snapshot)
-    path = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
-    record = json.loads(path.read_text(encoding="utf-8"))
-    server.thread["messages"].pop()
-    with pytest.raises(RuntimeError, match="Accepted message is absent"):
-        helper.submit(server, path, record)
-    assert len(server.commands) == 1
 
 
 class FixtureSocket(Protocol):
@@ -403,10 +45,13 @@ class WireServer:
         self.urls = []
         self.requests = []
         self.tickets = 0
-        self.lose_reply = False
         self.project = {"id": "project", "title": "Fixture", "workspaceRoot": str(root)}
         self.settings = {
-            "modelSelection": {"instanceId": "codex", "model": "fixture-model"},
+            "modelSelection": {
+                "instanceId": "codex",
+                "model": "fixture-model",
+                "options": [{"id": "reasoningEffort", "value": "xhigh"}],
+            },
             "runtimeMode": "approval-required",
             "interactionMode": "plan",
         }
@@ -488,10 +133,6 @@ class WireServer:
                     }
                 else:
                     value = backend.dispatch(method, payload)
-                    if backend.lose_reply:
-                        backend.lose_reply = False
-                        msg = "Lost accepted reply"
-                        raise TimeoutError(msg)
                     return json.dumps(
                         {
                             "_tag": "Exit",
@@ -612,7 +253,15 @@ def test_start_and_resume(  # ruff: ignore[too-many-arguments] - fixture matrix.
         if shared
         else ["--base-branch", "main", "--branch", "fixture"]
     )
-    wire_server.lose_reply = True
+    dispatch = wire_server.dispatch
+
+    def lose_after_acceptance(method: str, payload: dict) -> dict:
+        monkeypatch.setattr(wire_server, "dispatch", dispatch)
+        dispatch(method, payload)
+        msg = "Fixture connection loss after acceptance"
+        raise TimeoutError(msg)
+
+    monkeypatch.setattr(wire_server, "dispatch", lose_after_acceptance)
     with pytest.raises(TimeoutError):
         invoke(
             monkeypatch,
@@ -628,6 +277,17 @@ def test_start_and_resume(  # ruff: ignore[too-many-arguments] - fixture matrix.
     record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
     saved = json.loads(record.read_text())
     assert not saved.get("accepted")
+    assert stat.S_IMODE(record.stat().st_mode) == 0o600
+    assert "token" not in saved
+    for key in helper.SETTINGS:
+        assert saved["command"][key] == wire_server.settings[key]
+        assert (
+            saved["command"]["bootstrap"]["createThread"][key]
+            == wire_server.settings[key]
+        )
+    assert ("prepareWorktree" in saved["command"]["bootstrap"]) is not shared
+    if not shared:
+        assert saved["command"]["bootstrap"]["prepareWorktree"]["requireWorktree"]
     requests = [
         (m, p)
         for m, p in wire_server.requests
@@ -647,18 +307,25 @@ def test_start_and_resume(  # ruff: ignore[too-many-arguments] - fixture matrix.
     )
     invoke(monkeypatch, "resume", record)
     assert len(wire_server.receipts) == 1
+    assert (
+        sum(
+            m in {"orchestration.launchThread", "orchestration.dispatchCommand"}
+            for m, _ in wire_server.requests
+        )
+        == 1
+    )
     assert len(wire_server.threads) == 2
     assert json.loads(record.read_text())["thread"]["active"] is True
     assert prompt.read_text() not in capsys.readouterr().out
 
 
-def test_send_and_resume(
+def test_send_dry_run(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Send verifies the exact message; resume never submits a second turn."""
+    """Validate a target without dispatch, private record creation or prompt output."""
     prompt = tmp_path / "prompt.txt"
     prompt.write_text("Perform the fixture follow-up.")
     args = [
@@ -671,20 +338,120 @@ def test_send_and_resume(
         prompt,
     ]
     invoke(monkeypatch, *args, "--dry-run")
-    assert json.loads(capsys.readouterr().out)["dryRun"] is True
+    dry_run = capsys.readouterr().out
+    assert json.loads(dry_run)["dryRun"] is True
+    assert json.loads(dry_run)["thread"]["id"] == "parent"
+    assert prompt.read_text() not in dry_run
     assert not wire_server.receipts
-    wire_server.lose_reply = True
+    assert not (tmp_path / ".local/state/t3-start-thread").exists()
+    assert not any(
+        m == "orchestration.dispatchCommand" for m, _ in wire_server.requests
+    )
+    assert wire_server.threads[0]["messages"] == []
+
+
+def test_send_success_then_missing_message_is_not_resent(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Successful delivery remains acknowledged after its message disappears."""
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture follow-up.")
+    invoke(
+        monkeypatch,
+        "send",
+        "--workspace",
+        tmp_path,
+        "--thread",
+        "parent",
+        "--prompt-file",
+        prompt,
+    )
+    output = json.loads(capsys.readouterr().out.split("\n", 1)[1])
+    assert output["delivered"] is True
+    assert output["messageTurnId"] == "turn"
+    assert prompt.read_text() not in json.dumps(output)
+    record = Path(output["record"])
+    saved = json.loads(record.read_text(encoding="utf-8"))
+    assert saved["accepted"] is True
+    assert saved["messageId"] == output["messageId"]
+    wire_server.threads[0]["messages"].pop()
+    with pytest.raises(RuntimeError, match="Accepted message is absent"):
+        invoke(monkeypatch, "resume", record)
+    assert json.loads(record.read_text(encoding="utf-8")) == saved
+    assert (
+        sum(m == "orchestration.dispatchCommand" for m, _ in wire_server.requests) == 1
+    )
+
+
+@pytest.mark.parametrize("loss", ["before", "after"])
+def test_send_and_resume(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    loss: str,
+) -> None:
+    """Send verifies the exact message; resume never submits a second turn."""
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture follow-up.")
+    wire_server.threads[0]["messages"].append(
+        {"id": "earlier", "role": "user", "text": prompt.read_text()}
+    )
+    args = [
+        "send",
+        "--workspace",
+        tmp_path,
+        "--thread",
+        "parent",
+        "--prompt-file",
+        prompt,
+    ]
+    dispatch = wire_server.dispatch
+
+    def lose_once(method: str, payload: dict) -> dict:
+        monkeypatch.setattr(wire_server, "dispatch", dispatch)
+        if loss == "after":
+            dispatch(method, payload)
+        msg = "Fixture connection loss"
+        raise TimeoutError(msg)
+
+    monkeypatch.setattr(wire_server, "dispatch", lose_once)
     with pytest.raises(TimeoutError):
         invoke(monkeypatch, *args)
     record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
+    saved = json.loads(record.read_text())
+    assert stat.S_IMODE(record.stat().st_mode) == 0o600
+    assert "token" not in saved
+    for key in helper.SETTINGS:
+        assert saved["command"][key] == wire_server.threads[0][key]
     capsys.readouterr()
     invoke(monkeypatch, "resume", record)
-    output = json.loads(capsys.readouterr().out)
+    raw_output = capsys.readouterr().out
+    output = json.loads(raw_output)
+    attempts = [
+        p for m, p in wire_server.requests if m == "orchestration.dispatchCommand"
+    ]
+    assert len(attempts) == (2 if loss == "before" else 1)
+    assert all(p == attempts[0] for p in attempts)
+    assert attempts[0]["text"] == prompt.read_text()
+    assert output["messageId"] == saved["command"]["message"]["messageId"]
+    assert output["messageId"] == attempts[0]["messageId"]
+    assert output["messageId"] != "earlier"
+    assert prompt.read_text() not in raw_output
+    completed = json.loads(record.read_text())
+    assert completed["accepted"] is True
+    assert completed["command"] == saved["command"]
+    assert completed["messageId"] == output["messageId"]
+    assert completed["messageTurnId"] == "turn"
     assert output["delivered"] is True
     assert output["thread"]["active"] is True
     assert output["messageTurnId"] == "turn"
     assert len(wire_server.receipts) == 1
-    assert len(wire_server.threads[0]["messages"]) == 1
+    assert len(wire_server.threads) == 1
+    assert len(wire_server.threads[0]["messages"]) == 2
 
 
 @pytest.mark.parametrize(
@@ -923,7 +690,15 @@ def test_visible_resume_reads(  # ruff: ignore[too-many-arguments] - fixture mat
     methods: list[str],
 ) -> None:
     """Resuming a visible result reuses the shell it already read."""
-    wire_server.lose_reply = True
+    dispatch = wire_server.dispatch
+
+    def lose_after_acceptance(method: str, payload: dict) -> dict:
+        monkeypatch.setattr(wire_server, "dispatch", dispatch)
+        dispatch(method, payload)
+        msg = "Fixture connection loss after acceptance"
+        raise TimeoutError(msg)
+
+    monkeypatch.setattr(wire_server, "dispatch", lose_after_acceptance)
     with pytest.raises(TimeoutError):
         submit_fixture(monkeypatch, tmp_path, action)
     record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
@@ -999,6 +774,76 @@ def test_first_socket_requests_v2_with_one_ticket(
     ]
 
 
+def test_settings_file_rejects_incomplete_settings(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Invalid explicit settings never dispatch a launch."""
+    settings = tmp_path / "settings.json"
+    settings.write_text(json.dumps({"runtimeMode": "x"}))
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture task.")
+    with pytest.raises(ValueError, match="Settings file must hold exactly"):
+        invoke(
+            monkeypatch,
+            "start",
+            "--workspace",
+            tmp_path,
+            "--settings",
+            settings,
+            "--prompt-file",
+            prompt,
+            "--title",
+            "Fixture",
+            "--shared-checkout",
+        )
+    assert not wire_server.receipts
+    assert not any(m == "orchestration.launchThread" for m, _ in wire_server.requests)
+    assert not (tmp_path / ".local/state/t3-start-thread").exists()
+
+
+@pytest.mark.parametrize(
+    ("failure", "error"),
+    [
+        ("missing", "gone or archived"),
+        ("other-project", "Target thread must belong"),
+        ("empty", "Prompt file is empty"),
+        ("workspace", "Expected one T3 project"),
+    ],
+)
+def test_send_rejects_invalid_target_or_prompt(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure: str,
+    error: str,
+) -> None:
+    """Invalid input never creates a thread, sends a message or saves a record."""
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text(" \n" if failure == "empty" else "Fixture follow-up.")
+    if failure == "other-project":
+        wire_server.threads[0]["projectId"] = "other-project"
+    with pytest.raises(ValueError, match=error):
+        invoke(
+            monkeypatch,
+            "send",
+            "--workspace",
+            tmp_path / "other" if failure == "workspace" else tmp_path,
+            "--thread",
+            "missing" if failure == "missing" else "parent",
+            "--prompt-file",
+            prompt,
+        )
+    assert not wire_server.receipts
+    assert not any(
+        m == "orchestration.dispatchCommand" for m, _ in wire_server.requests
+    )
+    assert len(wire_server.threads) == 1
+    assert wire_server.threads[0]["messages"] == []
+    assert not (tmp_path / ".local/state/t3-start-thread").exists()
+
+
 @pytest.mark.parametrize(
     ("status", "body"),
     [
@@ -1053,14 +898,20 @@ def test_failed_authentication_never_retries(monkeypatch: pytest.MonkeyPatch) ->
     connect.assert_not_called()
 
 
-@pytest.mark.parametrize("action", ["start", "send"])
+@pytest.mark.parametrize(
+    ("action", "missing_thread"), [("start", False), ("send", False), ("start", True)]
+)
 def test_accepted_missing_result_is_not_resent(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     action: str,
+    *,
+    missing_thread: bool,
 ) -> None:
     """An acknowledged but absent result requires inspection."""
+    if missing_thread:
+        wire_server.threads.clear()
     command = {"threadId": "parent", "message": {"messageId": "missing"}}
     if action == "start":
         command["bootstrap"] = {}
@@ -1073,6 +924,10 @@ def test_accepted_missing_result_is_not_resent(
     with pytest.raises(RuntimeError, match="inspect T3 before retrying"):
         invoke(monkeypatch, "resume", record)
     assert not wire_server.receipts
+    assert not any(
+        m in {"orchestration.launchThread", "orchestration.dispatchCommand"}
+        for m, _ in wire_server.requests
+    )
 
 
 @pytest.mark.parametrize("action", ["start", "send"])
