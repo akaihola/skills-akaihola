@@ -16,6 +16,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
   <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T06:03:43.671Z"} -->
 
+- [26] Stop the T3 helper re-reading thread shells it already has
+    - Depends on: [25]
+
+  <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:03:47.550Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -104,7 +109,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -153,6 +158,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [24]: docs/tasks/24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-reada.md
 
 [25]: docs/tasks/25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-path.md
+
+[26]: docs/tasks/26-stop-the-t3-helper-re-reading-thread-shells-it-already-has.md
 
 ## Rules
 
