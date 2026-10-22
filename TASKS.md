@@ -17,11 +17,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [20] Give same-name outside documents their own read-as-markdown cache, and
-  fail on conversion errors
-  <!-- hai:{"id":"simple-3f84bf2c-1de8-4af4-9933-73b5b7e9e239","labels":["steward"],"createdAt":"2026-10-22T00:16:21.764Z","updatedAt":"2026-10-22T01:09:36.375Z"} -->
-
 ## In Progress
+
+- [~] [20] Give same-name outside documents their own read-as-markdown cache, and
+  fail on conversion errors
+      <!-- hai:{"id":"simple-3f84bf2c-1de8-4af4-9933-73b5b7e9e239","labels":["steward"],"createdAt":"2026-10-22T00:16:21.764Z","updatedAt":"2026-10-22T01:09:52.996Z"} -->
 
 ## Completed / Accepted
 
