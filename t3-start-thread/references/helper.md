@@ -170,8 +170,12 @@ ID so a partially accepted launch can finish. For existing-thread messaging, it
 checks the saved message ID, since the thread already exists. If the result is
 visible, it reports it without submitting another turn. Otherwise it resends
 the same command ID, preserving server deduplication. An acknowledged command
-with a missing result stops for inspection. Stop and inspect a failed run or
-schema error; do not create fresh requests as retries.
+with a missing result stops for inspection. Immediately after dispatch, a launch
+also requires both its thread and initial message to be visible. Incomplete
+visibility retains the acknowledged record and asks for resume; resume does
+not replay an acknowledged command while waiting for its result to appear.
+Stop and inspect a failed run or schema error; do not create fresh requests
+as retries.
 
 Report the title, branch/worktree, and observed run state. Claim the task is
 running only when the server reports a running run. Check the new thread's UI

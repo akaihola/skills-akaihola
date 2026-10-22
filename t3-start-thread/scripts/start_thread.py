@@ -316,75 +316,63 @@ def save_record(path: Path, record: dict, *, create: bool = False) -> None:
         output.write("\n")
 
 
-def submit(server: Server, path: Path, record: dict) -> None:
-    """Check for the saved thread first, then submit the unchanged command."""
-    if "bootstrap" not in record["command"]:
-        submit_message(server, path, record)
-        return
-    thread_id = record["command"]["threadId"]
-    snapshot = server.snapshot()
-    thread = next((t for t in all_threads(snapshot) if t["id"] == thread_id), None)
-    needs_launch = thread is None
-    if thread is not None:
-        detail = server.thread_snapshot(thread_id)
-        needs_launch = not any(
-            m["id"] == record["command"]["message"]["messageId"]
-            for m in detail["messages"]
-        )
-    if needs_launch and record.get("accepted"):
-        msg = "Accepted thread or initial message is absent; inspect T3 before retrying"
-        raise RuntimeError(msg)
-    if needs_launch:
-        record["acknowledgement"] = dispatch(server, record["command"])
-        record["accepted"] = True
-        save_record(path, record)
+def submission_result(server: Server, command: dict) -> tuple[dict | None, dict | None]:
+    """Observe the saved message and retain each operation's summary source."""
+    thread_id = command["threadId"]
+    if "bootstrap" in command:
         snapshot = server.snapshot()
         thread = next((t for t in all_threads(snapshot) if t["id"] == thread_id), None)
-    if thread is None:
-        msg = "Command accepted but thread is not yet visible; resume"
-        raise RuntimeError(msg)
-    record["accepted"] = True
-    record["thread"] = thread_summary(thread)
-    save_record(path, record)
-    print(json.dumps({"record": str(path), "thread": record["thread"]}, indent=2))
+        if thread is None:
+            return None, None
+        detail = server.thread_snapshot(thread_id)
+    else:
+        thread = detail = server.thread_snapshot(thread_id)
+    message = next(
+        (m for m in detail["messages"] if m["id"] == command["message"]["messageId"]),
+        None,
+    )
+    return thread, message
 
 
-def submit_message(server: Server, path: Path, record: dict) -> None:
-    """Resume sends by checking the message, since the thread already exists."""
+def submit(server: Server, path: Path, record: dict) -> None:
+    """Reconcile saved IDs before dispatch and persist acknowledgements before reads."""
     command = record["command"]
-    message_id = command["message"]["messageId"]
-    thread = server.thread_snapshot(command["threadId"])
-    message = next((m for m in thread["messages"] if m["id"] == message_id), None)
+    launch = "bootstrap" in command
+    thread, message = submission_result(server, command)
     if message is None and record.get("accepted"):
-        msg = "Accepted message is absent; inspect T3 before retrying"
+        msg = (
+            "Accepted thread or initial message is absent; inspect T3 before retrying"
+            if launch
+            else "Accepted message is absent; inspect T3 before retrying"
+        )
         raise RuntimeError(msg)
     if message is None:
         # Reuse the saved command ID if an earlier request lost its reply.
         record["acknowledgement"] = dispatch(server, command)
         record["accepted"] = True
         save_record(path, record)
-        thread = server.thread_snapshot(command["threadId"])
-        message = next((m for m in thread["messages"] if m["id"] == message_id), None)
+        thread, message = submission_result(server, command)
     if message is None:
-        msg = "Command accepted but message is not yet visible; resume"
+        missing = (
+            ("thread" if thread is None else "initial message") if launch else "message"
+        )
+        msg = f"Command accepted but {missing} is not yet visible; resume"
         raise RuntimeError(msg)
     record["accepted"] = True
     record["thread"] = thread_summary(thread)
-    record["messageId"] = message_id
-    record["messageTurnId"] = message.get("runId")
+    output = {"record": str(path), "thread": record["thread"]}
+    if not launch:
+        record["messageId"] = command["message"]["messageId"]
+        record["messageTurnId"] = message.get("runId")
+        output = {
+            "record": str(path),
+            "messageId": record["messageId"],
+            "messageTurnId": record["messageTurnId"],
+            "delivered": True,
+            "thread": record["thread"],
+        }
     save_record(path, record)
-    print(
-        json.dumps(
-            {
-                "record": str(path),
-                "messageId": message_id,
-                "messageTurnId": record["messageTurnId"],
-                "delivered": True,
-                "thread": record["thread"],
-            },
-            indent=2,
-        )
-    )
+    print(json.dumps(output, indent=2))
 
 
 def send(args: argparse.Namespace, server: Server, snapshot: dict) -> None:

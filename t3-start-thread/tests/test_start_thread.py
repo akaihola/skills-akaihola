@@ -697,11 +697,13 @@ def test_activity(fields: dict, *, active: bool) -> None:
 
 
 @pytest.mark.parametrize("action", ["start", "send"])
+@pytest.mark.parametrize("loss", ["none", "before", "after"])
 def test_resume_unsubmitted_old_record(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     action: str,
+    loss: str,
 ) -> None:
     """Old records translate without changing any saved identifier or setting."""
     command = {
@@ -727,7 +729,29 @@ def test_resume_unsubmitted_old_record(
         }
     record = tmp_path / "old-record.json"
     record.write_text(json.dumps({"url": "http://127.0.0.1:3773", "command": command}))
+    dispatch = wire_server.dispatch
+
+    def lose_once(method: str, payload: dict) -> dict:
+        monkeypatch.setattr(wire_server, "dispatch", dispatch)
+        if loss == "after":
+            dispatch(method, payload)
+        msg = "Fixture connection loss"
+        raise TimeoutError(msg)
+
+    if loss != "none":
+        monkeypatch.setattr(wire_server, "dispatch", lose_once)
+        with pytest.raises(TimeoutError):
+            invoke(monkeypatch, "resume", record)
+        assert json.loads(record.read_text())["command"] == command
+        assert not json.loads(record.read_text()).get("accepted")
     invoke(monkeypatch, "resume", record)
+    attempts = [
+        payload
+        for method, payload in wire_server.requests
+        if method in {"orchestration.launchThread", "orchestration.dispatchCommand"}
+    ]
+    assert len(attempts) == (2 if loss == "before" else 1)
+    assert all(payload == attempts[0] for payload in attempts)
     assert json.loads(record.read_text())["command"] == command
     assert list(wire_server.receipts) == ["saved-command"]
     assert wire_server.threads[-1]["id"] == command["threadId"]
@@ -765,6 +789,75 @@ def test_resume_partial_launch(
     assert len(wire_server.threads) == 2
     assert wire_server.threads[-1]["messages"] == [{"id": "initial", "runId": "turn"}]
     assert json.loads(record.read_text())["accepted"] is True
+
+
+@pytest.mark.parametrize("action", ["start", "send"])
+def test_newly_accepted_message_must_be_visible(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    action: str,
+) -> None:
+    """Keep acknowledged partial results until the exact message becomes visible."""
+    dispatch = wire_server.dispatch
+    hidden = []
+
+    def hide_message(method: str, command: dict) -> dict:
+        result = dispatch(method, command)
+        hidden.append(wire_server.threads[-1]["messages"].pop())
+        return result
+
+    monkeypatch.setattr(wire_server, "dispatch", hide_message)
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Perform the fixture task.")
+    target = (
+        ["--parent-thread", "parent", "--title", "Fixture", "--shared-checkout"]
+        if action == "start"
+        else ["--thread", "parent"]
+    )
+    with pytest.raises(
+        RuntimeError, match=r"Command accepted but .*not yet visible; resume"
+    ):
+        invoke(
+            monkeypatch,
+            action,
+            "--workspace",
+            tmp_path,
+            "--prompt-file",
+            prompt,
+            *target,
+        )
+    record = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
+    saved = json.loads(record.read_text())
+    assert saved["accepted"] is True
+    assert saved["acknowledgement"] == next(iter(wire_server.receipts.values()))
+    assert "thread" not in saved
+    assert stat.S_IMODE(record.stat().st_mode) == 0o600
+    assert capsys.readouterr().out == f"Request record: {record}\n"
+    with pytest.raises(RuntimeError, match="inspect T3 before retrying"):
+        invoke(monkeypatch, "resume", record)
+    assert json.loads(record.read_text()) == saved
+    wire_server.threads[-1]["messages"].extend(hidden)
+    invoke(monkeypatch, "resume", record)
+    output = json.loads(capsys.readouterr().out)
+    assert set(output) == (
+        {"record", "thread"}
+        if action == "start"
+        else {"record", "thread", "messageId", "messageTurnId", "delivered"}
+    )
+    assert output["record"] == str(record)
+    assert output["thread"]["id"] == saved["command"]["threadId"]
+    assert json.loads(record.read_text())["command"] == saved["command"]
+    assert wire_server.threads[-1]["messages"] == hidden
+    assert len(wire_server.receipts) == 1
+    assert (
+        sum(
+            m in {"orchestration.launchThread", "orchestration.dispatchCommand"}
+            for m, _ in wire_server.requests
+        )
+        == 1
+    )
 
 
 def test_first_socket_requests_v2_with_one_ticket(
