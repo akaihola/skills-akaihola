@@ -8,13 +8,13 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+## Scheduled
+
 - [27] Fold the T3 helper's duplicate handoff test fakes into the V2 wire
   fixture
     - Depends on: [24], [25]
 
-  <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T06:03:50.173Z"} -->
-
-## Scheduled
+  <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T06:55:17.791Z"} -->
 
 ## In Progress
 
