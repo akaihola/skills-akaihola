@@ -23,12 +23,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [25] Bring the T3 helper's launch and send recovery under one record path
+## Completed / Accepted
+
+- [ ] [25] Bring the T3 helper's launch and send recovery under one record path
     - Depends on: [24]
 
-      <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T06:27:09.271Z"} -->
-
-## Completed / Accepted
+      <!-- hai:{"id":"simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3","labels":["steward"],"createdAt":"2026-10-22T06:03:43.671Z","updatedAt":"2026-10-22T06:34:00.662Z"} -->
 
 - [ ] [24] Retire the T3 helper's V1 transport while keeping saved requests readable
       <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:21:34.457Z"} -->

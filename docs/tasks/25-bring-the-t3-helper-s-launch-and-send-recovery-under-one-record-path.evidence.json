@@ -1,0 +1,127 @@
+{
+  "items": [
+    {
+      "issue": "skills-akaihola [25]",
+      "hai_id": "simple-378e94c4-14d8-4c22-980b-8bb03a61d8b3",
+      "title": "Bring the T3 helper's launch and send recovery under one record path",
+      "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf",
+      "source_repository": "/home/agent/prg/skills-akaihola",
+      "base_commit": "564d595960de81d0dd99915acebdaece99e233b0",
+      "delivery_commits": [
+        "b293300736421f230f0c2ee0c9c7c525f1d29cb7"
+      ],
+      "checks": [
+        {
+          "id": "helper-fake-suite",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "t3-start-thread/references/helper.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "lint-format-whitespace",
+          "command": "ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && git show --format= --check HEAD",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "t3-start-thread/references/helper.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "helper-fake-suite": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf",
+          "tested_commit": "b293300736421f230f0c2ee0c9c7c525f1d29cb7",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/t3-start-thread/scripts/start_thread.py",
+              "value": "5059a67817afb2c75ecea4f8ccade1757f030392a4ba407597cd2f7e8827672e"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/t3-start-thread/tests/test_start_thread.py",
+              "value": "b48ec5b455c8c9be63e4c7a96296eb117a8e236f989de9d6f8e3d1d457f609b9"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/t3-start-thread/references/helper.md",
+              "value": "34c9cd7c467d34bc67b367ec787991f70f296ccd8893cd34c87f16b2febd5106"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [25]",
+          "check": "helper-fake-suite",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-22T06:32:44.362493+00:00"
+        },
+        "lint-format-whitespace": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf",
+          "tested_commit": "b293300736421f230f0c2ee0c9c7c525f1d29cb7",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/t3-start-thread/scripts/start_thread.py",
+              "value": "5059a67817afb2c75ecea4f8ccade1757f030392a4ba407597cd2f7e8827672e"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/t3-start-thread/tests/test_start_thread.py",
+              "value": "b48ec5b455c8c9be63e4c7a96296eb117a8e236f989de9d6f8e3d1d457f609b9"
+            },
+            "reference": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/t3-start-thread/references/helper.md",
+              "value": "34c9cd7c467d34bc67b367ec787991f70f296ccd8893cd34c87f16b2febd5106"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [25]",
+          "check": "lint-format-whitespace",
+          "command": "ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && git show --format= --check HEAD",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-22T06:33:01.775785+00:00"
+        }
+      }
+    }
+  ]
+}
