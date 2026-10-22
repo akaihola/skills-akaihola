@@ -8,32 +8,38 @@ The skill name to remove.
 
 ## Steps
 
-### 1. Sync the Library Repo
+### 1. Record the Workspace Root
+Run this in the caller's workspace before any other step:
 ```bash
-cd ~/prg/skills-akaihola && git pull
+WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+echo "$WORKSPACE_ROOT"
+```
+No step changes directory. Shell variables may not carry over between commands: set `WORKSPACE_ROOT` again in each command that uses it, from the path printed here.
+
+### 2. Sync the Library Repo
+```bash
+git -C ~/prg/skills-akaihola pull
 ```
 
-### 2. Find the Entry
+### 3. Find the Entry
 - Read `~/prg/skills-akaihola/library/library.yaml`
 - Locate the entry by name
 - If not found, tell the user
 
-### 3. Confirm Intent
+### 4. Confirm Intent
 Ask: "Remove `<name>` from the catalog? Also unlink from the current workspace? (y/n/both)"
 
-### 4. Remove from Catalog (if confirmed)
-- Edit `library.yaml` to remove the entry from the appropriate section
+### 5. Remove from Catalog (if confirmed)
+- Edit `~/prg/skills-akaihola/library/library.yaml` to remove the entry from the appropriate section
 - Commit and push:
   ```bash
-  cd ~/prg/skills-akaihola
-  git add library/library.yaml
-  git commit -m "library: removed <type> <name>"
-  git push
+  git -C ~/prg/skills-akaihola add library/library.yaml
+  git -C ~/prg/skills-akaihola commit -m "library: removed <type> <name>"
+  git -C ~/prg/skills-akaihola push
   ```
 
-### 5. Unlink Locally (if confirmed)
+### 6. Unlink Locally (if confirmed)
 ```bash
-WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 TARGET="$WORKSPACE_ROOT/.claude/skills/<name>"
 if [ -L "$TARGET" ]; then
   rm "$TARGET"
@@ -43,5 +49,5 @@ elif [ -d "$TARGET" ]; then
 fi
 ```
 
-### 6. Confirm
+### 7. Confirm
 Tell the user what was removed and where.

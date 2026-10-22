@@ -18,6 +18,6 @@ Match if any keyword appears (case-insensitive) in any field.
 
 ### 3. Display Results
 Show matching entries grouped by type (skills / agents / prompts).
-For each match, show: name, description, source, and install status (as in `list`).
+For each match, show: name, description, source, and install status (as in `list`: record the workspace root as in its step 1, then check as in its step 4).
 
 If no results: suggest `/library list` to browse everything.

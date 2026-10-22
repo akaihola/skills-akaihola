@@ -10,8 +10,9 @@ The user provides: name, description, source path or GitHub URL, and optionally 
 
 ### 1. Sync the Library Repo
 ```bash
-cd ~/prg/skills-akaihola && git pull
+git -C ~/prg/skills-akaihola pull
 ```
+No step changes directory, so the shell stays in the caller's workspace.
 
 ### 2. Determine the Type
 From the user's prompt or the source path:
@@ -21,7 +22,7 @@ From the user's prompt or the source path:
 - If ambiguous, ask.
 
 ### 3. Validate the Source
-- **Local path**: Check the file exists. If in `skills-akaihola`, prefer the `~/prg/skills-akaihola/...` form.
+- **Local path**: Check the file exists. Resolve a relative path against the caller's directory and record it as an absolute or home-relative path. If in `skills-akaihola`, prefer the `~/prg/skills-akaihola/...` form.
 - **GitHub URL**: Confirm it's well-formed and points to a specific file.
 - Source must point to a file, not a directory.
 
@@ -40,10 +41,9 @@ Read `~/prg/skills-akaihola/library/library.yaml`, add under the correct section
 
 ### 6. Commit and Push
 ```bash
-cd ~/prg/skills-akaihola
-git add library/library.yaml
-git commit -m "library: added <type> <name>"
-git push
+git -C ~/prg/skills-akaihola add library/library.yaml
+git -C ~/prg/skills-akaihola commit -m "library: added <type> <name>"
+git -C ~/prg/skills-akaihola push
 ```
 
 ### 7. Confirm

@@ -5,27 +5,30 @@ Show the full library catalog with install status in the current workspace.
 
 ## Steps
 
-### 1. Sync the Library Repo
+### 1. Record the Workspace Root
+Run this in the caller's workspace before any other step:
 ```bash
-cd ~/prg/skills-akaihola && git pull
+WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+echo "$WORKSPACE_ROOT"
+```
+No step changes directory. Shell variables may not carry over between commands: set `WORKSPACE_ROOT` again in each command that uses it, from the path printed here.
+
+### 2. Sync the Library Repo
+```bash
+git -C ~/prg/skills-akaihola pull
 ```
 
-### 2. Read the Catalog
+### 3. Read the Catalog
 - Read `~/prg/skills-akaihola/library/library.yaml`
 - Parse all entries from `library.skills`, `library.agents`, `library.prompts`
 
-### 3. Check Install Status
-For each entry, determine install status in the current workspace:
-```bash
-WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-```
-
+### 4. Check Install Status
 For each skill:
 - Check `$WORKSPACE_ROOT/.claude/skills/<name>` — if symlink: "✓ installed (workspace)", if directory: "✓ installed (copy)"
 - Check `~/.claude/skills/<name>` — if exists: "✓ installed (global)"
 - Otherwise: "— not installed"
 
-### 4. Display Results
+### 5. Display Results
 
 Group by type, one section each:
 

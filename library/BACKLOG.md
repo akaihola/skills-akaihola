@@ -34,6 +34,23 @@ Do one at a time. Start with `vr` (cleanest, most standalone).
 - Add each to the `prompts` section with source path
 - Same for any `.claude/agents/` files
 
+Blocked on the layout question below.
+
+---
+
+### Decide how agents and prompts are laid out
+**Status:** open question
+
+The cookbooks give agents and prompts the skill layout: `/library use` links or
+copies the source file's parent directory into `.claude/agents/<name>` or
+`.claude/commands/<name>`, while `list` and `remove` look only under
+`.claude/skills/`. Nothing says whether an agent or prompt is a single file
+(installed as `<target>/<name>.md`) or a directory like a skill, which `source`
+should point to, or how `list`, `remove`, `sync` and `push` find it once
+installed. Claude Code reads commands and agents as `.md` files in those
+directories; other harnesses may differ. Decide this before cataloging any agent
+or prompt, then update the cookbooks to match.
+
 ---
 
 ### `/library add` auto-detection from cursor position
