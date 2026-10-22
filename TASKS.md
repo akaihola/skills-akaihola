@@ -8,9 +8,6 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [24] Retire the T3 helper's V1 transport while keeping saved requests readable
-  <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:03:28.860Z"} -->
-
 - [25] Bring the T3 helper's launch and send recovery under one record path
     - Depends on: [24]
 
@@ -28,6 +25,9 @@ they are not pacer inputs. Keep each task in one tracker only.
   <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T06:03:50.173Z"} -->
 
 ## Scheduled
+
+- [24] Retire the T3 helper's V1 transport while keeping saved requests readable
+  <!-- hai:{"id":"simple-d5793ab1-d324-4f47-af0c-09a210753dc1","labels":["steward"],"createdAt":"2026-10-22T06:03:28.860Z","updatedAt":"2026-10-22T06:10:30.735Z"} -->
 
 ## In Progress
 
