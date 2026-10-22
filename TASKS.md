@@ -8,6 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [23] Review the t3-start-thread helper's architecture for deep modules and
+  over-engineering
+  <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T05:11:44.943Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -92,7 +96,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -135,6 +139,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [21]: docs/tasks/21-keep-the-library-cookbooks-in-the-caller-s-workspace-create-targets-an.md
 
 [22]: docs/tasks/22-make-the-himalaya-email-manager-readme-match-its-five-wrappers.md
+
+[23]: docs/tasks/23-review-the-t3-start-thread-helper-s-architecture-for-deep-modules-and-.md
 
 ## Rules
 
