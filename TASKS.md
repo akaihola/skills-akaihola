@@ -8,11 +8,6 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [26] Stop the T3 helper re-reading thread shells it already has
-    - Depends on: [25]
-
-  <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:03:47.550Z"} -->
-
 - [27] Fold the T3 helper's duplicate handoff test fakes into the V2 wire
   fixture
     - Depends on: [24], [25]
@@ -20,6 +15,11 @@ they are not pacer inputs. Keep each task in one tracker only.
   <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T06:03:50.173Z"} -->
 
 ## Scheduled
+
+- [26] Stop the T3 helper re-reading thread shells it already has
+    - Depends on: [25]
+
+  <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:48:47.722Z"} -->
 
 ## In Progress
 
