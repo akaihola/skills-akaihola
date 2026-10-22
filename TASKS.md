@@ -12,11 +12,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [23] Review the t3-start-thread helper's architecture for deep modules and
-  over-engineering
-      <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T06:01:26.764Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [23] Review the t3-start-thread helper's architecture for deep modules and
+  over-engineering
+      <!-- hai:{"id":"simple-82639beb-fb21-455e-bd4b-a31f63c9b6a0","labels":["steward","review"],"createdAt":"2026-10-22T05:11:44.943Z","updatedAt":"2026-10-22T06:02:03.961Z"} -->
 
 - [x] [22] Make the himalaya-email-manager README match its five wrappers
       <!-- hai:{"id":"simple-f836c9be-a6ae-4f60-8413-76dad942fc2a","labels":["steward"],"createdAt":"2026-10-22T00:16:24.586Z","updatedAt":"2026-10-22T03:25:25.871Z"} -->
