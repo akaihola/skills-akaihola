@@ -21,6 +21,12 @@ they are not pacer inputs. Keep each task in one tracker only.
 
   <!-- hai:{"id":"simple-d88e8d1c-78f9-434c-81ef-96a84ed74406","labels":["steward"],"createdAt":"2026-10-22T06:03:47.550Z","updatedAt":"2026-10-22T06:03:47.550Z"} -->
 
+- [27] Fold the T3 helper's duplicate handoff test fakes into the V2 wire
+  fixture
+    - Depends on: [24], [25]
+
+  <!-- hai:{"id":"simple-1e95468b-5345-49ad-b895-e08ef7960f7c","labels":["steward"],"createdAt":"2026-10-22T06:03:50.173Z","updatedAt":"2026-10-22T06:03:50.173Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -109,7 +115,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -160,6 +166,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [25]: docs/tasks/25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-path.md
 
 [26]: docs/tasks/26-stop-the-t3-helper-re-reading-thread-shells-it-already-has.md
+
+[27]: docs/tasks/27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wire-fix.md
 
 ## Rules
 
