@@ -6,9 +6,11 @@ import io
 import json
 import stat
 import tempfile
+from email.message import Message
 from pathlib import Path
 from typing import Protocol
 from unittest.mock import patch
+from urllib.error import HTTPError
 from urllib.request import Request
 
 import pytest
@@ -25,7 +27,6 @@ class LostReplyServer:
     """Accept the first request, then lose its reply as a transport could."""
 
     url = "http://127.0.0.1:3773"
-    protocol = 1
 
     def __init__(self, snapshot: dict) -> None:
         """Keep only the scoped fixture snapshot and submitted commands."""
@@ -36,15 +37,20 @@ class LostReplyServer:
         """Return fixture state, including any accepted thread."""
         return self.data
 
+    def thread_snapshot(self, thread_id: str) -> dict:
+        """Return an accepted thread with its persisted initial message."""
+        return next(t for t in self.data["threads"] if t["id"] == thread_id)
+
     def call(self, method: str, command: dict) -> dict:
         """Simulate acceptance followed by a lost reply."""  # ruff: ignore[docstring-missing-exception]
-        if method != "orchestration.dispatchCommand":
+        if method != "orchestration.launchThread":
             msg = "Unexpected test method"
             raise ValueError(msg)
         self.commands.append(command)
-        thread = dict(command["bootstrap"]["createThread"])
+        thread = {key: command[key] for key in ("projectId", "title", *helper.SETTINGS)}
         thread["id"] = command["threadId"]
-        thread["latestTurn"] = {"state": "running"}
+        thread["status"] = "running"
+        thread["messages"] = [{"id": command["initialMessage"]["messageId"]}]
         self.data["threads"].append(thread)
         msg = "Connection lost after acceptance"
         raise TimeoutError(msg)
@@ -98,7 +104,7 @@ def test_resume_after_lost_reply_does_not_submit_again() -> None:
         with patch("builtins.print"):
             helper.submit(server, record_path, record)
         assert len(server.commands) == 1
-        assert record["thread"]["latestTurn"]["state"] == "running"
+        assert record["thread"]["active"] is True
 
 
 def test_settings_file_replaces_parent() -> None:
@@ -136,10 +142,15 @@ def test_settings_file_replaces_parent() -> None:
         ):
             helper.start(args, server, snapshot)
         command = server.commands[0]
+        record_path = next((root / ".local/state/t3-start-thread").glob("*.json"))
+        bootstrap = json.loads(record_path.read_text(encoding="utf-8"))["command"][
+            "bootstrap"
+        ]
         for key, value in settings.items():
             assert command[key] == value
-            assert command["bootstrap"]["createThread"][key] == value
-        assert "prepareWorktree" not in command["bootstrap"]
+            assert bootstrap["createThread"][key] == value
+        assert "prepareWorktree" not in bootstrap
+        assert command["workspaceStrategy"] == {"type": "root"}
 
         settings_file.write_text(json.dumps({"runtimeMode": "x"}), encoding="utf-8")
         with pytest.raises(ValueError, match="Settings file must hold exactly"):
@@ -163,7 +174,6 @@ class MessageServer:
     """Track messages separately from the already existing target thread."""
 
     url = "http://127.0.0.1:3773"
-    protocol = 1
 
     def __init__(self, thread: dict) -> None:
         """Keep a target and switches for transport failures around acceptance."""
@@ -183,19 +193,18 @@ class MessageServer:
         :raises TimeoutError: When simulating loss before or after acceptance.
         """  # ruff: ignore[docstring-missing-exception] - Sphinx field is above.
         assert method == "orchestration.dispatchCommand"
+        assert command["type"] == "message.dispatch"
         assert command["threadId"] == self.thread["id"]
-        assert "bootstrap" not in command
         self.commands.append(command)
         if self.lose_before_accept:
             msg = "Connection lost before acceptance"
             raise TimeoutError(msg)
-        message = command["message"]
         self.thread["messages"].append(
             {
-                "id": message["messageId"],
-                "role": message["role"],
-                "text": message["text"],
-                "turnId": "fixture-turn",
+                "id": command["messageId"],
+                "role": "user",
+                "text": command["text"],
+                "runId": "fixture-run",
             }
         )
         if self.lose_after_accept:
@@ -250,23 +259,22 @@ def test_send_preserves_settings_and_verifies_exact_message(
     args, snapshot, server = message_setup
     helper.send(args, server, snapshot)
     command = server.commands[0]
-    for key in helper.SETTINGS:
-        assert command[key] == server.thread[key]
-    assert command["message"]["text"] == Path(args.prompt_file).read_text(
-        encoding="utf-8"
-    )
+    assert command["modelSelection"] == server.thread["modelSelection"]
+    assert command["text"] == Path(args.prompt_file).read_text(encoding="utf-8")
     assert len(snapshot["threads"]) == 1
     assert len(server.thread["messages"]) == 2
     path = next((tmp_path / ".local/state/t3-start-thread").glob("*.json"))
     record = json.loads(path.read_text(encoding="utf-8"))
+    for key in helper.SETTINGS:
+        assert record["command"][key] == server.thread[key]
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert "token" not in record
-    assert record["messageId"] == command["message"]["messageId"]
-    assert record["messageTurnId"] == "fixture-turn"
+    assert record["messageId"] == command["messageId"]
+    assert record["messageTurnId"] == "fixture-run"
     result = json.loads(capsys.readouterr().out.split("\n", 1)[1])
     assert result["delivered"] is True
     assert result["messageId"] != "earlier"
-    assert command["message"]["text"] not in json.dumps(result)
+    assert command["text"] not in json.dumps(result)
 
 
 def test_send_dry_run_has_no_submission_record_or_prompt_output(
@@ -383,11 +391,10 @@ class FixtureSocket(Protocol):
 
 
 class WireServer:
-    """Serve protocol-shaped RPC replies through the real helper transport."""
+    """Serve V2-shaped RPC replies through the real helper transport."""
 
-    def __init__(self, protocol: int, root: Path) -> None:
+    def __init__(self, root: Path) -> None:
         """Keep an isolated project, receipt cache, and connection history."""
-        self.protocol = protocol
         self.urls = []
         self.requests = []
         self.tickets = 0
@@ -403,23 +410,16 @@ class WireServer:
         self.receipts = {}
 
     def make_thread(self, thread_id: str) -> dict:
-        """Keep V1 and V2 activity fields distinct in fixtures."""
-        activity = (
-            {"session": {"status": "running"}, "latestTurn": {"state": "running"}}
-            if self.protocol == 1
-            else {
-                "status": "running",
-                "activeRunId": "run",
-                "activityRunStatus": "running",
-            }
-        )
+        """Create a running thread."""
         return {
             "id": thread_id,
             "projectId": "project",
             "title": "Fixture",
             "updatedAt": "2026-10-17T00:00:00Z",
             **self.settings,
-            **activity,
+            "status": "running",
+            "activeRunId": "run",
+            "activityRunStatus": "running",
             "messages": [],
         }
 
@@ -435,7 +435,7 @@ class WireServer:
         """Reject V1 upgrades exactly as a V2 server does."""
         assert timeout == 45
         self.urls.append(url)
-        if self.protocol == 2 and "orchestrationProtocol=2" not in url:
+        if "orchestrationProtocol=2" not in url:
             msg = "Upgrade rejected"
             raise helper.websocket.WebSocketBadStatusException(
                 msg,
@@ -459,25 +459,23 @@ class WireServer:
                 method, payload = request["tag"], request["payload"]
                 backend.requests.append((method, payload))
                 if method == "orchestration.subscribeShell":
-                    value = {"projects": [backend.project], "threads": backend.threads}
-                    if backend.protocol == 2:
-                        value["archivedThreads"] = backend.archived
+                    value = {
+                        "projects": [backend.project],
+                        "threads": backend.threads,
+                        "archivedThreads": backend.archived,
+                    }
                 elif method == "orchestration.subscribeThread":
                     thread = next(
                         t
                         for t in backend.threads + backend.archived
                         if t["id"] == payload["threadId"]
                     )
-                    value = (
-                        {"thread": thread}
-                        if backend.protocol == 1
-                        else {
-                            "projection": {
-                                "thread": {"id": thread["id"]},
-                                "messages": thread["messages"],
-                            }
+                    value = {
+                        "projection": {
+                            "thread": {"id": thread["id"]},
+                            "messages": thread["messages"],
                         }
-                    )
+                    }
                 else:
                     value = backend.dispatch(method, payload)
                     if backend.lose_reply:
@@ -497,8 +495,7 @@ class WireServer:
                         "requestId": request["id"],
                         "values": [
                             {"kind": "snapshot", **value}
-                            if backend.protocol == 2
-                            and method == "orchestration.subscribeThread"
+                            if method == "orchestration.subscribeThread"
                             else {"kind": "snapshot", "snapshot": value}
                         ],
                     }
@@ -517,27 +514,21 @@ class WireServer:
             thread["settledAt"] = thread.get("settledAt") or "2026-10-17T12:00:00Z"
             self.receipts[command["commandId"]] = {"sequence": 1}
             return self.receipts[command["commandId"]]
-        if self.protocol == 1:
-            assert method == "orchestration.dispatchCommand"
-            assert command["type"] == "thread.turn.start"
-            creation = "bootstrap" in command
-            message = command["message"]
+        creation = method == "orchestration.launchThread"
+        assert "bootstrap" not in command
+        if creation:
+            assert command["workspaceStrategy"]["type"] in {"root", "worktree"}
+            for key in helper.SETTINGS:
+                assert command[key] == self.settings[key]
+            message = command["initialMessage"]
         else:
-            creation = method == "orchestration.launchThread"
-            assert "bootstrap" not in command
-            if creation:
-                assert command["workspaceStrategy"]["type"] in {"root", "worktree"}
-                for key in helper.SETTINGS:
-                    assert command[key] == self.settings[key]
-                message = command["initialMessage"]
-            else:
-                assert method == "orchestration.dispatchCommand"
-                assert command["type"] == "message.dispatch"
-                assert command["createdBy"] == "user"
-                assert command["creationSource"] == "mcp"
-                assert command["dispatchMode"] == {"type": "queue_after_active"}
-                assert command["modelSelection"] == self.settings["modelSelection"]
-                message = command
+            assert method == "orchestration.dispatchCommand"
+            assert command["type"] == "message.dispatch"
+            assert command["createdBy"] == "user"
+            assert command["creationSource"] == "mcp"
+            assert command["dispatchMode"] == {"type": "queue_after_active"}
+            assert command["modelSelection"] == self.settings["modelSelection"]
+            message = command
         if creation:
             thread = next(
                 (t for t in self.threads if t["id"] == command["threadId"]), None
@@ -547,27 +538,20 @@ class WireServer:
                 self.threads.append(thread)
         else:
             thread = next(t for t in self.threads if t["id"] == command["threadId"])
-        thread["messages"].append(
-            {
-                "id": message["messageId"],
-                ("turnId" if self.protocol == 1 else "runId"): "turn",
-            }
-        )
+        thread["messages"].append({"id": message["messageId"], "runId": "turn"})
         result = (
             {"threadId": thread["id"], "projection": {}, "resumed": False}
-            if self.protocol == 2 and creation
+            if creation
             else {"sequence": 1}
         )
         self.receipts[command["commandId"]] = result
         return result
 
 
-@pytest.fixture(params=[1, 2])
-def wire_server(
-    request: pytest.FixtureRequest, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> WireServer:
-    """Run the CLI against both protocols without real credentials or sessions."""
-    server = WireServer(request.param, tmp_path)
+@pytest.fixture
+def wire_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> WireServer:
+    """Run the CLI against a V2 fake without real credentials or sessions."""
+    server = WireServer(tmp_path)
     monkeypatch.setenv("T3_THREAD_AUTH_TOKEN", "fixture-token")
     monkeypatch.setattr(helper, "urlopen", server.ticket)
     monkeypatch.setattr(helper.websocket, "create_connection", server.connect)
@@ -581,26 +565,24 @@ def invoke(monkeypatch: pytest.MonkeyPatch, *arguments: str | Path) -> None:
     helper.main()
 
 
-def test_inspect_protocol_detection(
+def test_inspect_summaries(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Inspect prints compatible summaries, detects once, and hides messages."""
+    """Inspect prints compatible summaries and hides messages."""
     invoke(monkeypatch, "inspect", "--workspace", tmp_path)
     output = json.loads(capsys.readouterr().out)
     assert output["threads"][0]["active"] is True
     assert output["threads"][0]["settledAt"] is None
     assert "messages" not in output["threads"][0]
     assert output["projects"] == [wire_server.project]
-    assert len(wire_server.urls) == wire_server.protocol
-    assert len(set(wire_server.urls)) == wire_server.tickets
 
 
 @pytest.mark.parametrize("shared", [False, True])
 @pytest.mark.parametrize("parent", [False, True])
-def test_start_and_resume_both_protocols(  # ruff: ignore[too-many-arguments] - fixture matrix.
+def test_start_and_resume(  # ruff: ignore[too-many-arguments] - fixture matrix.
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -643,17 +625,16 @@ def test_start_and_resume_both_protocols(  # ruff: ignore[too-many-arguments] - 
     ]
     assert len(requests) == 1
     _method, command = requests[0]
-    if wire_server.protocol == 2:
-        assert command["workspaceStrategy"] == (
-            {"type": "root"}
-            if shared
-            else {
-                "type": "worktree",
-                "baseRef": "main",
-                "branch": "fixture",
-                "startFromOrigin": False,
-            }
-        )
+    assert command["workspaceStrategy"] == (
+        {"type": "root"}
+        if shared
+        else {
+            "type": "worktree",
+            "baseRef": "main",
+            "branch": "fixture",
+            "startFromOrigin": False,
+        }
+    )
     invoke(monkeypatch, "resume", record)
     assert len(wire_server.receipts) == 1
     assert len(wire_server.threads) == 2
@@ -661,7 +642,7 @@ def test_start_and_resume_both_protocols(  # ruff: ignore[too-many-arguments] - 
     assert prompt.read_text() not in capsys.readouterr().out
 
 
-def test_send_and_resume_both_protocols(
+def test_send_and_resume(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -699,13 +680,6 @@ def test_send_and_resume_both_protocols(
 @pytest.mark.parametrize(
     ("fields", "active"),
     [
-        ({"session": None, "latestTurn": None}, False),
-        ({"session": {"status": "ready"}}, False),
-        ({"session": {"activeTurnId": "turn"}}, True),
-        ({"latestTurn": {"state": "running"}}, True),
-        ({"hasPendingApprovals": True}, True),
-        ({"hasPendingUserInput": True}, True),
-        ({"backgroundLiveness": "monitoring"}, True),
         ({"status": "idle", "activeRunId": None}, False),
         ({"status": "completed", "activeRunId": None}, False),
         ({"status": "queued", "activeRunId": None}, False),
@@ -723,7 +697,7 @@ def test_activity(fields: dict, *, active: bool) -> None:
 
 
 @pytest.mark.parametrize("action", ["start", "send"])
-def test_resume_unsubmitted_v1_record_on_either_protocol(
+def test_resume_unsubmitted_old_record(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -756,21 +730,16 @@ def test_resume_unsubmitted_v1_record_on_either_protocol(
     invoke(monkeypatch, "resume", record)
     assert json.loads(record.read_text())["command"] == command
     assert list(wire_server.receipts) == ["saved-command"]
+    assert wire_server.threads[-1]["id"] == command["threadId"]
     assert wire_server.threads[-1]["messages"][0]["id"] == "saved-message"
     # Force server-side deduplication too, rather than relying on reconciliation.
     server = helper.Server("http://127.0.0.1:3773", None)
-    server.snapshot()
     assert helper.dispatch(server, command) == helper.dispatch(server, command)
     assert len(wire_server.threads[-1]["messages"]) == 1
-    # No repeated negotiation within one server instance.
-    urls = wire_server.urls[-3:]
-    assert all(
-        ("orchestrationProtocol=2" in u) == (wire_server.protocol == 2) for u in urls
-    )
+    assert all("orchestrationProtocol=2" in u for u in wire_server.urls)
 
 
-@pytest.mark.parametrize("wire_server", [2], indirect=True)
-def test_resume_partial_v2_launch(
+def test_resume_partial_launch(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -798,17 +767,40 @@ def test_resume_partial_v2_launch(
     assert json.loads(record.read_text())["accepted"] is True
 
 
-@pytest.mark.parametrize("status", [401, 403, 426, 500])
-def test_unrelated_handshake_errors_never_trigger_fallback(
+def test_first_socket_requests_v2_with_one_ticket(
+    wire_server: WireServer,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The helper never opens a V1 socket before the V2 one."""
+    invoke(monkeypatch, "inspect", "--workspace", tmp_path)
+    assert wire_server.tickets == 1
+    assert wire_server.urls == [
+        "ws://127.0.0.1:3773/ws?wsTicket=ticket-1&orchestrationProtocol=2"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("status", "body"),
+    [
+        (401, "unrelated failure"),
+        (403, "unrelated failure"),
+        (426, "unrelated failure"),
+        (426, '{"error":"orchestration_protocol_incompatible"}'),
+        (500, "unrelated failure"),
+    ],
+)
+def test_failed_upgrade_never_retries(
     monkeypatch: pytest.MonkeyPatch,
     status: int,
+    body: str,
 ) -> None:
-    """Authentication and generic upgrade failures are not protocol detection."""
+    """A rejected V2 upgrade is reported, not retried with another ticket."""
     monkeypatch.setenv("T3_THREAD_AUTH_TOKEN", "fixture-token")
-    backend = WireServer(1, Path("/fixture"))
+    backend = WireServer(Path("/fixture"))
     monkeypatch.setattr(helper, "urlopen", backend.ticket)
     error = helper.websocket.WebSocketBadStatusException(
-        "Fixture failure", status_code=status, resp_body="unrelated failure"
+        "Fixture failure", status_code=status, resp_body=body
     )
     with patch.object(
         helper.websocket, "create_connection", side_effect=error
@@ -816,8 +808,30 @@ def test_unrelated_handshake_errors_never_trigger_fallback(
         server = helper.Server("http://127.0.0.1:3773", None)
         with pytest.raises(helper.websocket.WebSocketBadStatusException):
             server.snapshot()
+    assert backend.tickets == 1
     assert connect.call_count == 1
-    assert server.protocol is None
+    assert "orchestrationProtocol=2" in connect.call_args.args[0]
+
+
+def test_failed_authentication_never_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A refused ticket request stops before any socket is opened."""
+    monkeypatch.setenv("T3_THREAD_AUTH_TOKEN", "fixture-token")
+    error = HTTPError(
+        "http://127.0.0.1:3773/api/auth/websocket-ticket",
+        401,
+        "Unauthorized",
+        Message(),
+        None,
+    )
+    with (
+        patch.object(helper, "urlopen", side_effect=error) as ticket,
+        patch.object(helper.websocket, "create_connection") as connect,
+    ):
+        server = helper.Server("http://127.0.0.1:3773", None)
+        with pytest.raises(HTTPError):
+            server.snapshot()
+    assert ticket.call_count == 1
+    connect.assert_not_called()
 
 
 @pytest.mark.parametrize("action", ["start", "send"])
@@ -827,12 +841,10 @@ def test_accepted_missing_result_is_not_resent(
     monkeypatch: pytest.MonkeyPatch,
     action: str,
 ) -> None:
-    """An acknowledged but absent result requires inspection on either protocol."""
+    """An acknowledged but absent result requires inspection."""
     command = {"threadId": "parent", "message": {"messageId": "missing"}}
     if action == "start":
         command["bootstrap"] = {}
-        if wire_server.protocol == 1:
-            wire_server.threads.clear()
     record = tmp_path / "accepted.json"
     record.write_text(
         json.dumps(
@@ -844,14 +856,13 @@ def test_accepted_missing_result_is_not_resent(
     assert not wire_server.receipts
 
 
-@pytest.mark.parametrize("wire_server", [2], indirect=True)
 def test_archived_launch_stays_resumable(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Archived V2 threads reconcile without a replacement launch."""
+    """Archived threads reconcile without a replacement launch."""
     thread = wire_server.threads.pop()
     thread.update(
         {"status": "completed", "activeRunId": None, "activityRunStatus": None}
@@ -877,12 +888,9 @@ def test_archived_launch_stays_resumable(
 
 
 def idle_thread(server: WireServer, thread_id: str) -> dict:
-    """Create a stopped thread with protocol-appropriate shell fields."""
+    """Create a stopped thread."""
     thread = server.make_thread(thread_id)
-    if server.protocol == 1:
-        thread.update(session={"status": "ready"}, latestTurn={"state": "completed"})
-    else:
-        thread.update(status="completed", activeRunId=None, activityRunStatus=None)
+    thread.update(status="completed", activeRunId=None, activityRunStatus=None)
     return thread
 
 
@@ -980,14 +988,12 @@ def test_settle_archived_collection_and_missing(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """V2 archived shells and absent targets are refused without dispatch."""
+    """Archived shells and absent targets are refused without dispatch."""
     wire_server.archived = [idle_thread(wire_server, "archived")]
     with pytest.raises(SystemExit):
         invoke(monkeypatch, "settle", "--thread", "archived", "--thread", "missing")
     results = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
-    assert results[0]["reason"] == (
-        "archived" if wire_server.protocol == 2 else "thread not found"
-    )
+    assert results[0]["reason"] == "archived"
     assert results[1]["reason"] == "thread not found"
     assert not wire_server.receipts
 
@@ -1083,7 +1089,7 @@ def test_paced_send_dry_run(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Both wire protocols resolve a tracker number without sending a message."""
+    """A tracker number resolves to its thread without sending a message."""
     prompt = tmp_path / "review.txt"
     prompt.write_text(
         "Fixture evidence and completion criteria.\n...", encoding="utf-8"

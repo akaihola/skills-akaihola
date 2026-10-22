@@ -16,7 +16,6 @@ import subprocess  # ruff: ignore[suspicious-subprocess-import] - fixed CLI invo
 import sys
 import time
 import uuid
-from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
@@ -25,7 +24,6 @@ import websocket
 
 # Thread settings a new thread takes from its parent or a settings file.
 SETTINGS = ("modelSelection", "runtimeMode", "interactionMode")
-V2 = 2
 
 
 class SendTargetError(ValueError):
@@ -109,7 +107,6 @@ class Server:
             msg = "No bearer session was issued"
             raise ValueError(msg)
         self.token: str = token
-        self.protocol: int | None = None
 
     def call(self, method: str, payload: dict, *, stream: bool = False) -> dict:
         """Read one snapshot or a command acknowledgement, without retrying."""
@@ -121,22 +118,9 @@ class Server:
         with urlopen(request, timeout=15) as response:  # ruff: ignore[suspicious-url-open-usage] - validated HTTP(S) URL.
             ticket = json.load(response)["ticket"]
         ws_url = re.sub(r"^http", "ws", self.url) + "/ws?wsTicket=" + quote(ticket)
-        if self.protocol == V2:
-            ws_url += "&orchestrationProtocol=2"
-        try:
-            socket = websocket.create_connection(ws_url, timeout=45)
-        except websocket.WebSocketBadStatusException as error:
-            if (
-                self.protocol is None
-                and error.status_code == HTTPStatus.UPGRADE_REQUIRED
-                and "orchestration_protocol_incompatible" in str(error.resp_body)
-            ):
-                self.protocol = V2
-                # Tickets are single-use, including a rejected upgrade.
-                return self.call(method, payload, stream=stream)
-            raise
-        if self.protocol is None:
-            self.protocol = 1
+        socket = websocket.create_connection(
+            ws_url + "&orchestrationProtocol=2", timeout=45
+        )
         request_id = str(uuid.uuid4())
         deadline = time.monotonic() + 45
         try:
@@ -182,12 +166,9 @@ class Server:
 
     def thread_snapshot(self, thread_id: str) -> dict:
         """Read one thread to verify a submitted message by its identifier."""
-        snapshot = self.call(
+        projection = self.call(
             "orchestration.subscribeThread", {"threadId": thread_id}, stream=True
-        )
-        if "projection" not in snapshot:
-            return snapshot["thread"]
-        projection = snapshot["projection"]
+        )["projection"]
         shell = self.snapshot()
         thread = next((t for t in all_threads(shell) if t["id"] == thread_id), {})
         return {**projection["thread"], **thread, "messages": projection["messages"]}
@@ -199,9 +180,7 @@ def all_threads(snapshot: dict) -> list[dict]:
 
 
 def dispatch(server: Server, command: dict) -> dict:
-    """Translate durable V1 records at the wire boundary, preserving identifiers."""
-    if server.protocol != V2:
-        return server.call("orchestration.dispatchCommand", command)
+    """Translate V1-shaped records to V2 at the wire boundary, preserving IDs."""
     settings = {key: command[key] for key in SETTINGS}
     message = {k: v for k, v in command["message"].items() if k != "role"}
     if "bootstrap" not in command:
@@ -255,39 +234,20 @@ def thread_summary(thread: dict) -> dict:
         "latestTurn",
         "session",
         "settledAt",
+        "status",
+        "activeRunId",
+        "activityRunStatus",
+        "pendingRuntimeRequest",
+        "pendingBackgroundTasks",
     )
     summary = {key: thread.get(key) for key in keys}
-    if "status" in thread:
-        summary.update(
-            {
-                key: thread.get(key)
-                for key in (
-                    "status",
-                    "activeRunId",
-                    "activityRunStatus",
-                    "pendingRuntimeRequest",
-                    "pendingBackgroundTasks",
-                )
-            }
-        )
-        summary["active"] = bool(
-            thread["status"] in {"preparing", "starting", "running", "waiting"}
-            or thread.get("activeRunId")
-            or thread.get("activityRunStatus")
-            or thread.get("pendingRuntimeRequest")
-            or thread.get("pendingBackgroundTasks")
-        )
-    else:
-        session = thread.get("session") or {}
-        turn = thread.get("latestTurn") or {}
-        summary["active"] = bool(
-            session.get("status") in {"starting", "running"}
-            or session.get("activeTurnId")
-            or turn.get("state") == "running"
-            or thread.get("hasPendingApprovals")
-            or thread.get("hasPendingUserInput")
-            or thread.get("backgroundLiveness")
-        )
+    summary["active"] = bool(
+        thread.get("status") in {"preparing", "starting", "running", "waiting"}
+        or thread.get("activeRunId")
+        or thread.get("activityRunStatus")
+        or thread.get("pendingRuntimeRequest")
+        or thread.get("pendingBackgroundTasks")
+    )
     return summary
 
 
@@ -365,7 +325,7 @@ def submit(server: Server, path: Path, record: dict) -> None:
     snapshot = server.snapshot()
     thread = next((t for t in all_threads(snapshot) if t["id"] == thread_id), None)
     needs_launch = thread is None
-    if thread is not None and server.protocol == V2:
+    if thread is not None:
         detail = server.thread_snapshot(thread_id)
         needs_launch = not any(
             m["id"] == record["command"]["message"]["messageId"]
@@ -411,7 +371,7 @@ def submit_message(server: Server, path: Path, record: dict) -> None:
     record["accepted"] = True
     record["thread"] = thread_summary(thread)
     record["messageId"] = message_id
-    record["messageTurnId"] = message.get("turnId", message.get("runId"))
+    record["messageTurnId"] = message.get("runId")
     save_record(path, record)
     print(
         json.dumps(

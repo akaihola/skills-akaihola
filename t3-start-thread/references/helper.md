@@ -13,8 +13,8 @@ uv run scripts/start_thread.py inspect --workspace /path/to/repository
 
 This prints matching project metadata and recent thread IDs, titles, and model
 settings. Each thread includes an `active` boolean for running work, pending
-approvals or input, and background tasks on either protocol. A parked paced
-run alone is not active. Choose the intended parent thread using conversation
+approvals or input, and background tasks. A parked paced run alone is not
+active. Choose the intended parent thread using conversation
 context, rather than assuming the newest thread is the current one.
 `CODEX_THREAD_ID` is the provider's session ID, not necessarily T3's thread ID.
 
@@ -34,7 +34,7 @@ uv run scripts/start_thread.py settle --url http://127.0.0.1:3773 \
   --thread T3_THREAD_ID --thread ANOTHER_THREAD_ID --dry-run
 ```
 
-Remove `--dry-run` to dispatch `thread.settle` on either protocol. No workspace
+Remove `--dry-run` to dispatch `thread.settle`. No workspace
 argument is needed. Each target gets one JSON line with `threadId`, `dryRun`
 and `status`: `settled`, `already-settled`, `refused` with a `reason`, or `error`
 with the server's rejection. In a dry-run, `settled` means it would be settled.
@@ -62,10 +62,8 @@ uv run scripts/start_thread.py send \
 ```
 
 The helper preserves the target's model options, runtime mode, and interaction
-mode. It submits a normal user message using V1 `thread.turn.start` or V2
-`message.dispatch`. V2 queues the message after any active run. This does not
-create a thread or worktree. The helper detects the protocol from the WebSocket handshake,
-without relying on the server's version string.
+mode. It submits a normal user message with V2 `message.dispatch`, which queues
+the message after any active run. This does not create a thread or worktree.
 
 Use `--dry-run` to verify authentication, the target, and its settings without
 sending a message or writing a request record. It does not print the prompt.
@@ -78,8 +76,8 @@ establish exclusive access.
 
 Successful output includes `delivered: true` after finding the exact message
 ID in the target's thread snapshot. This verifies persistence, not that the
-other agent has acted on the message. Report the message's turn ID, or V2 run
-ID in `messageTurnId`, and observed state when available. Wait for the requested
+other agent has acted on the message. Report the message's run ID, which the
+output keeps in `messageTurnId`, and observed state when available. Wait for the requested
 acknowledgement when needed.
 
 ## Route review findings back to the implementer
@@ -167,28 +165,36 @@ its reply, resume that record rather than running `start` or `send` again:
 uv run scripts/start_thread.py resume /path/to/request.json
 ```
 
-For thread creation, resume checks the saved thread ID and, on V2, the initial
-message ID so a partially accepted launch can finish. For existing-thread
-messaging, it checks the saved message ID, since the thread already exists.
-If the result is visible, it reports it without submitting another turn.
-Otherwise it resends the same command ID, preserving server deduplication.
-Existing V1 records remain resumable after a V2 upgrade. Records keep their
-original IDs and request format; the helper translates requests at dispatch.
-An acknowledged command with a missing result stops for inspection. Stop and
-inspect a failed turn or schema error; do not create fresh requests as retries.
+For thread creation, resume checks the saved thread ID and the initial message
+ID so a partially accepted launch can finish. For existing-thread messaging, it
+checks the saved message ID, since the thread already exists. If the result is
+visible, it reports it without submitting another turn. Otherwise it resends
+the same command ID, preserving server deduplication. An acknowledged command
+with a missing result stops for inspection. Stop and inspect a failed run or
+schema error; do not create fresh requests as retries.
 
-Report the title, branch/worktree, and observed turn state. Claim the task is
-running only when the server reports a running turn, active session, or V2
-running run. Check
-the new thread's UI if it needs an approval or user answer.
+Report the title, branch/worktree, and observed run state. Claim the task is
+running only when the server reports a running run. Check the new thread's UI
+if it needs an approval or user answer.
 
-The helper supports V1 and V2 orchestration. V1 uses turn bootstrap commands;
-V2 uses `orchestration.launchThread` for creation and `message.dispatch` for
-follow-ups. If the API changes, inspect the running version's contracts before
-modifying the request. Relevant V1 source:
-[thread commands],
-[authentication],
-and [WebSocket server].
+## Server and record compatibility
+
+The helper speaks only T3's V2 orchestration protocol. Every WebSocket
+connection asks for V2 with a fresh single-use ticket. A refused ticket or
+rejected upgrade fails the command without a retry or V1 fallback, so a V1-only
+server is not supported. V2 uses `orchestration.launchThread` for creation and
+`message.dispatch` for follow-ups.
+
+Request records are a separate matter. New and older records alike keep the
+V1-era request format: a `thread.turn.start` command with its thread, command
+and message IDs, plus a `bootstrap` for thread creation. The helper translates
+the record to V2 at dispatch without rewriting it, so a record saved before the
+V2 upgrade still resumes against a V2 server with its original IDs.
+
+If the API changes, inspect the running version's contracts before modifying
+the request. Relevant source: the V2 [orchestration contracts] and
+[WebSocket server]; the V1 [thread commands] that define the saved record
+format; and ticket [authentication], which V2 did not change.
 
 ## Forking an existing conversation
 
@@ -204,7 +210,8 @@ the user wants to preserve both branches. See the upstream
 [rewind documentation].
 
 [t3-start-thread/scripts/start_thread.py]: ../scripts/start_thread.py
+[orchestration contracts]: https://github.com/pingdotgg/t3code/blob/v0.1.1-nightly.20261017.3238/packages/contracts/src/orchestrationV2.ts
+[WebSocket server]: https://github.com/pingdotgg/t3code/blob/v0.1.1-nightly.20261017.3238/apps/server/src/ws.ts
 [thread commands]: https://github.com/pingdotgg/t3code/blob/v0.0.44/packages/contracts/src/orchestration.ts
 [authentication]: https://github.com/pingdotgg/t3code/blob/v0.0.44/apps/server/src/cli/auth.ts
-[WebSocket server]: https://github.com/pingdotgg/t3code/blob/v0.0.44/apps/server/src/ws.ts
 [rewind documentation]: https://github.com/pingdotgg/t3code/blob/v0.0.44/docs/user/composer.md
