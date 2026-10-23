@@ -51,9 +51,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 - [ ] [19] Make secrets-scan fail when a requested scanner doesn't finish
       <!-- hai:{"id":"simple-8adc391b-0ca6-4b11-a1c5-8fe3e232a961","labels":["steward"],"createdAt":"2026-10-22T00:16:20.104Z","updatedAt":"2026-10-22T00:41:30.108Z"} -->
 
-- [ ] [18] Check skills-akaihola's README and the skills changed since 10-19 against
+- [x] [18] Check skills-akaihola's README and the skills changed since 10-19 against
   their scripts
-      <!-- hai:{"id":"simple-1d542bfe-f9d6-4bf2-a423-4d485640c4f0","labels":["steward","review"],"createdAt":"2026-10-21T23:15:03.957Z","updatedAt":"2026-10-21T23:38:35.793Z"} -->
+      <!-- hai:{"id":"simple-1d542bfe-f9d6-4bf2-a423-4d485640c4f0","labels":["steward","review"],"createdAt":"2026-10-21T23:15:03.957Z","updatedAt":"2026-10-23T07:35:37.777Z"} -->
 
 - [x] [17] Run the four safe help probes the skill review could not run
       <!-- hai:{"id":"simple-9882987d-c9c5-4325-b2b0-f9055f920051","labels":["steward"],"createdAt":"2026-10-21T11:21:20.385Z","updatedAt":"2026-10-21T21:54:09.756Z"} -->
@@ -81,9 +81,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 - [x] [10] Separate T3 child-task delegation from top-level launches
       <!-- hai:{"id":"simple-3b280fda-1d0f-4a06-bd23-4c27f05ddd56","labels":["steward"],"createdAt":"2026-10-19T11:18:14.060Z","updatedAt":"2026-10-19T14:05:50.617Z"} -->
 
-- [ ] [9] Review every skill for stale instructions, weak triggers and token cost,
+- [x] [9] Review every skill for stale instructions, weak triggers and token cost,
   and draft the fixes
-      <!-- hai:{"id":"simple-2d9cbdb6-f827-4bd2-96e4-eed5462ebd07","labels":["steward"],"createdAt":"2026-10-19T08:08:27.558Z","updatedAt":"2026-10-19T08:53:40.873Z"} -->
+      <!-- hai:{"id":"simple-2d9cbdb6-f827-4bd2-96e4-eed5462ebd07","labels":["steward"],"createdAt":"2026-10-19T08:08:27.558Z","updatedAt":"2026-10-23T07:35:38.372Z"} -->
 
 - [x] [8] Gather acceptance evidence for the 2 review-queue items
       <!-- hai:{"id":"simple-9467a5ab-9645-4aa0-89cc-747c91768be8","labels":["steward"],"createdAt":"2026-10-17T20:09:27.827Z","updatedAt":"2026-10-21T17:12:39.680Z"} -->
