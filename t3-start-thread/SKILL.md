@@ -8,7 +8,7 @@ description: Route requested T3 Code coordination to child-task delegation, an e
 ## Apply model-setting preferences
 
 Before creating a thread or delegating a task, read
-[agent@hopeli:~/my-knowledge/USER.md](http://hopeli/my-knowledge/USER.md?f#t3-code-model-settings) when present. Explicit user
+[agent@tinni:~/my-knowledge/USER.md](http://tinni/my-knowledge/USER.md?f#t3-code-model-settings) when present. Explicit user
 preferences override inherited and catalog-default reasoning and service-tier
 options. Pass the resolved options explicitly and verify the created thread's
 saved configuration. The helper's `start` accepts exactly one of `--parent-thread` or `--settings`.
