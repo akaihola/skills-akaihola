@@ -8,6 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [28] Let the T3 helper find and authenticate to the local server when it isn't
+  on loopback
+  <!-- hai:{"id":"simple-560f3c46-1476-4433-b348-47d2d0ab6ba6","labels":["steward"],"createdAt":"2026-10-24T21:26:38.750Z","updatedAt":"2026-10-24T21:26:38.750Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -115,7 +119,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -168,6 +172,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [26]: docs/tasks/26-stop-the-t3-helper-re-reading-thread-shells-it-already-has.md
 
 [27]: docs/tasks/27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wire-fix.md
+
+[28]: docs/tasks/28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-it-is.md
 
 ## Rules
 
