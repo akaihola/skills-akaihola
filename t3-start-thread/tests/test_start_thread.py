@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import stat
+import sys
 from email.message import Message
 from pathlib import Path
 from typing import Protocol
@@ -1306,3 +1307,153 @@ def test_send_rejects_incomplete_target_arguments(
             monkeypatch, "send", *arguments, "--prompt-file", "unused.txt", "--dry-run"
         )
     assert error.value.code == 2
+
+
+@pytest.fixture
+def local_t3(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Record local session issuance with an isolated fake CLI and home."""
+    monkeypatch.delenv("T3_THREAD_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(helper.Path, "home", lambda: tmp_path)
+    command = tmp_path / "t3"
+    command.write_text(
+        f"#!{sys.executable}\n"
+        "import json, pathlib, sys\n"
+        "pathlib.Path(__file__).with_suffix('.args').write_text(json.dumps(sys.argv[1:]))\n"
+        "print('fixture-token')\n"
+    )
+    command.chmod(stat.S_IRWXU)
+    monkeypatch.setenv("PATH", str(tmp_path))
+    return tmp_path
+
+
+@pytest.mark.parametrize("explicit_base", [False, True])
+def test_runtime_origin_default(
+    local_t3: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    explicit_base: bool,
+) -> None:
+    """Omitting --url discovers the selected base directory's local server."""
+    base = local_t3 / ("custom" if explicit_base else ".t3")
+    (base / "userdata").mkdir(parents=True)
+    (base / "userdata/server-runtime.json").write_text(
+        json.dumps({"origin": "http://local.example.org:3773"})
+    )
+    with patch.object(
+        helper.Server, "snapshot", return_value={"projects": [], "threads": []}
+    ):
+        # Capture the endpoint without opening a network connection.
+        original = helper.Server.__init__
+        urls = []
+
+        def capture(server: helper.Server, url: str, base_dir: str | None) -> None:
+            original(server, url, base_dir)
+            urls.append(server.url)
+
+        monkeypatch.setattr(helper.Server, "__init__", capture)
+        invoke(
+            monkeypatch,
+            "inspect",
+            "--workspace",
+            local_t3,
+            *(["--base-dir", str(base)] if explicit_base else []),
+        )
+    assert urls == ["http://local.example.org:3773"]
+
+
+@pytest.mark.parametrize(
+    "runtime",
+    [
+        None,
+        "{",
+        "[]",
+        '{"origin": null}',
+        '{"origin": "http://local.example.org:bad"}',
+        "directory",
+    ],
+)
+def test_runtime_origin_fallback(
+    local_t3: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    runtime: str | None,
+) -> None:
+    """Absent or unreadable runtime data keeps the loopback default."""
+    base = local_t3 / ".t3"
+    (base / "userdata").mkdir(parents=True)
+    if runtime == "directory":
+        (base / "userdata/server-runtime.json").mkdir()
+    elif runtime is not None:
+        (base / "userdata/server-runtime.json").write_text(runtime)
+    with patch.object(
+        helper.Server, "snapshot", return_value={"projects": [], "threads": []}
+    ):
+        original = helper.Server.__init__
+        urls = []
+
+        def capture(server: helper.Server, url: str, base_dir: str | None) -> None:
+            original(server, url, base_dir)
+            urls.append(server.url)
+
+        monkeypatch.setattr(helper.Server, "__init__", capture)
+        invoke(monkeypatch, "inspect", "--workspace", local_t3)
+    assert urls == ["http://127.0.0.1:3773"]
+
+
+@pytest.mark.parametrize("explicit_base", [False, True])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://localhost:3773",
+        "http://127.0.0.1:3773",
+        "http://[::1]:3773",
+        "http://LOCAL.example.org:80/",
+        "http://local.example.org",
+    ],
+)
+def test_runtime_origin_session(
+    local_t3: Path,
+    url: str,
+    *,
+    explicit_base: bool,
+) -> None:
+    """Only loopback or a normalized recorded origin can issue a local session."""
+    base = local_t3 / ("custom" if explicit_base else ".t3")
+    (base / "userdata").mkdir(parents=True)
+    (base / "userdata/server-runtime.json").write_text(
+        json.dumps({"origin": "http://local.example.org"})
+    )
+    server = helper.Server(url, str(base) if explicit_base else None)
+    assert server.token == "fixture-token"  # ruff: ignore[hardcoded-password-string] - synthetic CLI output.
+    args = json.loads((local_t3 / "t3.args").read_text())
+    assert args == [
+        "auth",
+        "session",
+        "issue",
+        "--ttl",
+        "5m",
+        "--label",
+        "T3 thread handoff",
+        "--token-only",
+        *(["--base-dir", str(base)] if explicit_base else []),
+    ]
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://other.example.org",
+        "https://local.example.org",
+        "http://local.example.org:3773",
+        "http://local.example.org.evil.example.org",
+    ],
+)
+def test_runtime_origin_refuses_other_hosts(local_t3: Path, url: str) -> None:
+    """A different scheme, host or port never invokes the local CLI."""
+    base = local_t3 / ".t3"
+    (base / "userdata").mkdir(parents=True)
+    (base / "userdata/server-runtime.json").write_text(
+        json.dumps({"origin": "http://local.example.org"})
+    )
+    with pytest.raises(ValueError, match="Remote servers require T3_THREAD_AUTH_TOKEN"):
+        helper.Server(url, None)
+    assert not (local_t3 / "t3.args").exists()

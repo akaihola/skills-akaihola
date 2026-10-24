@@ -35,3 +35,49 @@ T3 records the address it is serving on in `<base dir>/userdata/server-runtime.j
 - The four new tests pass, and the helper's existing test suite passes with networking disabled.
 - Only `t3-start-thread/scripts/start_thread.py`, its tests and `t3-start-thread/SKILL.md` change, besides this issue's own moves.
 - Handoff: a short outcome; details stay in this file.
+
+
+## Implementation and validation
+
+The helper reads the selected base directory's runtime origin when no URL
+is supplied. Local session issuance permits loopback or the same normalized
+scheme, hostname and effective port as that origin. Other remote origins
+retain the existing refusal. Explicit URLs and saved resume records retain
+their endpoint selection.
+
+Four new parametrized tests use an isolated home, temporary runtime data and
+an executable fake CLI. They cover discovery, fallback, session arguments,
+case/default-port normalization and refusal across scheme, host and port.
+Malformed JSON, invalid ports and an unreadable runtime path fall back safely.
+
+The initial test-first run reproduced the defect: six failing cases, fourteen
+passing cases. After implementation, the full helper suite passed 103 tests
+with networking disabled. Ruff lint, formatting and whitespace checks passed.
+Ruff required formatting-only edits in the two changed Python files.
+
+```bash
+unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q
+ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py
+ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py
+git diff --check
+```
+
+No live server was contacted. The steward owns the later deployed-server
+read-only inspection and send dry run.
+
+## Resource record
+
+Commands ran sequentially with a 180-second bound and process-group cleanup,
+monitoring available memory and swap against the launch thresholds.
+
+- **Test-first focused cases — started at once:** wait 0.0 s; admission
+  MemAvailable 57863 MiB; final 57785 MiB; starting swap
+  0 MiB; growth 0 MiB; elapsed 1.1 s; exit 1.
+
+- **Initial full helper suite — started at once:** wait 0.0 s; admission
+  MemAvailable 57939 MiB; final 57834 MiB; starting swap
+  0 MiB; growth 0 MiB; elapsed 1.2 s; exit 0.
+
+- **Final full helper suite — started at once:** wait 0.0 s; admission
+  MemAvailable 57931 MiB; final 57907 MiB; starting swap
+  0 MiB; growth 0 MiB; elapsed 1.2 s; exit 0.

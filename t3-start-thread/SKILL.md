@@ -68,6 +68,8 @@ The helper implements ordinary thread operations only; never substitute
 Prefer a native T3 tool for the selected operation if one is exposed.
 Otherwise use the helper below. It uses the running server's authenticated
 WebSocket API and also works when the collaborative browser is unavailable.
+The helper finds the local server itself; pass `--url` and
+`T3_THREAD_AUTH_TOKEN` only for another machine's server.
 
 Before claiming ordinary thread creation or messaging is unavailable, check
 this helper and the local backend. Missing native tools do not establish that

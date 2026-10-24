@@ -71,11 +71,40 @@ def paced_thread(tracker: str, issue: int) -> str:
     return thread_id
 
 
+def normalized_origin(url: str) -> tuple[str, str | None, int]:
+    """Compare origins using the scheme, hostname and effective port."""
+    parsed = urlsplit(url)
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+    return parsed.scheme, parsed.hostname, port
+
+
+def local_origin(base_dir: str | None) -> str | None:
+    """Read the local runtime address, tolerating unavailable runtime data."""
+    base = Path(base_dir).expanduser() if base_dir else Path.home() / ".t3"
+    try:
+        data = json.loads(
+            (base / "userdata/server-runtime.json").read_text(encoding="utf-8")
+        )
+        origin = data.get("origin") if isinstance(data, dict) else None
+        if isinstance(origin, str):
+            scheme, host, _ = normalized_origin(origin)
+            if scheme in {"http", "https"} and host:
+                return origin
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 class Server:
     """Keep a short-lived bearer session in memory for one invocation."""
 
-    def __init__(self, url: str, base_dir: str | None) -> None:
+    def __init__(self, url: str | None, base_dir: str | None) -> None:
         """Validate the endpoint and capture a bearer session privately."""
+        runtime_origin = local_origin(base_dir)
+        if url is None:
+            url = runtime_origin or "http://127.0.0.1:3773"
         self.url = url.rstrip("/")
         parsed = urlsplit(self.url)
         if parsed.scheme not in {"http", "https"} or not parsed.hostname:
@@ -86,7 +115,10 @@ class Server:
             raise ValueError(msg)
         token = os.environ.get("T3_THREAD_AUTH_TOKEN")
         if not token:
-            if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            if parsed.hostname not in {"localhost", "127.0.0.1", "::1"} and (
+                runtime_origin is None
+                or normalized_origin(self.url) != normalized_origin(runtime_origin)
+            ):
                 msg = "Remote servers require T3_THREAD_AUTH_TOKEN"
                 raise ValueError(msg)
             command = [
@@ -529,7 +561,7 @@ def main() -> None:
     commands = parser.add_subparsers(dest="action", required=True)
     for action in ("inspect", "start", "send", "settle"):
         command = commands.add_parser(action)
-        command.add_argument("--url", default="http://127.0.0.1:3773")
+        command.add_argument("--url")
         command.add_argument("--base-dir")
         if action == "settle":
             command.add_argument("--thread", action="append", required=True)
