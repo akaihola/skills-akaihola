@@ -1,0 +1,127 @@
+{
+  "items": [
+    {
+      "issue": "skills-akaihola [28]",
+      "hai_id": "simple-560f3c46-1476-4433-b348-47d2d0ab6ba6",
+      "title": "Let the T3 helper find and authenticate to the local server when it isn't on loopback",
+      "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a",
+      "source_repository": "/home/agent/prg/skills-akaihola",
+      "base_commit": "fd85a6376e317bba86740ff386571eaaf77d637c",
+      "delivery_commits": [
+        "fe721041780217b0955bbcfae4212e92b1f9a1b3"
+      ],
+      "checks": [
+        {
+          "id": "helper-fake-suite",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "skill": {
+              "kind": "sha256",
+              "path": "t3-start-thread/SKILL.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "lint-format-whitespace",
+          "command": "bash -c 'ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && git diff --check fd85a6376e317bba86740ff386571eaaf77d637c HEAD'",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "t3-start-thread/scripts/start_thread.py"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "t3-start-thread/tests/test_start_thread.py"
+            },
+            "skill": {
+              "kind": "sha256",
+              "path": "t3-start-thread/SKILL.md"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "helper-fake-suite": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a",
+          "tested_commit": "fe721041780217b0955bbcfae4212e92b1f9a1b3",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/t3-start-thread/scripts/start_thread.py",
+              "value": "abbd9790c39bf37f1142837d976fccaf8d9a172e8c4b9fc017e07ca5ebb14087"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/t3-start-thread/tests/test_start_thread.py",
+              "value": "233a93dee179ca791ff91a1205bfea9811b944e5809a31814d1738fe4370f403"
+            },
+            "skill": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/t3-start-thread/SKILL.md",
+              "value": "4aacd5ebd20095c24fc507efbab4533641813a744cb6a10b8fc6049106937561"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [28]",
+          "check": "helper-fake-suite",
+          "command": "unshare -rn env PYTHONDONTWRITEBYTECODE=1 uv run --offline --no-project --with pytest==9.1.1 --with websocket-client==1.9.2 pytest -p no:cacheprovider t3-start-thread/tests -q",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-24T21:31:07.717965+00:00"
+        },
+        "lint-format-whitespace": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a",
+          "tested_commit": "fe721041780217b0955bbcfae4212e92b1f9a1b3",
+          "dependencies": {
+            "helper": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/t3-start-thread/scripts/start_thread.py",
+              "value": "abbd9790c39bf37f1142837d976fccaf8d9a172e8c4b9fc017e07ca5ebb14087"
+            },
+            "tests": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/t3-start-thread/tests/test_start_thread.py",
+              "value": "233a93dee179ca791ff91a1205bfea9811b944e5809a31814d1738fe4370f403"
+            },
+            "skill": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/t3-start-thread/SKILL.md",
+              "value": "4aacd5ebd20095c24fc507efbab4533641813a744cb6a10b8fc6049106937561"
+            },
+            "lint_config": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-8e4b340a/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [28]",
+          "check": "lint-format-whitespace",
+          "command": "bash -c 'ruff check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/scripts/start_thread.py t3-start-thread/tests/test_start_thread.py && git diff --check fd85a6376e317bba86740ff386571eaaf77d637c HEAD'",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-24T21:31:10.080495+00:00"
+        }
+      }
+    }
+  ]
+}

@@ -81,3 +81,39 @@ monitoring available memory and swap against the launch thresholds.
 - **Final full helper suite — started at once:** wait 0.0 s; admission
   MemAvailable 57931 MiB; final 57907 MiB; starting swap
   0 MiB; growth 0 MiB; elapsed 1.2 s; exit 0.
+
+## Merge and recorded evidence
+
+Fast-forwarded `main` from `fd85a6376e317bba86740ff386571eaaf77d637c` to
+`fe721041780217b0955bbcfae4212e92b1f9a1b3`. Delivery commits, oldest first:
+
+- `fe721041780217b0955bbcfae4212e92b1f9a1b3`
+
+The task worktree remains clean and detached at the merged commit; its branch
+is retained. The shared checkout remains on `main`.
+
+Both checks were recorded against the merged commit and passed (exit 0):
+
+- **`helper-fake-suite`:** all 103 helper tests with networking disabled.
+- **`lint-format-whitespace`:** Ruff lint and formatting for both Python
+  files, plus whitespace validation of the delivery diff.
+
+The [machine receipt] records commands, commit identity and SHA-256
+fingerprints. This helper has no lockfile and uses no editable dependency;
+the offline test dependencies are pinned in the command.
+
+- **Recorder helper-fake-suite — started at once:** wait 0.0 s;
+  admission MemAvailable 57882 MiB; final 57833 MiB;
+  starting swap 0 MiB; growth 0 MiB;
+  elapsed 1.4 s; exit 0.
+
+- **Recorder lint-format-whitespace — started at once:** wait 0.0 s;
+  admission MemAvailable 57848 MiB; final 57850 MiB;
+  starting swap 0 MiB; growth 0 MiB;
+  elapsed 0.2 s; exit 0.
+
+No acceptance conditions remain unmet. Completion is recorded unchecked;
+user acceptance stays separate. The steward owns the later deployed-server
+inspection and send dry run. No owner action is required.
+
+[machine receipt]: 28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-it-is.evidence.json
