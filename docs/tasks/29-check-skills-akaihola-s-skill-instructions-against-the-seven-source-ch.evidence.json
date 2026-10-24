@@ -1,0 +1,154 @@
+{
+  "items": [
+    {
+      "issue": "skills-akaihola [29]",
+      "hai_id": "simple-e96a4775-b900-4503-bb28-9f047468aa99",
+      "title": "Check skills-akaihola's skill instructions against the seven source changes since the 10-22 docs review",
+      "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
+      "source_repository": "/home/agent/prg/skills-akaihola",
+      "base_commit": "f35e0f6559c24564c8b3068f8ae5d8b2470121eb",
+      "delivery_commits": [
+        "7b0d58fbcec774d01791bdc118ac121b4ed600db"
+      ],
+      "checks": [
+        {
+          "id": "metadata",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock python scripts/check_skill_metadata.py",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock"
+            },
+            "project": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "regressions",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock pytest -p no:cacheprovider tests/test_skill_metadata.py tests/test_secrets_scan.py tests/test_read_as_markdown.py tests/test_security_boundaries.py t3-start-thread/tests -q",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock"
+            },
+            "project": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "help",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock bash -e -c 'python t3-start-thread/scripts/start_thread.py --help >/dev/null\nfor action in inspect start send settle resume; do\n  python t3-start-thread/scripts/start_thread.py \"$action\" --help >/dev/null || exit\n done\npython read-as-markdown/scripts/read_as_markdown.py --help >/dev/null\npython secrets-scan/scripts/scan.py --help >/dev/null\nprintf '\"'\"'%s\\n'\"'\"' '\"'\"'Eight offline help probes passed'\"'\"'\n'",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock"
+            },
+            "project": {
+              "kind": "sha256",
+              "path": "pyproject.toml"
+            }
+          }
+        },
+        {
+          "id": "documents",
+          "command": "python3 /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/check-docs.py && python3 .github/scripts/check_symlinks.py",
+          "dependencies": {
+            "checker": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/check-docs.py"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "metadata": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
+          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            },
+            "project": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [29]",
+          "check": "metadata",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock python scripts/check_skill_metadata.py",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-24T23:58:25.051758+00:00"
+        },
+        "regressions": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
+          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            },
+            "project": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [29]",
+          "check": "regressions",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock pytest -p no:cacheprovider tests/test_skill_metadata.py tests/test_secrets_scan.py tests/test_read_as_markdown.py tests/test_security_boundaries.py t3-start-thread/tests -q",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-24T23:58:27.801551+00:00"
+        },
+        "help": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
+          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            },
+            "project": {
+              "kind": "sha256",
+              "path": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348/pyproject.toml",
+              "value": "06f2371fd0d7dbd39fea1c7f9d644f9968ded1b8bb8feb925d40cb2170e0ede7"
+            }
+          },
+          "issue": "skills-akaihola [29]",
+          "check": "help",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/requirements.lock bash -e -c 'python t3-start-thread/scripts/start_thread.py --help >/dev/null\nfor action in inspect start send settle resume; do\n  python t3-start-thread/scripts/start_thread.py \"$action\" --help >/dev/null || exit\n done\npython read-as-markdown/scripts/read_as_markdown.py --help >/dev/null\npython secrets-scan/scripts/scan.py --help >/dev/null\nprintf '\"'\"'%s\\n'\"'\"' '\"'\"'Eight offline help probes passed'\"'\"'\n'",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-24T23:58:28.676997+00:00"
+        },
+        "documents": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
+          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "dependencies": {
+            "checker": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/check-docs.py",
+              "value": "7fbfa544e5608c1346d0b86229b4af1784a5a822cd3568b95a75bcfcd7099506"
+            }
+          },
+          "issue": "skills-akaihola [29]",
+          "check": "documents",
+          "command": "python3 /home/agent/.local/state/kandev-pacer/t3/evidence/hai29-checks/check-docs.py && python3 .github/scripts/check_symlinks.py",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-24T23:58:28.956241+00:00"
+        }
+      }
+    }
+  ]
+}

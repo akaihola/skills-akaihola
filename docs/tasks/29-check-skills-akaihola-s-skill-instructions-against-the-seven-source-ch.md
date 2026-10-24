@@ -104,4 +104,46 @@ stop occurred. These measurements contain no command output.
 | Document and symlink checks | started at once | 0.0 | 57658.2 / 57651.7 | 0.5 / 0 | 0.2 | exit 0 |
 | Final document and symlink checks | started at once | 0.0 | 57690.6 / 57685.6 | 0.5 / 0 | 0.2 | exit 0 |
 
+### Integration and merged checks
+
+Base commit: `f35e0f6559c24564c8b3068f8ae5d8b2470121eb`. Delivery and merged commit:
+`7b0d58fbcec774d01791bdc118ac121b4ed600db`. The delivery was fast-forwarded onto `main`;
+the task checkout was detached at that commit for clean-checkout recording.
+The task branch and worktree are retained.
+
+All four evidence commands completed at the merged commit:
+
+- **metadata:** exit 0; 48 skill frontmatters validated.
+- **regressions:** exit 0; 158 tests passed, including every required suite.
+- **help:** exit 0; all eight offline parser probes passed.
+- **documents:** exit 0; eight source documents, 78 local links, heading
+  lengths, scope, new-text privacy, diff whitespace and committed symlinks passed.
+
+The [check receipt][receipt] records exact commands, dependency hashes,
+tested commit and results. It was copied only after all record calls finished.
+No implementation commit intervened between merge and the completion move.
+The nested scanner-shape proposal remains with the steward in the recheck;
+it was not filed or messaged. User acceptance remains unchecked.
+
+### Memory for evidence recording
+
+Each row names `CHECK_ID` in this command (`RECORDER` and `EVIDENCE` identify
+the external recorder and declaration used for this task):
+
+```bash
+uv run "$RECORDER" record "$EVIDENCE" 'skills-akaihola [29]' CHECK_ID
+```
+
+The same admission/monitoring guard applied, with a 300-second timeout per
+record call and process-group cleanup. These measurements contain no check
+output; the results are listed separately above.
+
+| Record command / CHECK_ID | Outcome | Wait (s) | Admission / final available (MiB) | Starting swap / growth (MiB) | Elapsed (s) | Status |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| `metadata` | started at once | 0.0 | 57715.2 / 57683.9 | 0.5 / 0 | 0.2 | exit 0 |
+| `regressions` | started at once | 0.0 | 57677.6 / 57655.6 | 0.5 / 0 | 2.81 | exit 0 |
+| `help` | started at once | 0.0 | 57658.7 / 57629.9 | 0.5 / 0 | 0.8 | exit 0 |
+| `documents` | started at once | 0.0 | 57632.9 / 57630.6 | 0.5 / 0 | 0.2 | exit 0 |
+
 [recheck]: ../reviews/2026-10-25-docs-recheck.md
+[receipt]: 29-check-skills-akaihola-s-skill-instructions-against-the-seven-source-ch.evidence.json

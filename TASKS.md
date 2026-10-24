@@ -12,11 +12,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [29] Check skills-akaihola's skill instructions against the seven source
-  changes since the 10-22 docs review
-      <!-- hai:{"id":"simple-e96a4775-b900-4503-bb28-9f047468aa99","labels":["steward","review"],"createdAt":"2026-10-24T23:50:27.390Z","updatedAt":"2026-10-24T23:50:49.461Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [29] Check skills-akaihola's skill instructions against the seven source
+  changes since the 10-22 docs review
+      <!-- hai:{"id":"simple-e96a4775-b900-4503-bb28-9f047468aa99","labels":["steward","review"],"createdAt":"2026-10-24T23:50:27.390Z","updatedAt":"2026-10-24T23:59:27.721Z"} -->
 
 - [x] [28] Let the T3 helper find and authenticate to the local server when it isn't
   on loopback
