@@ -8,11 +8,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+## Scheduled
+
 - [28] Let the T3 helper find and authenticate to the local server when it isn't
   on loopback
-  <!-- hai:{"id":"simple-560f3c46-1476-4433-b348-47d2d0ab6ba6","labels":["steward"],"createdAt":"2026-10-24T21:26:38.750Z","updatedAt":"2026-10-24T21:26:38.750Z"} -->
-
-## Scheduled
+  <!-- hai:{"id":"simple-560f3c46-1476-4433-b348-47d2d0ab6ba6","labels":["steward"],"createdAt":"2026-10-24T21:26:38.750Z","updatedAt":"2026-10-24T21:28:51.054Z"} -->
 
 ## In Progress
 
