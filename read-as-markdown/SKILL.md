@@ -29,13 +29,8 @@ chunks.
 
 1. Detects format from file extension
 2. Finds workspace root from the current working directory (walks up to find `.claude/`; falls back to the current directory)
-3. Checks cache at `<workspace>/.cache/markdown/<relative-source-path>.md`
-   for in-workspace sources, or
-   `<workspace>/.cache/markdown/_external/<path-hash>/<filename>.md` for external
-   sources (first 16 hex digits of SHA-256 of the resolved absolute source path)
-   - Fast path: mtime + size match in `.meta` sidecar → cache hit
-   - Content-hash fallback: SHA-256 of original file checked against
-     `index.json` → finds cache even if the source file was moved/renamed
+3. Checks the workspace cache by source path, then content hash; see
+   [cache lookup and layout](references/cache.md#caching)
 4. On miss: dispatches to the appropriate converter backend
 5. Writes Markdown + `.meta` sidecar + updates `index.json` hash index;
    after conversion, creates or updates the workspace `.gitignore` with `.cache/`
@@ -59,16 +54,12 @@ options:
 ## Output and cache details
 
 Read [cache layout and backends](references/cache.md) when inspecting cached
-files, diagnosing conversion errors or adding a converter. The cache retains
-the source extension, mirrors in-workspace paths, and groups external sources
-under `_external/<path-hash>/` so same-name documents have separate caches.
-It is local to the selected workspace.
+files, diagnosing conversion errors or adding a converter.
 
-Conversion writes cached files and may update the workspace ignore file.
 Success exits 0. Handled errors are JSON objects with an `error` key and exit
 status 1.
-PDF uses `pdftotext` first, then the registered `pandoc` fallback; DOCX/EPUB
-use `pandoc`. Forced backends do not fall back.
+Argument errors and uncaught exceptions also exit nonzero; the latter can
+produce a traceback.
 
 ## Distinction from pdf/docx skills
 

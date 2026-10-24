@@ -38,15 +38,13 @@ The two scanners use different exclusion lists; see
 ## Interpret a result
 
 Read [classification and limits](references/classifying-findings.md) before
-triaging findings. A finding is `likely-false-positive` only when the detected
-value itself contains a placeholder marker; words elsewhere on its line do not
-count. Every other finding is `review-required`. Neither label proves that a
-credential is live or harmless.
+triaging findings. Neither classification label proves that a credential is
+live or harmless.
 
 The report names each scanner's outcome: `ran`, `skipped` on request
-(`--no-secretlint`) or `failed` with a reason. A failure covers an unexpected
-exit status, unparsable output, a setup failure (`bun add`, `git ls-files`)
-or a secretlint batch that was not scanned. A requested skip is not a failure.
+(`--no-secretlint`) or `failed` with a reason. See
+[failure conditions](references/classifying-findings.md#output-and-coverage).
+A requested skip is not a failure.
 
 | Exit | Meaning |
 | --- | --- |
@@ -58,7 +56,8 @@ Exit 2 outranks exit 1: the report still lists findings from the scanners that
 finished, but the scan is incomplete. Rerun it after fixing the named scanner
 before calling a repository clean.
 
-Never print flagged source lines, credential values, or raw secretlint messages.
+Never print flagged source lines, credential values, or raw secretlint messages,
+or include them in reports, patches or commands.
 Use file/line and detector kind when reporting or handing off findings.
 Do not run a credential verification or rotate/revoke credentials without
 authorization for that operation. A confirmed exposed credential requires

@@ -7,13 +7,12 @@ description: Route requested T3 Code coordination to child-task delegation, an e
 
 ## Apply model-setting preferences
 
-Before creating a thread or delegating a task, read
-[agent@tinni:~/my-knowledge/USER.md](http://tinni/my-knowledge/USER.md?f#t3-code-model-settings) when present. Explicit user
+Before creating a thread or delegating a task, read the available user-preference
+instructions for T3 model settings, when present. Explicit user
 preferences override inherited and catalog-default reasoning and service-tier
 options. Pass the resolved options explicitly and verify the created thread's
-saved configuration. The helper's `start` accepts exactly one of `--parent-thread` or `--settings`.
-For an override, copy all three settings fields from `inspect`, edit the required
-options, and pass only `--settings`; it replaces rather than merges settings.
+saved configuration. For helper settings and overrides, follow the
+[start reference](references/helper.md#start-an-explicitly-requested-ordinary-thread).
 
 ## Choose the operation first
 
@@ -68,8 +67,8 @@ The helper implements ordinary thread operations only; never substitute
 Prefer a native T3 tool for the selected operation if one is exposed.
 Otherwise use the helper below. It uses the running server's authenticated
 WebSocket API and also works when the collaborative browser is unavailable.
-The helper finds the local server itself; pass `--url` and
-`T3_THREAD_AUTH_TOKEN` only for another machine's server.
+See [server discovery and authentication](references/helper.md#server-discovery-and-authentication)
+for local defaults and explicit server overrides.
 
 Before claiming ordinary thread creation or messaging is unavailable, check
 this helper and the local backend. Missing native tools do not establish that

@@ -50,10 +50,9 @@ Detect-secrets findings also carry `is_verified`; secretlint findings carry
 messages are omitted. The Markdown renderer reports the same safe
 location/type information and the scanner outcomes.
 
-The wrapper always passes `--no-verify` to detect-secrets. Its
-`--all-files` option applies only to that scanner; secretlint uses
-`get_git_tracked_files()` and batches `SECRETLINT_BATCH_SIZE` (200) paths at
-a time.
+For scanner options and the verification policy, see the [skill entry point][skill].
+Secretlint uses `get_git_tracked_files()` and batches `SECRETLINT_BATCH_SIZE`
+(200) paths at a time.
 
 `scanners` maps each scanner name to `{"status": "ran"}`,
 `{"status": "skipped", "reason": "--no-secretlint"}` or
@@ -71,14 +70,12 @@ scanner stderr. A scanner fails when:
   Empty output with exit 0 counts as a clean batch. Findings from the other
   batches are kept, and the reason counts the batches not scanned.
 
-`exit_status()` returns 2 when any requested scanner failed, else 1 when a
-finding needs review, else 0. An invalid path also exits 2.
+See [exit statuses and incomplete-scan handling][results].
 
 ## Remediation and suppression
 
-For a confirmed exposed credential, arrange authorized revocation/rotation
-and replace source literals with a credential mechanism. Never reproduce the
-old value in reports, patches or commands.
+Follow the [skill's authorization and reporting rules][results]; replace
+confirmed source credentials with a credential mechanism.
 
 Suppress only verified false positives and prefer narrow suppressions.
 Broadly excluding documentation, test fixtures or dependency directories can
@@ -92,3 +89,5 @@ current options. The wrapper implements neither a persistent baseline nor
 an audit/diff workflow.
 
 [secrets-scan/scripts/scan.py]: ../scripts/scan.py
+[skill]: ../SKILL.md
+[results]: ../SKILL.md#interpret-a-result

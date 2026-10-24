@@ -18,12 +18,26 @@ active. Choose the intended parent thread using conversation
 context, rather than assuming the newest thread is the current one.
 `CODEX_THREAD_ID` is the provider's session ID, not necessarily T3's thread ID.
 
-The default server is `http://127.0.0.1:3773`. Use `--url` for another server.
-For a local server, the helper captures `t3 auth session issue --ttl 5m
---token-only` without printing the token. Set `--base-dir` when the CLI's state
-directory differs from the server's. For a remote server, supply an existing
-bearer session through `T3_THREAD_AUTH_TOKEN`; do not mint credentials from an
-unrelated local server. Tokens stay in memory.
+## Server discovery and authentication
+
+Without `--url`, the helper reads `origin` from the selected base directory's
+runtime file. The default base and file are:
+
+```text
+~/.t3/userdata/server-runtime.json
+```
+
+If discovery finds no origin, the helper falls back to
+`http://127.0.0.1:3773`. `--url` overrides discovery. `--base-dir` selects both
+the runtime-file base and the local authentication CLI's state directory;
+choose the base used by the intended server.
+
+`T3_THREAD_AUTH_TOKEN`, when set, supplies an existing bearer session. Otherwise
+the helper captures `t3 auth session issue --ttl 5m --label "T3 thread handoff"
+--token-only` without printing the token, but only for loopback or the recorded
+runtime origin (matching scheme, hostname and effective port). Other origins
+require `T3_THREAD_AUTH_TOKEN`; do not mint credentials from an unrelated local
+server. Tokens stay in memory.
 
 ## Settle threads
 
@@ -142,8 +156,10 @@ current branch. The parent must belong to the selected project.
 For an explicitly requested shared checkout, pass `--shared-checkout` and omit
 both `--branch` and `--base-branch`; this does not switch the checkout's branch.
 
-When no parent thread fits, pass `--settings FILE` instead of
-`--parent-thread`. The file is a JSON object holding exactly `modelSelection`,
+`start` requires exactly one of `--parent-thread` or `--settings FILE`.
+When no parent fits, or to override settings, use the file: copy all three
+fields from `inspect` and edit the required options. Settings replace rather
+than merge. The file is a JSON object holding exactly `modelSelection`,
 `runtimeMode` and `interactionMode`, in the shape `inspect` prints. Use it for
 an explicitly requested model and for scheduled jobs, since archived threads
 drop out of the snapshot and can no longer serve as parents. Never change the
@@ -172,10 +188,15 @@ visible, it reports it without submitting another turn. Otherwise it resends
 the same command ID, preserving server deduplication. An acknowledged command
 with a missing result stops for inspection. Immediately after dispatch, a launch
 also requires both its thread and initial message to be visible. Incomplete
-visibility retains the acknowledged record and asks for resume; resume does
+visibility retains the acknowledged record and exits 1; resume does
 not replay an acknowledged command while waiting for its result to appear.
 Stop and inspect a failed run or schema error; do not create fresh requests
 as retries.
+
+The CLI hides most exception details to avoid exposing credentials, printing
+`Error: <ExceptionType>. Inspect the request record and server state before
+retrying.` Inspect the saved `accepted` flag and acknowledgement instead of
+expecting a detailed missing-result message on stderr.
 
 Report the title, branch/worktree, and observed run state. Claim the task is
 running only when the server reports a running run. Check the new thread's UI

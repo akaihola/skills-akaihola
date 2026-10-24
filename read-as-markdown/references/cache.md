@@ -16,9 +16,7 @@ Implementation: [read-as-markdown/scripts/read_as_markdown.py].
 }
 ```
 
-Handled conversion errors return `{"error": "description"}` with exit status 1.
-Successful conversions and cache hits exit 0.
-Argument errors exit nonzero; uncaught exceptions can still produce a traceback.
+For error objects and exit statuses, see the [skill's result handling][results].
 
 ## Caching
 
@@ -46,7 +44,8 @@ Each cached file has a `.meta` JSON sidecar:
 }
 ```
 
-A hash index at `<workspace>/.cache/markdown/index.json` maps content hashes to
+The fast path compares the source's mtime and size with its sidecar. On a miss,
+a hash index at `<workspace>/.cache/markdown/index.json` maps SHA-256 content hashes to
 relative cache paths, enabling cache hits when source files are moved or renamed.
 
 The script writes one `convert` entry in `toolchain`. It does not implement or
@@ -59,6 +58,8 @@ record later post-processing.
 | PDF    | pdftotext      | pandoc   |
 | DOCX   | pandoc         | —        |
 | EPUB   | pandoc         | —        |
+
+Forced backends do not fall back.
 
 **pdftotext** uses `-layout` mode for best table/column preservation in academic
 papers. On NixOS, automatically falls back to `nix-shell -p poppler-utils` if
@@ -80,3 +81,4 @@ BACKENDS["pdf"].insert(0, ("marker", marker_converter))
 
 
 [read-as-markdown/scripts/read_as_markdown.py]: ../scripts/read_as_markdown.py
+[results]: ../SKILL.md#output-and-cache-details
