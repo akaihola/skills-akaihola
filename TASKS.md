@@ -8,6 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [29] Check skills-akaihola's skill instructions against the seven source
+  changes since the 10-22 docs review
+  <!-- hai:{"id":"simple-e96a4775-b900-4503-bb28-9f047468aa99","labels":["steward","review"],"createdAt":"2026-10-24T23:50:27.390Z","updatedAt":"2026-10-24T23:50:27.390Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -119,7 +123,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -174,6 +178,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [27]: docs/tasks/27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wire-fix.md
 
 [28]: docs/tasks/28-let-the-t3-helper-find-and-authenticate-to-the-local-server-when-it-is.md
+
+[29]: docs/tasks/29-check-skills-akaihola-s-skill-instructions-against-the-seven-source-ch.md
 
 ## Rules
 
