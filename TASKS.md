@@ -14,9 +14,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Completed / Accepted
 
-- [ ] [28] Let the T3 helper find and authenticate to the local server when it isn't
+- [x] [28] Let the T3 helper find and authenticate to the local server when it isn't
   on loopback
-      <!-- hai:{"id":"simple-560f3c46-1476-4433-b348-47d2d0ab6ba6","labels":["steward"],"createdAt":"2026-10-24T21:26:38.750Z","updatedAt":"2026-10-24T21:31:27.232Z"} -->
+      <!-- hai:{"id":"simple-560f3c46-1476-4433-b348-47d2d0ab6ba6","labels":["steward"],"createdAt":"2026-10-24T21:26:38.750Z","updatedAt":"2026-10-24T22:58:45.201Z"} -->
 
 - [x] [27] Fold the T3 helper's duplicate handoff test fakes into the V2 wire
   fixture
