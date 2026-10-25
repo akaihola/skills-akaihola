@@ -10,11 +10,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [30] Report malformed nested scanner results in secrets-scan as a failed
-  scanner (exit 2)
-  <!-- hai:{"id":"simple-e317bb37-ad14-47fa-8f98-bfbf6e328bf3","labels":["steward"],"createdAt":"2026-10-25T00:18:33.080Z","updatedAt":"2026-10-25T00:28:34.967Z"} -->
-
 ## In Progress
+
+- [~] [30] Report malformed nested scanner results in secrets-scan as a failed
+  scanner (exit 2)
+      <!-- hai:{"id":"simple-e317bb37-ad14-47fa-8f98-bfbf6e328bf3","labels":["steward"],"createdAt":"2026-10-25T00:18:33.080Z","updatedAt":"2026-10-25T00:28:41.454Z"} -->
 
 ## Completed / Accepted
 
