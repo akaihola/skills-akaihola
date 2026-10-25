@@ -57,18 +57,24 @@ Secretlint uses `get_git_tracked_files()` and batches `SECRETLINT_BATCH_SIZE`
 `scanners` maps each scanner name to `{"status": "ran"}`,
 `{"status": "skipped", "reason": "--no-secretlint"}` or
 `{"status": "failed", "reason": ...}`, and `summary.failed_scanners` lists
-the failed names. Reasons name exit statuses and parse errors, never raw
-scanner stderr. A scanner fails when:
+the failed names. Reasons name exit statuses, parse errors and the part of
+the output with the wrong JSON type, never its value or raw scanner stderr.
+A scanner fails when:
 
 - **detect-secrets:** `uvx` cannot start, exits with a status other than 0
-  or 1, or prints output that is not JSON with a `results` object.
+  or 1, or prints output that is not JSON with a `results` object mapping
+  each file to a list of objects.
 - **secretlint setup:** `bun add` cannot start or fails, it leaves no
   secretlint binary, or `git ls-files` fails (for example outside a Git
   repository).
 - **secretlint batch:** a batch cannot start, exits with a status other than
   0 or 1, exits 1 with empty output, or prints output that is not a JSON list.
-  Empty output with exit 0 counts as a clean batch. Findings from the other
-  batches are kept, and the reason counts the batches not scanned.
+  A nested value of the wrong JSON type fails the batch too: a result that is
+  not an object, a `filePath` that is not a string, `messages` that is not a
+  list of objects, a `loc`, `start` or `end` that is not an object, or a line
+  or column that is not an integer. Empty output with exit 0 counts as a clean
+  batch. Findings from the other batches are kept, and the reason counts the
+  batches not scanned.
 
 See [exit statuses and incomplete-scan handling][results].
 

@@ -1,5 +1,6 @@
 """Offline secrets-scan runs with fake uvx, bun, git and secretlint executables."""
 
+import copy
 import hashlib
 import importlib.util
 import json
@@ -8,6 +9,7 @@ import shlex
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -184,6 +186,129 @@ def test_failed_scanner_exits_2_and_is_named(
         assert f"- `{name}`: **failed** — {reason}" in out
         assert f"Scan incomplete:** `{name}`" in out
         assert "No secrets detected" not in out
+
+
+# A well-formed secretlint result flagging the token on line 1 of a.txt
+FLAGGED = {
+    "filePath": "a.txt",
+    "messages": [
+        {
+            "ruleId": "@secretlint/secretlint-rule-github",
+            "messageId": "GITHUB_TOKEN",
+            "message": "found",
+            "loc": {
+                "start": {"line": 1, "column": 6},
+                "end": {"line": 1, "column": 6 + len(TOKEN)},
+            },
+        }
+    ],
+}
+MESSAGE = (0, "messages", 0)
+LOC = (*MESSAGE, "loc")
+
+# Where a malformed value replaces part of [FLAGGED], and the reason
+MALFORMED_SECRETLINT = {
+    "null item": ((0,), None, "a result item was not a JSON object"),
+    "scalar item": ((0,), TOKEN, "a result item was not a JSON object"),
+    "list item": ((0,), [TOKEN], "a result item was not a JSON object"),
+    "filePath not a string": (
+        (0, "filePath"),
+        [TOKEN],
+        "filePath was not a JSON string",
+    ),
+    "messages not a list": ((0, "messages"), TOKEN, "messages was not a JSON list"),
+    "message not an object": (MESSAGE, [TOKEN], "a message was not a JSON object"),
+    "loc not an object": (LOC, TOKEN, "loc was not a JSON object"),
+    "start not an object": ((*LOC, "start"), None, "loc.start was not a JSON object"),
+    "end not an object": ((*LOC, "end"), [TOKEN], "loc.end was not a JSON object"),
+    "column not an integer": (
+        (*LOC, "start", "column"),
+        TOKEN,
+        "a position was not a JSON integer",
+    ),
+}
+
+MALFORMED_DETECT_SECRETS = {
+    "results not a mapping": ([TOKEN], "output had no results object"),
+    "entry not a list": (
+        {"a.txt": [], "b.txt": TOKEN},
+        "a results entry was not a JSON list",
+    ),
+    "finding not an object": (
+        {"a.txt": [], "b.txt": [TOKEN]},
+        "a finding was not a JSON object",
+    ),
+}
+
+
+def replaced(path: tuple, value: object) -> list:
+    """Return [FLAGGED] with the part at path replaced by value."""
+    data = copy.deepcopy([FLAGGED])
+    *parents, last = path
+    target: Any = data
+    for key in parents:
+        target = target[key]
+    target[last] = value
+    return data
+
+
+def secretlint_by_file(b_output: object) -> str:
+    """Return a fake secretlint printing [FLAGGED] for a.txt and b_output for b.txt."""
+    a, b = (shlex.quote(json.dumps(x)) for x in ([FLAGGED], b_output))
+    return f"""[[ " $* " == *"/b.txt "* ]] && echo {b} || echo {a}"""
+
+
+def assert_incomplete_but_kept(
+    harness: Harness, fmt: list[str], name: str, reason: str
+) -> None:
+    """Exit 2 names the failed scanner; the well-formed a.txt finding is listed."""
+    for path in [harness.repo / "a.txt", harness.repo / "b.txt"]:
+        path.write_text(f"TOKEN={TOKEN}\n", encoding="utf-8")
+    status, out = harness.run(*fmt)
+    assert status == 2
+    if fmt:
+        report = json.loads(out)
+        assert report["scanners"][name] == {"status": "failed", "reason": reason}
+        assert report["summary"]["failed_scanners"] == [name]
+        assert [(f["source"], f["file"]) for f in report["findings"]] == [
+            ("secretlint", "a.txt")
+        ]
+    else:
+        assert f"- `{name}`: **failed** — {reason}" in out
+        assert f"Scan incomplete:** `{name}`" in out
+        assert "`a.txt` line 1" in out
+        assert "Needs Review (1 findings)" in out
+
+
+@FORMATS
+@pytest.mark.parametrize(
+    "case", MALFORMED_SECRETLINT.values(), ids=MALFORMED_SECRETLINT
+)
+def test_malformed_secretlint_batch_fails_the_scanner(
+    harness: Harness, case: tuple[tuple, object, str], fmt: list[str]
+) -> None:
+    """A batch with a malformed nested shape is not scanned; others are kept."""
+    path, value, reason = case
+    harness.install(secretlint=secretlint_by_file(replaced(path, value)))
+    assert_incomplete_but_kept(
+        harness, fmt, "secretlint", f"1 of 2 batches not scanned (first: {reason})"
+    )
+
+
+@FORMATS
+@pytest.mark.parametrize(
+    "case", MALFORMED_DETECT_SECRETS.values(), ids=MALFORMED_DETECT_SECRETS
+)
+def test_malformed_detect_secrets_results_fail_the_scanner(
+    harness: Harness, case: tuple[object, str], fmt: list[str]
+) -> None:
+    """Malformed detect-secrets results fail it; secretlint findings are kept."""
+    results, reason = case
+    harness.install(
+        uvx=harness.cat("baseline.json", {"results": results}),
+        secretlint=secretlint_by_file([]),
+    )
+    assert_incomplete_but_kept(harness, fmt, "detect-secrets", reason)
 
 
 def test_failure_outranks_findings(harness: Harness) -> None:

@@ -33,6 +33,7 @@ import sys
 import tempfile
 from pathlib import Path
 from textwrap import dedent
+from typing import TypeVar
 
 # -- configuration -------------------------------------------------------------
 
@@ -109,6 +110,27 @@ class ScannerError(Exception):
 def failed(reason: str) -> dict:
     """Return the outcome of a requested scanner that did not finish."""
     return {"status": "failed", "reason": reason}
+
+
+JSON_TYPES: dict[type, str] = {
+    dict: "object",
+    list: "list",
+    str: "string",
+    int: "integer",
+}
+T = TypeVar("T")
+
+
+# Type parameter syntax needs Python 3.12; this script supports 3.10
+def expect(value: object, kind: type[T], what: str) -> T:  # ruff: ignore[non-pep695-generic-function]
+    """Return value if it has the JSON type kind; else raise a ScannerError.
+
+    The reason names what was malformed, never the value.
+    """
+    if not isinstance(value, kind):
+        msg = f"{what} was not a JSON {JSON_TYPES[kind]}"
+        raise ScannerError(msg)
+    return value
 
 
 # -- helpers -------------------------------------------------------------------
@@ -194,6 +216,9 @@ def run_detect_secrets(repo_path: Path, *, all_files: bool) -> dict:
     if not isinstance(data, dict) or not isinstance(data.get("results"), dict):
         msg = "output had no results object"
         raise ScannerError(msg)
+    for secrets in data["results"].values():
+        for secret in expect(secrets, list, "a results entry"):
+            expect(secret, dict, "a finding")
     return data
 
 
@@ -239,11 +264,15 @@ def get_git_tracked_files(repo_path: Path) -> list[str]:
     return [f for f in files if not f.startswith(EXCLUDE_DIR_PREFIXES)]
 
 
-def parse_secretlint_batch(result: subprocess.CompletedProcess[str]) -> list:
-    """Return the JSON results of one secretlint run; raise if it failed.
+def parse_secretlint_batch(
+    result: subprocess.CompletedProcess[str], repo_path: Path
+) -> list[dict]:
+    """Return the findings of one secretlint run; raise if it failed.
 
     secretlint exits 0 when clean (its output may be empty) and 1 with
-    findings; any other result means the batch was not scanned.
+    findings; any other result, or JSON of an unexpected shape, means the
+    batch was not scanned. Each dict has: file, line, col, end_line, end_col,
+    rule_id, message_id, message, docs_url.
     """
     if result.returncode not in {0, 1}:
         msg = f"exit status {result.returncode}"
@@ -259,10 +288,34 @@ def parse_secretlint_batch(result: subprocess.CompletedProcess[str]) -> list:
     except json.JSONDecodeError as exc:
         msg = "output was not valid JSON"
         raise ScannerError(msg) from exc
-    if not isinstance(items, list):
-        msg = "output was not a JSON list"
-        raise ScannerError(msg)
-    return items
+    findings: list[dict] = []
+    for item in expect(items, list, "output"):
+        expect(item, dict, "a result item")
+        fp = expect(item.get("filePath", ""), str, "filePath")
+        for msg in expect(item.get("messages", []), list, "messages"):
+            expect(msg, dict, "a message")
+            loc = expect(msg.get("loc", {}), dict, "loc")
+            start = expect(loc.get("start", {}), dict, "loc.start")
+            end = expect(loc.get("end", {}), dict, "loc.end")
+            line, col, end_line, end_col = (
+                expect(pos.get(key, 0), int, "a position")
+                for pos in (start, end)
+                for key in ("line", "column")
+            )
+            findings.append(
+                {
+                    "file": fp.replace(str(repo_path) + "/", ""),
+                    "line": line,
+                    "col": col,
+                    "end_line": end_line,
+                    "end_col": end_col,
+                    "rule_id": msg.get("ruleId", ""),
+                    "message_id": msg.get("messageId", ""),
+                    "message": msg.get("message", ""),
+                    "docs_url": msg.get("docsUrl", ""),
+                }
+            )
+    return findings
 
 
 def run_secretlint(
@@ -270,9 +323,8 @@ def run_secretlint(
 ) -> tuple[list[dict], str | None]:
     """Run secretlint on the given files in batches.
 
-    Return the finding dicts and a failure reason, or None when every batch
-    was scanned. Each dict has: file, line, col, end_line, end_col, rule_id,
-    message_id, message.
+    Return the findings of parse_secretlint_batch() and a failure reason, or
+    None when every batch was scanned.
     """
     # secretlint needs absolute paths when run from a temp dir
     abs_files = [str(repo_path / f) for f in files]
@@ -286,30 +338,9 @@ def run_secretlint(
     for batch in batches:
         cmd = [str(sl_bin), "--format", "json", "--secretlintrc", str(rc_path), *batch]
         try:
-            items = parse_secretlint_batch(run_tool(cmd, repo_path))
+            all_findings += parse_secretlint_batch(run_tool(cmd, repo_path), repo_path)
         except ScannerError as exc:
             failures.append(str(exc))
-            continue
-
-        for item in items:
-            fp = item.get("filePath", "")
-            rel = fp.replace(str(repo_path) + "/", "")
-            for msg in item.get("messages", []):
-                loc = msg.get("loc", {})
-                start, end = loc.get("start", {}), loc.get("end", {})
-                all_findings.append(
-                    {
-                        "file": rel,
-                        "line": start.get("line", 0),
-                        "col": start.get("column", 0),
-                        "end_line": end.get("line", 0),
-                        "end_col": end.get("column", 0),
-                        "rule_id": msg.get("ruleId", ""),
-                        "message_id": msg.get("messageId", ""),
-                        "message": msg.get("message", ""),
-                        "docs_url": msg.get("docsUrl", ""),
-                    }
-                )
 
     if failures:
         return all_findings, (
