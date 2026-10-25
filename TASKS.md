@@ -18,9 +18,9 @@ they are not pacer inputs. Keep each task in one tracker only.
   scanner (exit 2)
       <!-- hai:{"id":"simple-e317bb37-ad14-47fa-8f98-bfbf6e328bf3","labels":["steward"],"createdAt":"2026-10-25T00:18:33.080Z","updatedAt":"2026-10-25T01:02:30.750Z"} -->
 
-- [ ] [29] Check skills-akaihola's skill instructions against the seven source
+- [x] [29] Check skills-akaihola's skill instructions against the seven source
   changes since the 10-22 docs review
-      <!-- hai:{"id":"simple-e96a4775-b900-4503-bb28-9f047468aa99","labels":["steward","review"],"createdAt":"2026-10-24T23:50:27.390Z","updatedAt":"2026-10-24T23:59:27.721Z"} -->
+      <!-- hai:{"id":"simple-e96a4775-b900-4503-bb28-9f047468aa99","labels":["steward","review"],"createdAt":"2026-10-24T23:50:27.390Z","updatedAt":"2026-10-25T01:39:31.903Z"} -->
 
 - [x] [28] Let the T3 helper find and authenticate to the local server when it isn't
   on loopback
