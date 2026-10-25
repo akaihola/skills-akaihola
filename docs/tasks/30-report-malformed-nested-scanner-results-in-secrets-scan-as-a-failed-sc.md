@@ -113,7 +113,54 @@ contain no command output.
 | Regression suites | started at once | 0.0 | 57584.8 / 57521.5 | 0.5 / 0 | 3.41 | exit 0 |
 | Scanner help probe | started at once | 0.0 | 57576.1 / 57563.7 | 0.5 / 0 | 0.2 | exit 0 |
 
+### Integration and merged checks
+
+Base commit: `2e3340114abcbee3e6b96d8c7f8df2c06c4f2a1e`. Delivery and merged
+commit: `95bbe1f900414735f84acd25f513d2524c842b02`. The task branch was
+rebased onto `main` (adding only the start move beneath it) and
+fast-forwarded. The task worktree was detached at the merged commit for
+clean-checkout recording. The task branch and worktree are retained.
+
+All four evidence commands passed at the merged commit:
+
+- **metadata:** exit 0; 48 skill frontmatters validated.
+- **regressions:** exit 0; 184 passed. This is the full repository-level
+  suite: all four root `tests/` files and `t3-start-thread/tests`.
+- **new-tests-fail-on-base:** exit 0. In a temporary export of the merged
+  tree with the base commit's `scan.py`, the two new test functions gave
+  `24 failed, 2 passed`. The two passes are the non-mapping `results` cases
+  that `7e7a300` already handled.
+- **ruff:** exit 0; check and format passed on both changed Python files,
+  and the Python 3.10 parse passed on `scan.py` (Ruff 0.16.8).
+
+The [check receipt][receipt] records the exact commands, dependency hashes
+(the requirements lock, `pyproject.toml` and the Ruff binary), the tested
+commit and the results. It was copied only after all record calls finished.
+No commit intervened between the merge and the completion move. User
+acceptance remains unchecked.
+
+### Memory for evidence recording
+
+Each row names `CHECK_ID` in this command (`RECORDER` and `EVIDENCE` identify
+the external recorder and declaration used for this task):
+
+```bash
+uv run "$RECORDER" record "$EVIDENCE" 'skills-akaihola [30]' CHECK_ID
+```
+
+The same admission and monitoring guard applied, with a 300-second timeout
+per record call and process-group cleanup. These measurements contain no
+check output; the results are listed above.
+
+| Record command / CHECK_ID | Outcome | Wait (s) | Admission / final available (MiB) | Starting swap / growth (MiB) | Elapsed (s) | Status |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| `metadata` | started at once | 0.0 | 57486.9 / 57460.5 | 0.5 / 0 | 0.2 | exit 0 |
+| `regressions` | started at once | 0.0 | 57473.9 / 57431.1 | 0.5 / 0 | 3.61 | exit 0 |
+| `new-tests-fail-on-base` | started at once | 0.0 | 57509.0 / 57474.8 | 0.5 / 0 | 1.6 | exit 0 |
+| `ruff` | started at once | 0.0 | 57491.3 / 57461.5 | 0.5 / 0 | 0.2 | exit 0 |
+
 [scan]: ../../secrets-scan/scripts/scan.py
 [ref]: ../../secrets-scan/references/classifying-findings.md
 [skill]: ../../secrets-scan/SKILL.md
 [tests]: ../../tests/test_secrets_scan.py
+[receipt]: 30-report-malformed-nested-scanner-results-in-secrets-scan-as-a-failed-sc.evidence.json
