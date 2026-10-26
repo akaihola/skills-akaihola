@@ -14,8 +14,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Completed / Accepted
 
-- [ ] [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
-      <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T14:55:22.031Z"} -->
+- [x] [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
+      <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T15:43:12.501Z"} -->
 
 - [x] [30] Report malformed nested scanner results in secrets-scan as a failed
   scanner (exit 2)
@@ -192,6 +192,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [31]: docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md
 
+[acceptance policy]: http://tinni/my-knowledge/agents/steward/acceptance-policy.md?f
+
 ## Rules
 
 ### Review and ordering
@@ -238,8 +240,10 @@ they are not pacer inputs. Keep each task in one tracker only.
    Record completion only after merge, under Completed / Accepted
    with `[ ]`, and commit the tracker update. Tests passing alone do not mean
    that the user has accepted the result.
-4. Only explicit user acceptance changes `[ ]` to `[x]`. During later tracker
-   maintenance, retire accepted entries and detail files only when no other
+4. Explicit user acceptance, or the steward under its
+   [acceptance policy],
+   changes `[ ]` to `[x]`. During later tracker maintenance, retire accepted
+   entries and detail files only when no other
    task references them. Never reuse their reference numbers.
 
 When tracker updates conflict, start from `main`'s tracker and reapply only
