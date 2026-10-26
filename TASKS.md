@@ -8,10 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
-- [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
-  <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T14:21:48.024Z"} -->
-
 ## Scheduled
+
+- [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
+  <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T14:44:22.041Z"} -->
 
 ## In Progress
 
