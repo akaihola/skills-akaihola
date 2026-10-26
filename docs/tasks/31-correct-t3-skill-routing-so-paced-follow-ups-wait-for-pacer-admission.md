@@ -19,7 +19,107 @@ The routing decision and helper reference agree on how paced follow-ups reach ad
 
 Expected focused effort about 30 minutes. Keep the final handoff brief; no owner action is expected. Do not push, deploy, send messages, add new infrastructure or change pacer settings.
 
+## Implementation and local evidence
+
+The [routing skill] now makes paced follow-ups an explicit exception to the
+native-tool preference. Its [helper reference] keeps the observed limitation,
+message attribution, marker, persistence and admission checks together.
+Ordinary messaging, launch/delegation, settlement, target lookup, model
+preferences, dry runs and recovery retain their existing instructions.
+
+Applied [writing-for-agents] and the installed skill-creator workflow:
+keep the decision at the routing point, disclose the send-specific explanation,
+preserve invocation metadata and copyable commands, and validate the skill.
+
+Inspected the installed server bundle, not just the upstream checkout:
+
+```text
+/nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs
+sha256: 1844e2071fe23af92b1a34e6be6e3b15cfc0b4eaf71fd4703fb470c6ceab0e48
+```
+
+- **Native send (lines 322927–322956, 282814–282847):** the MCP service
+  passes agent attribution and, when thread-scoped, a sender-thread ID to
+  `ThreadManagementService.sendToThread`. Queue mode becomes
+  `queue_after_active` without changing those fields.
+- **Pacing (lines 274678–274690, 277795–277805):** the marker matcher accepts
+  three periods or the ellipsis character plus trailing whitespace. Eligibility
+  requires user attribution and no sender-thread ID. The queue branch accepts
+  paced requests even without an active run.
+- **Parking (lines 277869–277887):** the eligible idle request gets a queued
+  run, a pacing hold and `startedAt: null`. Delivery and execution are separate.
+- **Helper:** [dispatch translation] retains the original text and model
+  selection, sends user/MCP attribution and omits the sender-thread ID. Its
+  implementation needed no changes.
+- **Regression:** extended [send/resume tests] across ordinary text, both
+  markers and trailing whitespace, with reply loss before/after acceptance.
+  Existing wire assertions cover attribution, queue mode and model selection;
+  the regression also checks absence of sender-thread attribution, exact text,
+  original IDs and one durable dispatch. These offline fixtures verify the
+  helper boundary; the installed source establishes pacing semantics.
+
+No live send, authentication probe, conversation mutation, service restart,
+pacer configuration change, push or deployment was used. The diff was reviewed
+for private data; only synthetic fixture text was added.
+
+## Validation before merge
+
+The focused helper and metadata suite passed: **115 tests**. The repository
+validator passed all **48 skill frontmatters**; skill-creator validation,
+**six offline help checks**, Ruff and `git diff --check` passed. Edit-time lint
+caught argument-count and line-length issues; both were corrected before this
+passing run. Local Markdown targets and the new heading links were reviewed.
+Hai read the whole canonical tracker: unique stable IDs, resolved detail
+links, and this issue In Progress after the immediate start commit.
+
+Commands (also declared in the final receipt):
+
+- **regressions:**
+
+  ```bash
+  PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock pytest -p no:cacheprovider t3-start-thread/tests tests/test_skill_metadata.py -q
+  ```
+
+- **skill-validation:**
+
+  ```bash
+  PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock bash -e -c 'python scripts/check_skill_metadata.py
+  python /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/quick_validate.py t3-start-thread'
+  ```
+
+- **helper-help:**
+
+  ```bash
+  PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock bash -e -c 'python t3-start-thread/scripts/start_thread.py --help >/dev/null
+  for action in inspect start send settle resume; do
+    python t3-start-thread/scripts/start_thread.py "$action" --help >/dev/null
+  done
+  printf "%s\n" "Six offline help checks passed"'
+  ```
+
+- **python-lint:**
+
+  ```bash
+  /nix/store/n67r0lpnvh89s3mbgnys5fcrl131prrf-ruff-0.16.8/bin/ruff check t3-start-thread/tests/test_start_thread.py
+  ```
+
+## Memory reports before merge
+
+All commands ran sequentially with a 300-second timeout, process-group cleanup,
+2 GiB admission, and monitoring for memory below 1 GiB or swap growth above
+512 MiB. Readings are MiB; wait and elapsed values are seconds.
+
+| Command ID | Outcome | Wait | Admission | Final | Swap start | Swap growth | Elapsed | Exit |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| premerge-regressions | started at once | 0.0 | 57498 | 57451 | 1 | 0 | 1.2 | 0 |
+| premerge-skill-validation | started at once | 0.0 | 57516 | 57496 | 1 | 0 | 0.2 | 0 |
+| premerge-helper-help | started at once | 0.0 | 57496 | 57435 | 1 | 0 | 0.6 | 0 |
+| premerge-python-lint | started at once | 0.0 | 57435 | 57442 | 1 | 0 | 0.2 | 0 |
+
 [the skill tracker]: ../../TASKS.md
 [routing skill]: ../../t3-start-thread/SKILL.md
 [helper reference]: ../../t3-start-thread/references/helper.md
 [run record]: http://tinni/my-knowledge/agents/steward/log/2026-10-26.md?f#1613-refill-pacer-wake-up
+[writing-for-agents]: https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md
+[dispatch translation]: ../../t3-start-thread/scripts/start_thread.py
+[send/resume tests]: ../../t3-start-thread/tests/test_start_thread.py

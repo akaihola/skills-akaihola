@@ -387,17 +387,25 @@ def test_send_success_then_missing_message_is_not_resent(
     )
 
 
-@pytest.mark.parametrize("loss", ["before", "after"])
+@pytest.mark.parametrize(
+    "case",
+    [
+        (loss, ending)
+        for loss in ("before", "after")
+        for ending in (".", "\n... \n", "\n…\t\n")
+    ],
+)
 def test_send_and_resume(
     wire_server: WireServer,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
-    loss: str,
+    case: tuple[str, str],
 ) -> None:
     """Send verifies the exact message; resume never submits a second turn."""
+    loss, ending = case
     prompt = tmp_path / "prompt.txt"
-    prompt.write_text("Perform the fixture follow-up.")
+    prompt.write_text(f"Perform the fixture follow-up{ending}")
     wire_server.threads[0]["messages"].append(
         {"id": "earlier", "role": "user", "text": prompt.read_text()}
     )
@@ -438,6 +446,7 @@ def test_send_and_resume(
     assert len(attempts) == (2 if loss == "before" else 1)
     assert all(p == attempts[0] for p in attempts)
     assert attempts[0]["text"] == prompt.read_text()
+    assert "senderThreadId" not in attempts[0]
     assert output["messageId"] == saved["command"]["message"]["messageId"]
     assert output["messageId"] == attempts[0]["messageId"]
     assert output["messageId"] != "earlier"

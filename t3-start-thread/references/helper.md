@@ -94,13 +94,41 @@ other agent has acted on the message. Report the message's run ID, which the
 output keeps in `messageTurnId`, and observed state when available. Wait for the requested
 acknowledgement when needed.
 
+## Paced follow-ups
+
+Follow the [ordinary-thread routing decision](../SKILL.md#ordinary-thread-operations) even when a native send tool is
+exposed. On the integration inspected on 2026-10-26, native `t3_thread_send`
+with `mode=queue` and a trailing `...` started an idle target while its provider
+was paused by the pacer. That queue mode waits behind active work; it does not
+by itself wait for pacer admission.
+
+The installed native service calls `ThreadManagementService.sendToThread` with
+`createdBy: "agent"` and, for a thread-scoped caller, `senderThreadId`. This
+integration's pacing hook requires `createdBy: "user"` and no sender-thread
+ID. The helper's `send` translates its saved request to V2 `message.dispatch`
+with `createdBy: "user"`, `creationSource: "mcp"`, no `senderThreadId`, and
+the original message text. Both paths use `queue_after_active`; their message
+attribution differs. This limitation is specific to the inspected integration,
+not a claim about every native tool or future version.
+
+End the private prompt with `...` or `…` (trailing whitespace is allowed).
+Use the helper's `send --dry-run` to check the target and settings, then send
+the authorized follow-up. `delivered: true` verifies message persistence.
+Use `t3_thread_read` or the server's run record to check the returned
+`messageTurnId`: `status: "queued"` and `startedAt: null` show it has not
+started. Where exposed, `pacing: "held"`
+or `"waiting"` identifies the pacer wait; a queued status alone can also mean
+waiting behind active work. Report the observed state without treating delivery
+as admission. Use existing records and local code for capability verification;
+a live probe is unnecessary. Recover interrupted sends with `resume` below.
+
 ## Route review findings back to the implementer
 
 When a review or acceptance check finds changes needed in work a known ordinary
 thread implemented, send the findings to that thread as a paced follow-up.
 Include the original issue, evidence (files, failing checks or reproduction),
-the changes needed and what "done" means. End the private prompt with `...`
-so the pacing hook parks it until admission. Do not hand the findings to the
+the changes needed and what "done" means. Follow [paced follow-ups](#paced-follow-ups) for the
+send path, trailing marker and delivery checks. Do not hand the findings to the
 user to relay. Preserve any explicit restriction on messaging.
 
 For paced work, resolve the implementing thread from its canonical tracker
@@ -165,10 +193,10 @@ an explicitly requested model and for scheduled jobs, since archived threads
 drop out of the snapshot and can no longer serve as parents. Never change the
 settings silently.
 
-On a server with the pacing hook, a prompt ending in `...` or `…`, ignoring
-trailing whitespace, parks until the pacer admits it. This applies to both
-initial prompts and follow-ups. Delivery confirms persistence even when the
-run is parked; it does not mean the agent is running.
+On a server with the pacing hook, a helper initial prompt ending in `...` or
+`…`, ignoring trailing whitespace, parks until the pacer admits it. Delivery
+confirms persistence even when the run is parked; it does not mean the agent
+is running. For follow-ups, use [paced follow-ups](#paced-follow-ups).
 
 ## Verify and handle interrupted requests
 
