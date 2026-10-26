@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
-      <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T14:44:34.783Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
+      <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T14:55:22.031Z"} -->
 
 - [x] [30] Report malformed nested scanner results in secrets-scan as a failed
   scanner (exit 2)

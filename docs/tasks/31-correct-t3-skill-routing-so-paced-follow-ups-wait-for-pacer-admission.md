@@ -116,6 +116,60 @@ All commands ran sequentially with a 300-second timeout, process-group cleanup,
 | premerge-helper-help | started at once | 0.0 | 57496 | 57435 | 1 | 0 | 0.6 | 0 |
 | premerge-python-lint | started at once | 0.0 | 57435 | 57442 | 1 | 0 | 0.2 | 0 |
 
+## Merge and recorded acceptance checks
+
+Base commit: `6b38680b73b0168fa8b85bce8f7d87ae23b1d95c`. Delivery commits, oldest first:
+
+- `97f140b7fbc424d566235f12d425915464c8e46b`
+
+Fast-forward merged locally to `main`. The task worktree is clean and detached
+at `97f140b7fbc424d566235f12d425915464c8e46b`; the task branch remains available.
+No push or deployment occurred.
+
+The [check receipt] records six passing checks at that exact merged commit:
+
+- **regressions:** 115 passed in 0.79 seconds.
+- **skill-validation:** all 48 skill frontmatters and skill-creator validation passed.
+- **helper-help:** six offline parser/help checks passed.
+- **python-lint:** Ruff passed.
+- **installed-route-inspection:** pinned installed-source and helper excerpts
+  match the attribution and queue analysis above. This is source inspection,
+  not a live admission test.
+- **delivery-scope:** literal base/delivery comparison and whitespace checks
+  passed; only the routing skill, helper reference, regression and this task
+  record changed. The helper implementation is identical to the base.
+
+The receipt declares the pinned requirements lock by SHA-256, plus the copied
+skill validator, installed Ruff and installed server bundle where used. There
+are no editable dependency checkouts. Scope checks use literal commit hashes,
+so later completion metadata is outside their comparison. Final diff review
+found no added identities, message content or credentials.
+
+## Memory reports for evidence recording
+
+Each record command used the same guard and timeout as the pre-merge checks:
+
+```bash
+for check in regressions skill-validation helper-help python-lint installed-route-inspection delivery-scope; do
+  uv run /home/agent/my-knowledge/agents/steward/scripts/check-evidence.py record /home/agent/.local/state/kandev-pacer/t3/evidence/fcb6d0aab0322152788b7c6c5df8974185cf26bf1e14d2f4fd676e9bba7876aa.evidence.json 'skills-akaihola [31]' "$check"
+done
+```
+
+Readings are MiB; wait and elapsed values are seconds. Each row names its
+individual record invocation above.
+
+| Command ID | Outcome | Wait | Admission | Final | Swap start | Swap growth | Elapsed | Exit |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| record-regressions | started at once | 0.0 | 57500 | 57504 | 1 | 0 | 1.2 | 0 |
+| record-skill-validation | started at once | 0.0 | 57504 | 57480 | 1 | 0 | 0.2 | 0 |
+| record-helper-help | started at once | 0.0 | 57480 | 57439 | 1 | 0 | 0.6 | 0 |
+| record-python-lint | started at once | 0.0 | 57439 | 57431 | 1 | 0 | 0.2 | 0 |
+| record-installed-route-inspection | started at once | 0.0 | 57431 | 57436 | 1 | 0 | 0.2 | 0 |
+| record-delivery-scope | started at once | 0.0 | 57436 | 57448 | 1 | 0 | 0.2 | 0 |
+
+No failed, skipped or stopped acceptance checks; no agent-owned follow-up remains.
+Completion is recorded pending user acceptance; the acceptance box stays unchecked.
+
 [the skill tracker]: ../../TASKS.md
 [routing skill]: ../../t3-start-thread/SKILL.md
 [helper reference]: ../../t3-start-thread/references/helper.md
@@ -123,3 +177,4 @@ All commands ran sequentially with a 300-second timeout, process-group cleanup,
 [writing-for-agents]: https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md
 [dispatch translation]: ../../t3-start-thread/scripts/start_thread.py
 [send/resume tests]: ../../t3-start-thread/tests/test_start_thread.py
+[check receipt]: 31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.evidence.json

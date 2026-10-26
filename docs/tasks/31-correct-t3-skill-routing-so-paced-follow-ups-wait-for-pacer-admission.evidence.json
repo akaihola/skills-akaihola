@@ -1,0 +1,208 @@
+{
+  "items": [
+    {
+      "issue": "skills-akaihola [31]",
+      "hai_id": "simple-4a887019-1b59-4b32-a1c2-acfd17477874",
+      "title": "Correct T3 skill routing so paced follow-ups wait for pacer admission",
+      "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+      "source_repository": "/home/agent/prg/skills-akaihola",
+      "base_commit": "6b38680b73b0168fa8b85bce8f7d87ae23b1d95c",
+      "delivery_commits": [
+        "97f140b7fbc424d566235f12d425915464c8e46b"
+      ],
+      "checks": [
+        {
+          "id": "regressions",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock pytest -p no:cacheprovider t3-start-thread/tests tests/test_skill_metadata.py -q",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock"
+            }
+          }
+        },
+        {
+          "id": "skill-validation",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock bash -e -c 'python scripts/check_skill_metadata.py\npython /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/quick_validate.py t3-start-thread'",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock"
+            },
+            "validator": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/quick_validate.py"
+            }
+          }
+        },
+        {
+          "id": "helper-help",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock bash -e -c 'python t3-start-thread/scripts/start_thread.py --help >/dev/null\nfor action in inspect start send settle resume; do\n  python t3-start-thread/scripts/start_thread.py \"$action\" --help >/dev/null\ndone\nprintf \"%s\\n\" \"Six offline help checks passed\"'",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock"
+            }
+          }
+        },
+        {
+          "id": "python-lint",
+          "command": "/nix/store/n67r0lpnvh89s3mbgnys5fcrl131prrf-ruff-0.16.8/bin/ruff check t3-start-thread/tests/test_start_thread.py",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock"
+            },
+            "ruff": {
+              "kind": "sha256",
+              "path": "/nix/store/n67r0lpnvh89s3mbgnys5fcrl131prrf-ruff-0.16.8/bin/ruff"
+            }
+          }
+        },
+        {
+          "id": "installed-route-inspection",
+          "command": "sed -n '274678,274690p;277795,277805p;277869,277887p;282814,282847p;322927,322956p' /nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs && git show 97f140b7fbc424d566235f12d425915464c8e46b:t3-start-thread/scripts/start_thread.py | sed -n '211,230p;435,455p'",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock"
+            },
+            "installed-server": {
+              "kind": "sha256",
+              "path": "/nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs"
+            }
+          }
+        },
+        {
+          "id": "delivery-scope",
+          "command": "git diff --check 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b && git diff --exit-code 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b -- t3-start-thread/scripts/start_thread.py && python3 - <<'PY'\nimport subprocess\nexpected = {\n    't3-start-thread/SKILL.md',\n    't3-start-thread/references/helper.md',\n    't3-start-thread/tests/test_start_thread.py',\n    'docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md',\n}\nactual = set(subprocess.check_output(['git', 'diff', '--name-only', '6b38680b73b0168fa8b85bce8f7d87ae23b1d95c', '97f140b7fbc424d566235f12d425915464c8e46b'], text=True).splitlines())\nassert actual == expected, sorted(actual)\nprint('Delivery scope: only routing docs, regression and task evidence; helper unchanged')\nPY",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "regressions": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            }
+          },
+          "issue": "skills-akaihola [31]",
+          "check": "regressions",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock pytest -p no:cacheprovider t3-start-thread/tests tests/test_skill_metadata.py -q",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-26T14:53:26.025138+00:00"
+        },
+        "skill-validation": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            },
+            "validator": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/quick_validate.py",
+              "value": "ee6dba90f44d37171c5a6edb8095979c54919ff6822c1a907afca2e78c48738c"
+            }
+          },
+          "issue": "skills-akaihola [31]",
+          "check": "skill-validation",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock bash -e -c 'python scripts/check_skill_metadata.py\npython /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/quick_validate.py t3-start-thread'",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-26T14:53:26.386031+00:00"
+        },
+        "helper-help": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            }
+          },
+          "issue": "skills-akaihola [31]",
+          "check": "helper-help",
+          "command": "PYTHONPATH= PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 unshare -rn uv run --offline --no-project --with-requirements /home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock bash -e -c 'python t3-start-thread/scripts/start_thread.py --help >/dev/null\nfor action in inspect start send settle resume; do\n  python t3-start-thread/scripts/start_thread.py \"$action\" --help >/dev/null\ndone\nprintf \"%s\\n\" \"Six offline help checks passed\"'",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-26T14:53:26.977626+00:00"
+        },
+        "python-lint": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            },
+            "ruff": {
+              "kind": "sha256",
+              "path": "/nix/store/n67r0lpnvh89s3mbgnys5fcrl131prrf-ruff-0.16.8/bin/ruff",
+              "value": "3b981580d0f5a56fc16b8320c7c838d84191955c558bbf355c50fae458fa7164"
+            }
+          },
+          "issue": "skills-akaihola [31]",
+          "check": "python-lint",
+          "command": "/nix/store/n67r0lpnvh89s3mbgnys5fcrl131prrf-ruff-0.16.8/bin/ruff check t3-start-thread/tests/test_start_thread.py",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-26T14:53:27.204148+00:00"
+        },
+        "installed-route-inspection": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            },
+            "installed-server": {
+              "kind": "sha256",
+              "path": "/nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs",
+              "value": "1844e2071fe23af92b1a34e6be6e3b15cfc0b4eaf71fd4703fb470c6ceab0e48"
+            }
+          },
+          "issue": "skills-akaihola [31]",
+          "check": "installed-route-inspection",
+          "command": "sed -n '274678,274690p;277795,277805p;277869,277887p;282814,282847p;322927,322956p' /nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs && git show 97f140b7fbc424d566235f12d425915464c8e46b:t3-start-thread/scripts/start_thread.py | sed -n '211,230p;435,455p'",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-26T14:53:27.433592+00:00"
+        },
+        "delivery-scope": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
+          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "dependencies": {
+            "lock": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/kandev-pacer/t3/evidence/hai31-checks/requirements.lock",
+              "value": "31585f95d04060a98c0dbe7311cb8c6e4c0730cfe1788aa65bbdbfc5362d9171"
+            }
+          },
+          "issue": "skills-akaihola [31]",
+          "check": "delivery-scope",
+          "command": "git diff --check 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b && git diff --exit-code 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b -- t3-start-thread/scripts/start_thread.py && python3 - <<'PY'\nimport subprocess\nexpected = {\n    't3-start-thread/SKILL.md',\n    't3-start-thread/references/helper.md',\n    't3-start-thread/tests/test_start_thread.py',\n    'docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md',\n}\nactual = set(subprocess.check_output(['git', 'diff', '--name-only', '6b38680b73b0168fa8b85bce8f7d87ae23b1d95c', '97f140b7fbc424d566235f12d425915464c8e46b'], text=True).splitlines())\nassert actual == expected, sorted(actual)\nprint('Delivery scope: only routing docs, regression and task evidence; helper unchanged')\nPY",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-10-26T14:53:27.658609+00:00"
+        }
+      }
+    }
+  ]
+}
