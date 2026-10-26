@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
+  <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T14:21:48.024Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -127,7 +130,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -186,6 +189,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [29]: docs/tasks/29-check-skills-akaihola-s-skill-instructions-against-the-seven-source-ch.md
 
 [30]: docs/tasks/30-report-malformed-nested-scanner-results-in-secrets-scan-as-a-failed-sc.md
+
+[31]: docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md
 
 ## Rules
 
