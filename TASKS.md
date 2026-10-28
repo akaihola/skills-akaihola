@@ -226,6 +226,13 @@ they are not pacer inputs. Keep each task in one tracker only.
   work without scheduling or launching it. Keep local configuration outside
   this public repository. Use one pacer process for each tracker.
 
+### Workflow for new issue completion
+
+`## Ordered backlog` and `## Scheduled` are the pacer's launch queue.
+An agent or person doing the work itself must create or move the issue straight
+to `## In Progress` on `main`, commit that change, then create the worktree branch
+from there. `## Scheduled` is only for issues the heartbeat hands to the pacer.
+
 ### Scheduling, implementation and completion
 
 1. On a clean `main` checkout, move the selected issue from Ordered backlog
