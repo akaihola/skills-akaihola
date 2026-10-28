@@ -29,6 +29,25 @@ Decide from the user's intent before choosing a tool or helper command:
 If "hand this off" leaves the intended kind of coordination unclear, ask
 whether the user wants a child task or a separate conversation.
 
+## Preserve the main task identity
+
+When the current task prompt begins with `Task thread identity: {…}`, copy that
+entire JSON line unchanged as the first line of every related child task, fork,
+or independently launched thread's initial prompt. This applies to native tools,
+the ACP transport and the helper, including cross-project work. Keep the original
+canonical tracker, stable issue ID, task reference, main thread ID and server;
+never replace the main ID with a supporting thread's ID. Record returned task and
+thread IDs in the task record. A reference number alone is project-local and does
+not identify a related thread in another project.
+
+The main task thread stays unsettled for the user. Its final response summarizes
+all work, supporting results, verification and limitations. Only the user settles
+that main thread. Supporting threads may be settled after their results have been
+collected and their pending obligations resolved; they may inherit the main's
+automatic-settlement opt-out. If the main identity is missing or ambiguous, report
+that fact instead of inventing it or treating missing thread history as acceptance.
+These rules do not themselves authorize delegation or a new conversation.
+
 ## Delegate a child task
 
 Call `orchestrator_capabilities` to discover the live provider instances and
