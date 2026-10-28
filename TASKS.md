@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [32] Preserve task identity in related T3 threads
-      <!-- hai:{"id":"simple-50e7010f-4517-4600-8e74-c60942de4a46","createdAt":"2026-10-28T19:14:22.769Z","updatedAt":"2026-10-28T19:14:22.769Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [32] Preserve task identity in related T3 threads
+      <!-- hai:{"id":"simple-50e7010f-4517-4600-8e74-c60942de4a46","createdAt":"2026-10-28T19:14:22.769Z","updatedAt":"2026-10-28T19:27:41.798Z"} -->
 
 - [x] [31] Correct T3 skill routing so paced follow-ups wait for pacer admission
       <!-- hai:{"id":"simple-4a887019-1b59-4b32-a1c2-acfd17477874","labels":["steward","review"],"createdAt":"2026-10-26T14:21:48.024Z","updatedAt":"2026-10-26T15:43:12.501Z"} -->
