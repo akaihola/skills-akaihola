@@ -8,6 +8,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [34] Replace a third party's directory record with made-up data and purge it
+  from the public history and every clone
+  <!-- hai:{"id":"simple-954330e6-620c-43b1-8e13-e1826df5636f","labels":["security","privacy"],"createdAt":"2026-11-01T19:02:05.094Z","updatedAt":"2026-11-01T19:02:05.094Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -136,7 +140,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -203,6 +207,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [32]: docs/tasks/32-preserve-task-identity-in-related-t3-threads.md
 
 [33]: docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md
+
+[34]: docs/tasks/34-replace-a-third-party-s-directory-record-with-made-up-data-and-purge-i.md
 
 ## Rules
 
