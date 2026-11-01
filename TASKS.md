@@ -8,6 +8,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Ordered backlog
 
+- [33] Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone
+  <!-- hai:{"id":"simple-6c2869b5-1b40-42e9-9b86-e24946fc8914","priority":"low","createdAt":"2026-11-01T15:54:42.354Z","updatedAt":"2026-11-01T15:54:42.354Z"} -->
+
 ## Scheduled
 
 ## In Progress
@@ -133,7 +136,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -198,6 +201,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [acceptance policy]: http://tinni/my-knowledge/agents/steward/acceptance-policy.md?f
 
 [32]: docs/tasks/32-preserve-task-identity-in-related-t3-threads.md
+
+[33]: docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md
 
 ## Rules
 
