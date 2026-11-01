@@ -95,3 +95,43 @@ reverted that improvement, so it adds nothing to preserve.
 
 [the search script]: ../../clasohlson/scripts/search.py
 [salvage thread]: t3-thread://v1/ec83c40b-62c1-446c-a7dd-00b7fe584aeb
+
+## Merged verification
+
+The recovered stdlib change was merged into main at
+`d75873d70ac57b440a0b2b21d74fb011a00271e2`; the staged inverse is superseded.
+The previous main commit was `dbf2642de3e145b242bc1cbba8ae8469b23b29ea`.
+The delivery consists of that single new commit. The task worktree remains
+at the delivery commit, clean and available for rerunning checks.
+
+The agent recorded two passing checks from that clean checkout in the
+[evidence receipt]: `offline-search` ran five tests and executable help;
+`outcomes-scope-cleanup` checked the literal delivery range, recorded outcomes,
+whitespace and removal of the scratch extraction and tinni archive. Only the
+search script, its skill instructions and its offline tests changed outside
+tracker documentation. No archive secrets or unrelated files were imported.
+The receipt contains the exact commands. Checks use only the standard library;
+there is no applicable lockfile or editable package dependency.
+
+The first attempted merge used a checkout path as the merge argument and was
+rejected without changing main; merging the literal delivery commit then
+succeeded. No acceptance check failed, was skipped or stopped. Live API
+availability was deliberately not tested. Antti's acceptance is still pending:
+only Antti settles the main thread. No supporting threads need settlement.
+
+### Recording resource use
+
+Each command below used a 180-second timeout and monitored available memory
+and swap use, with termination thresholds of 1024 MiB available memory or
+512 MiB swap growth. Each runs the evidence recorder with the declaration
+outside the clean checkout and the stated check ID:
+
+```bash
+uv run /home/agent/my-knowledge/agents/steward/scripts/check-evidence.py record /home/agent/.local/state/kandev-pacer/t3/evidence/db0306bb9e4e955839005d416b14d607634cb97e81777f5ed6503d56da4e90cc.evidence.json 'skills-akaihola [33]' offline-search
+uv run /home/agent/my-knowledge/agents/steward/scripts/check-evidence.py record /home/agent/.local/state/kandev-pacer/t3/evidence/db0306bb9e4e955839005d416b14d607634cb97e81777f5ed6503d56da4e90cc.evidence.json 'skills-akaihola [33]' outcomes-scope-cleanup
+```
+
+- **offline-search:** started at once; waited 0.0 seconds; admission 57200 MiB and final 57179 MiB available; starting swap 406 MiB; swap growth 0 MiB; elapsed 0.4 seconds; exit 0.
+- **outcomes-scope-cleanup:** started at once; waited 0.0 seconds; admission 56898 MiB and final 56892 MiB available; starting swap 406 MiB; swap growth 0 MiB; elapsed 0.2 seconds; exit 0.
+
+[evidence receipt]: 33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.evidence.json

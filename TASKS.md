@@ -12,10 +12,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
-- [~] [33] Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone
-      <!-- hai:{"id":"simple-6c2869b5-1b40-42e9-9b86-e24946fc8914","priority":"low","createdAt":"2026-11-01T15:54:42.354Z","updatedAt":"2026-11-01T16:46:57.093Z"} -->
-
 ## Completed / Accepted
+
+- [ ] [33] Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone
+      <!-- hai:{"id":"simple-6c2869b5-1b40-42e9-9b86-e24946fc8914","priority":"low","createdAt":"2026-11-01T15:54:42.354Z","updatedAt":"2026-11-01T16:48:31.418Z"} -->
 
 - [x] [32] Preserve task identity in related T3 threads
       <!-- hai:{"id":"simple-50e7010f-4517-4600-8e74-c60942de4a46","createdAt":"2026-10-28T19:14:22.769Z","updatedAt":"2026-10-29T19:00:30.309Z"} -->
