@@ -10,10 +10,10 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [33] Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone
-  <!-- hai:{"id":"simple-6c2869b5-1b40-42e9-9b86-e24946fc8914","priority":"low","createdAt":"2026-11-01T15:54:42.354Z","updatedAt":"2026-11-01T15:55:24.215Z"} -->
-
 ## In Progress
+
+- [~] [33] Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone
+      <!-- hai:{"id":"simple-6c2869b5-1b40-42e9-9b86-e24946fc8914","priority":"low","createdAt":"2026-11-01T15:54:42.354Z","updatedAt":"2026-11-01T15:55:34.032Z"} -->
 
 ## Completed / Accepted
 
