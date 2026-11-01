@@ -1,7 +1,7 @@
-#!/usr/bin/env -S uv run --script
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["httpx"]
+# dependencies = []
 # ///
 """Search products on clasohlson.com/fi/ via the Voyado Elevate (Apptus eSales) API.
 
@@ -18,9 +18,9 @@ import argparse
 import json
 import sys
 import uuid
+import urllib.error
+import urllib.request
 from urllib.parse import quote, urlencode
-
-import httpx
 
 API_BASE = "https://w76e66a6f.api.esales.apptus.cloud/api/v2/panels"
 
@@ -66,10 +66,16 @@ def search_products(
     qs += f"&search_attributes={attributes}"
     url = f"{API_BASE}/search?{qs}"
 
-    resp = httpx.get(url, timeout=15)
-    if resp.status_code >= 500:
-        resp.raise_for_status()
-    return resp.json()
+    request = urllib.request.Request(url)
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        # Some sub-panels fail with HTTP 400 while product data remains usable.
+        with error:
+            if error.code == 400:
+                return json.loads(error.read())
+            raise
 
 
 def extract_products(raw: dict, panel_name: str = "product-suggestions") -> list[dict]:

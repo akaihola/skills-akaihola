@@ -53,24 +53,45 @@ command instead of searching elsewhere.
 - No secret from the archive enters a commit, record or thread.
 - Implementation completion and Antti's acceptance are recorded separately.
 
-## Waiting for archive transfer
+## Recovery outcome
 
-Antti must copy the saved clone before the agent can recover the unpublished
-search changes. On 2026-11-01, the agent checked the required [tinni archive]
-with `test -f`; it was missing. No archive was opened, no saved code was run,
-and no recovery or search tests were possible. The issue remains In Progress;
-implementation completion and user acceptance have not been recorded.
+Agents can now run the product search with Python alone. The unpublished
+change removed a package dependency that current branches still required.
+Its reviewed implementation is restored in [the search script], including
+usable product data returned with HTTP 400. The saved staged change merely
+reverted that improvement, so it adds nothing to preserve.
 
-On akaihola@atom, from any working directory, run:
+- **Saved commit:** `2f24303308692e717ce99046049198048fb7a6b7` is
+  recovered as a reviewed patch, with explicit `urllib.error` import and
+  response cleanup. Only the search script changed in that saved commit.
+  Its source blob was `939eefe6760497c9f85ac8cace4f55058a3fe712`.
+- **Staged change:** superseded. Its blob
+  `4de086ebefad5e7f2ab1ebd07c6e540b5ff97385` exactly matches the saved
+  commit's parent script: the entire staged diff undoes the stdlib change.
+  Apart from the first line, it also matches all compared branch scripts.
+- **Branch comparison:** local main `dbf2642de3e145b242bc1cbba8ae8469b23b29ea`,
+  fetched origin/main `ed29af204f248978ca3147ef1c8e1134508ac7d7`, and
+  local/fetched clasohlson `559f9a570225daa312d59c53b14d198e3fda41e1`
+  still used `httpx`. Both GitHub branches were fetched on 2026-11-01.
+- **Safety:** extracted into a fresh scratch directory outside this repository
+  using Python's tarfile data filter. Archive Git commands disabled hooks
+  with `-c core.hooksPath=/dev/null` and disabled filesystem monitoring;
+  no archived scripts were executed. Only the reviewed script patch was
+  transferred; no archived Git config, hooks, author metadata or other files
+  were imported. The patch and new tests were reviewed for private data.
+- **Tests:** the agent ran five offline unittest cases successfully:
+  Unicode query encoding and pagination, successful JSON and timeout,
+  HTTP 400 product extraction, propagation/closure of other HTTP errors,
+  malformed JSON and connection errors, and JSON CLI output. Direct
+  executable `--help` also succeeded. No live search was run, so current
+  remote API availability remains unverified.
+- **Cleanup:** scratch extraction, temporary script copies and tinni archive
+  deleted after recording the outcome on 2026-11-01. The atom archive was
+  untouched.
+- **Transfer history:** archive absent on the first check; the user confirmed
+  copying it and the agent verified its presence on 2026-11-01.
+- **Thread:** only the [salvage thread] was used; no related threads exist.
+  Implementation completion is separate from user acceptance.
 
-```bash
-scp ~/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz agent@tinni:tmp/
-```
-
-After the transfer succeeds, reply “archive copied” in the [salvage thread].
-The agent will check the destination and continue the comparison, recovery,
-tests and cleanup. This main thread stays open awaiting that reply. No related
-threads were created.
-
-[tinni archive]: http://tinni/tmp/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz?f
+[the search script]: ../../clasohlson/scripts/search.py
 [salvage thread]: t3-thread://v1/ec83c40b-62c1-446c-a7dd-00b7fe584aeb

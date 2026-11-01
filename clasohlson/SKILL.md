@@ -15,6 +15,7 @@ Search the Clas Ohlson Finland product catalog using their internal Voyado Eleva
 
 ## Quick Start
 
+Requires Python 3.10 or newer; no third-party packages or `uv` are needed.
 Run the search script to find products:
 
 ```bash
