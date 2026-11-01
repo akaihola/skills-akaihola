@@ -52,3 +52,25 @@ command instead of searching elsewhere.
   kept on a named branch, or superseded, with the reason.
 - No secret from the archive enters a commit, record or thread.
 - Implementation completion and Antti's acceptance are recorded separately.
+
+## Waiting for archive transfer
+
+Antti must copy the saved clone before the agent can recover the unpublished
+search changes. On 2026-11-01, the agent checked the required [tinni archive]
+with `test -f`; it was missing. No archive was opened, no saved code was run,
+and no recovery or search tests were possible. The issue remains In Progress;
+implementation completion and user acceptance have not been recorded.
+
+On akaihola@atom, from any working directory, run:
+
+```bash
+scp ~/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz agent@tinni:tmp/
+```
+
+After the transfer succeeds, reply “archive copied” in the [salvage thread].
+The agent will check the destination and continue the comparison, recovery,
+tests and cleanup. This main thread stays open awaiting that reply. No related
+threads were created.
+
+[tinni archive]: http://tinni/tmp/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz?f
+[salvage thread]: t3-thread://v1/ec83c40b-62c1-446c-a7dd-00b7fe584aeb
