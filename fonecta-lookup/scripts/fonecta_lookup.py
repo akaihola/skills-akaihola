@@ -98,12 +98,12 @@ async def login(page) -> None:
     await dialog.locator("button", has_text="Kirjaudu sisään").click()
     await page.wait_for_timeout(3_000)
 
-    # Verify login succeeded by checking for the auth token appearance
-    text = await page.inner_text("body")
-    if "PRO" not in text and "FirstName" not in text:
-        # Generic check: look for the user's first name in the top bar
-        # (Fonecta shows "FirstName" + "PRO" badge when logged in as Pro)
-        raise RuntimeError("Login appears to have failed — check credentials")
+    # Verify login succeeded: the login dialog, and its password field, close
+    # once Fonecta accepts the credentials. A rejected login keeps them open.
+    try:
+        await page.locator("input[name='password']").wait_for(state="hidden", timeout=10_000)
+    except Exception as exc:
+        raise RuntimeError("Login appears to have failed — check credentials") from exc
 
 
 def extract_name(page_props: dict) -> str | None:

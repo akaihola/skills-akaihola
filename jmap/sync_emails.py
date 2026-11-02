@@ -10,6 +10,7 @@ Characters illegal in filenames (< > : " / \\ | ? *) are replaced with _.
 """
 import argparse
 import json
+import os
 import re
 import urllib.parse
 import urllib.request
@@ -19,7 +20,6 @@ from textwrap import dedent
 
 DEFAULTS = {
     "jmap_url":  "http://127.0.0.1:8895",
-    "account_id": "example-account",
 }
 
 
@@ -44,8 +44,8 @@ def parse_args():
                    help="Recipient domain or address fragment to filter on (e.g. 'example.org')")
     p.add_argument("--output-dir", required=True, type=Path,
                    help="Directory to write email folders into")
-    p.add_argument("--account", default=DEFAULTS["account_id"],
-                   help=f"JMAP account ID (default: {DEFAULTS['account_id']})")
+    p.add_argument("--account", default=os.environ.get("JMAP_ACCOUNT_ID"),
+                   help="JMAP account ID (default: $JMAP_ACCOUNT_ID; one of the two is required)")
     p.add_argument("--jmap-url", default=DEFAULTS["jmap_url"],
                    help=f"JMAP base URL (default: {DEFAULTS['jmap_url']})")
     p.add_argument("--limit", type=int, default=500,
@@ -57,6 +57,8 @@ def parse_args():
     args = p.parse_args()
     if not args.from_filter and not args.subject_filter and not args.to_filter:
         p.error("at least one of --from-filter, --to-filter, or --subject-filter is required")
+    if not args.account:
+        p.error("--account or the JMAP_ACCOUNT_ID environment variable is required")
     return args
 
 

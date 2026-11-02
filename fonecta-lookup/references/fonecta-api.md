@@ -19,6 +19,8 @@ Fonecta Caller uses AWS Cognito for auth, exposed via `customer-api.fonecta.fi`.
    `div[role='presentation'].MuiDialog-root >> button[text="Kirjaudu sisään"]`
    (There are two buttons with that text — the nav bar one is intercepted by the dialog overlay,
    so scoping to the dialog is required.)
+6. Login has succeeded once the dialog's `input[name='password']` is hidden; a
+   rejected login keeps the dialog open.
 
 ### Token acquisition
 

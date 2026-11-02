@@ -75,9 +75,42 @@ process_csv_output() {
     sort -t, -k3 -n "$csv_file"
 }
 
+usage() {
+    cat <<'EOF'
+Usage: email-mailbox-analyzer.sh [THUNDERBIRD_PROFILE_DIR]
+
+Analyze the IMAP mailboxes configured in a Thunderbird profile with imapdu.
+The profile directory is, in order: the argument, $THUNDERBIRD_PROFILE, or the
+first ~/.thunderbird/*.default-release directory.
+EOF
+}
+
+# Print the first *.default-release profile directory under ~/.thunderbird
+find_thunderbird_profile() {
+    local candidate
+    for candidate in "$HOME"/.thunderbird/*.default-release; do
+        if [[ -d "$candidate" ]]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Main function
 main() {
-    local thunderbird_profile="$HOME/.thunderbird/abcd1234.default-release"
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        usage
+        return 0
+    fi
+
+    local thunderbird_profile="${1:-${THUNDERBIRD_PROFILE:-}}"
+    if [[ -z "$thunderbird_profile" ]]; then
+        thunderbird_profile="$(find_thunderbird_profile)" || {
+            echo "Error: no ~/.thunderbird/*.default-release profile found; pass the profile directory as an argument" >&2
+            exit 1
+        }
+    fi
     local prefs_file="$thunderbird_profile/prefs.js"
 
     # Check if prefs.js exists

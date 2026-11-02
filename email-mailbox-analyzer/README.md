@@ -19,8 +19,11 @@ This skill analyzes email mailbox usage by extracting IMAP server configurations
 
 ### Basic Usage
 ```bash
-./email-mailbox-analyzer
+./scripts/email-mailbox-analyzer.sh [THUNDERBIRD_PROFILE_DIR]
 ```
+
+Without an argument, the script uses `$THUNDERBIRD_PROFILE` or, if that is
+unset, the first `~/.thunderbird/*.default-release` profile directory.
 
 ### Manual Usage (as requested)
 If you want to run the specific command mentioned:
@@ -49,6 +52,7 @@ count,path/to/folder,total-bytes,largest-message-bytes
 - The script skips non-IMAP servers like "Local Folders" and "smart mailboxes"
 
 ## Troubleshooting
-- If you get permission errors, ensure you have read access to `~/.thunderbird/abcd1234.default-release/prefs.js`
+- If you get permission errors, ensure you have read access to your profile's `prefs.js`
+  (find it with `ls ~/.thunderbird/*.default-release/prefs.js`)
 - If `imapdu` fails, check your internet connection and IMAP server availability
 - For authentication issues, ensure your Thunderbird passwords are up to date

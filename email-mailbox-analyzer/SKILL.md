@@ -42,7 +42,7 @@ Use this skill when you need to:
 To analyze all configured IMAP accounts:
 
 ```bash
-./scripts/email-mailbox-analyzer.sh
+./scripts/email-mailbox-analyzer.sh [THUNDERBIRD_PROFILE_DIR]
 ```
 
 ### Manual Usage
@@ -84,10 +84,9 @@ The skill includes a main script that:
 
 ### Configuration
 
-The script automatically detects Thunderbird's configuration by finding the
-first `*.default-release` profile directory under `~/.thunderbird/`. If
-Thunderbird is installed in a non-standard location, pass the path explicitly
-to the script.
+The script takes the Thunderbird profile directory from its argument, then
+from `$THUNDERBIRD_PROFILE`, and otherwise uses the first `*.default-release`
+profile directory under `~/.thunderbird/`.
 
 ### Error Handling
 

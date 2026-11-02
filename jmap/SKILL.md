@@ -9,7 +9,7 @@ description: Generic JMAP email utilities. Use when syncing emails from any send
 
 - JMAP proxy runs on the remote host; accessed locally via **reverse SSH tunnel on port 8895**
 - Base URL: `http://127.0.0.1:8895`
-- Primary account: `example-account`
+- Account ID: set `JMAP_ACCOUNT_ID` in the environment or pass `--account`; the script has no default
 
 Verify the tunnel is up before any JMAP operation:
 ```bash
@@ -30,7 +30,7 @@ python3 ./.claude/skills/jmap/sync_emails.py \
 Optional flags:
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `--account` | `example-account` | JMAP account ID |
+| `--account` | `$JMAP_ACCOUNT_ID` | JMAP account ID; required when the variable is unset |
 | `--jmap-url` | `http://127.0.0.1:8895` | JMAP base URL |
 | `--limit` | `500` | Max emails per run |
 | `--earliest-date-filter` | Latest date already fetched | Earliest received date to fetch, in `YYYY-MM-DD` format |

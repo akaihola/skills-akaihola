@@ -90,6 +90,7 @@ The login form is a two-step MUI Dialog:
 2. Click the "Kirjaudu sisään" nav button (opens the dialog).
 3. Enter email → click "Seuraava".
 4. Enter password → click the "Kirjaudu sisään" button **scoped to the dialog** (the nav-bar button is visually blocked by the dialog overlay and times out if clicked directly).
+5. Wait for the dialog's password field to close. If it stays open, the login failed.
 
 # Known Limitations
 
