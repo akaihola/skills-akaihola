@@ -74,3 +74,152 @@ Then count each value's occurrences per commit and file with `git log --all -S`,
 - Every clone and copy in step 7 is on the rewritten history with no match after `gc`, or is listed as pending with its reason.
 - The result lists the local work found and preserved in each clone.
 - This repository's commit-hash references are updated, and the commit map's location is recorded.
+
+## Work record, 2026-11-02
+
+**Who is affected:** the private person whose directory record was published,
+the correspondents in the mail examples, and Antti. **The problem:** their data
+sat in this public repository's files and in every earlier commit and clone.
+**What changed:** the files now carry made-up values, the whole history has
+been rewritten without the real values, and the clones on the agent account
+have been moved onto the rewritten history with the old objects deleted.
+**What is different:** once Antti force-pushes the rewritten branches and
+GitHub Support removes the four pull-request references, the data can no
+longer be read from GitHub or from the cleaned clones. Until then it remains
+on GitHub, in the clones on his other accounts and in the clones listed under
+"Pending" below.
+
+Values were read into private files with mode 0600 under the session's
+`$TMPDIR` and never printed; this record gives counts only. Those files are
+deleted at the end of the session.
+
+### Step 1: the skills without the real values
+
+Commit `764e9e4` (merged to `main`):
+
+- [fonecta-api.md](../../fonecta-lookup/references/fonecta-api.md) shows a
+  made-up record ("Example Person", "Esimerkki Oy", business ID `12345678`).
+- [fonecta_lookup.py](../../fonecta-lookup/scripts/fonecta_lookup.py) treats
+  the login as successful once the login dialog's password field is hidden,
+  instead of looking for a first name on the page.
+- [email-mailbox-analyzer.sh](../../email-mailbox-analyzer/scripts/email-mailbox-analyzer.sh)
+  takes the Thunderbird profile from its argument or `$THUNDERBIRD_PROFILE`,
+  or uses the first `~/.thunderbird/*.default-release` directory, and has
+  `--help`.
+- [sync_emails.py](../../jmap/sync_emails.py) requires the account ID from
+  `--account` or `$JMAP_ACCOUNT_ID`.
+- The kuluttaja, analyzer, jmap and pi-session-logs examples use RFC 2606
+  domains and placeholders.
+
+Offline checks, run by the agent in the task worktree: `bash -n` and `--help`
+of the analyzer script (exit 0), its missing-profile error (exit 1) and profile
+detection with a fake profile; `sync_emails.py --help` (exit 0) and its
+missing-account error (exit 2); `uv run fonecta_lookup.py --help` (exit 0).
+
+### Values found
+
+The private list holds 41 values. Beyond the locations above, the history
+search found three more kinds, all now replaced:
+
+- the first version of the JMAP skill used two company names in personal
+  folder paths, a correspondent's address fragment and two example comments
+  naming the organisations;
+- an older Himalaya test used a personal folder name in 14 paths;
+- `pi-session-logs/SKILL.md` contained the surname in a misspelt repository
+  name, now corrected to `skills-akaihola`.
+
+Antti's first name, the city and the operator name also occur in unrelated
+text, so their replacements were limited to the login check and the record's
+`cityName` and `operatorName` fields. A scan for e-mail addresses, Finnish
+mobile numbers, business IDs and personal identity codes over all history
+found no other personal values; all other phone numbers are placeholders.
+
+### Step 3: rewriting the history
+
+A fresh mirror of GitHub plus every local ref of the main checkout (36
+branches, 7 remote-tracking refs, 87 T3 checkpoint refs and one detached
+worktree HEAD) was rewritten with `git filter-repo --replace-text`,
+`--replace-message` and `--mailmap`, keeping empty commits so that no commit
+disappears. Results:
+
+- No object reachable in the rewritten mirror (2643 objects) and no author or
+  committer field matches any value.
+- Of 500 commits, every rewritten tree equals the original tree with the
+  replacement rules applied, path by path, and the two changed commit messages
+  equal the rules applied to the old ones. Only 14 files changed.
+- The old `main` and the new `main` have identical trees: step 1 had already
+  removed every value from the tip.
+- Antti's older personal address (one author and one committer entry) now
+  reads `13725+akaihola@users.noreply.github.com`. The 27 author entries and
+  one committer entry of the OpenClaw agent keep its `.local` address, which
+  names no person; changing it needs Antti's decision.
+
+### Step 4: commit references
+
+Commit `e9f095f` rewrites 178 commit-hash mentions in 33 reviews, task
+records and evidence receipts with rebase-all's `rewrite-refs`. Commit
+messages were translated by filter-repo itself. The commit map, ref map,
+the list of the 47 objects that held a value, the rewritten bundle and the
+resync script are kept privately in
+[agent@tinni:~/.local/state/skills-akaihola-history-rewrite/2026-11-02/](http://tinni/.local/state/skills-akaihola-history-rewrite/2026-11-02/?f).
+Other repositories that cite this repository's commits are unchanged.
+
+### Step 6: what GitHub keeps
+
+GitHub reports no forks. The four merged pull requests #12, #19, #20 and #22
+keep read-only `refs/pull/N/head` refs that reach 8, 19, 19 and 28 objects
+with a value. A force push cannot change them, so the old commits stay
+reachable by hash until GitHub Support dereferences the pull requests and
+collects the garbage. The first changed commit on GitHub's history is
+`35215f1e3c4ffbf7ef0a09e642de799610d20ddd`.
+
+### Step 7: clones on the agent account
+
+Local work was recorded before anything changed. Each clone's record is in
+its git directory as `skills-rewrite-record-*.json`.
+
+- **Main checkout `~/prg/skills-akaihola`:** six worktrees, none with staged,
+  unstaged or untracked changes; no stash entries; 259 commits missing from
+  GitHub (`main`'s 172 plus task branches and T3 checkpoints). All 129 refs
+  were moved to their rewritten commits, every worktree was reset to its
+  rewritten HEAD, reflogs were expired and `git gc --prune=now` ran.
+- **Plugin-marketplace clone:** no local work; 2 refs moved.
+- **Scratch clone `~/tmp/hai261-review/skills-akaihola`:** no local work; 2
+  refs moved.
+
+After `gc`, a scan of every object left in the three databases (2681, 1627
+and 2465 objects) found no value. Their working trees, including ignored
+files, hold no value either. The only matches are in installed third-party
+packages under `.venv` (authors who share the third party's first name, and a
+brand name), which are not this repository's data.
+
+### Pending
+
+- **Force push:** Antti pushes the rewritten `main` and `clasohlson`.
+- **GitHub Support:** Antti asks Support to dereference the four pull
+  requests, run garbage collection and remove cached views.
+- **Antti's other accounts:** the five other accounts in the fleet
+  definition run the resync script after the push.
+- **The pre-migration backup clone on this account** and **the fallback copy
+  of the agent home:** left unchanged; they need Antti's decision.
+- **The powered-off closet laptop's accounts:** pending until it is powered
+  on.
+- **Verification of a fresh GitHub clone:** after the push, by comparing
+  GitHub's branch tips with the verified hashes.
+- **Outside this task:** an older version of
+  `processing-scanned-receipts/SKILL.md` holds what looks like a real shop
+  receipt (shop, business ID, date, items). It is not personal data under
+  this task's list; including it would need another rewrite.
+
+### Guarded heavy commands
+
+| Command | Outcome | MemAvailable at admission, final | Swap start, growth | Time | Exit |
+| --- | --- | --- | --- | --- | --- |
+| `git filter-repo` on the working mirror | started at once (no wait) | 54435, 54437 MiB | 413, 0 MiB | 4 s | 0 |
+| `verify_mirror.py` (value checks, per-commit equivalence) | started at once (no wait) | 54436, 54463 MiB | 413, 0 MiB | 9 s | 0 |
+| `refcheck.py` (values reachable from GitHub refs) | started at once (no wait) | 54299, 54289 MiB | 413, 0 MiB | 2 s | 0 |
+| `resync.py --apply` on the three agent clones | started at once (no wait) | 54761, 54761 MiB | 413, 0 MiB | 3 s | 0 |
+
+The first history scans (value counts with `git log --all -p` over the 8 MiB
+repository) ran before the guard existed, without an admission check. The
+first reading after them showed 54 GiB available and 413 MiB of swap in use.
