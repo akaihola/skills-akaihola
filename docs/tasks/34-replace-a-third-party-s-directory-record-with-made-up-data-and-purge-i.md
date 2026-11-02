@@ -215,6 +215,12 @@ the old objects again. Both sources will bring the old history back until
 GitHub has the rewritten branches and the laptop clone is resynced, so the
 cleanup is repeated after those steps.
 
+The resync script recognises a clone by the history's first commit, which
+both histories share, as well as by its remote URL or path. A rehearsal on a
+clone of GitHub's old history, with one unpushed commit and one uncommitted
+change, ended on the final history with the commit rebased, the change
+restored, and no old commit or object holding a value left.
+
 After the first resync's `gc`, a scan of every object left in the three
 databases (2681, 1627 and 2465 objects) found no value; after the second,
 none of the 49 objects, no old commit and no receipt value remained (2725,
@@ -232,6 +238,11 @@ brand name), which are not this repository's data.
   definition run the resync script after the push.
 - **The pre-migration backup clone on this account** and **the fallback copy
   of the agent home:** left unchanged; they need Antti's decision.
+- **The pacer's HAI-215 evidence checkout**
+  (`~/.local/state/kandev-pacer/t3/evidence/hai215-checks/skills-source`):
+  old history, no local work. Files beside it cite old commit hashes as
+  evidence, so it was left unchanged for Antti's decision. A search of the
+  whole agent home for the history's first commit found no other clone.
 - **The powered-off closet laptop's accounts:** pending until it is powered
   on.
 - **Verification of a fresh GitHub clone:** after the push, by comparing
