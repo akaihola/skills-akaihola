@@ -6,9 +6,9 @@
       "title": "Bring the T3 helper's launch and send recovery under one record path",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "564d595960de81d0dd99915acebdaece99e233b0",
+      "base_commit": "24e1088a66e3d2815e7a73a259c57067e40664ac",
       "delivery_commits": [
-        "b293300736421f230f0c2ee0c9c7c525f1d29cb7"
+        "93e2d6efd520fa7fa8fafd28677add589a740378"
       ],
       "checks": [
         {
@@ -59,7 +59,7 @@
       "evidence": {
         "helper-fake-suite": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf",
-          "tested_commit": "b293300736421f230f0c2ee0c9c7c525f1d29cb7",
+          "tested_commit": "93e2d6efd520fa7fa8fafd28677add589a740378",
           "dependencies": {
             "helper": {
               "kind": "sha256",
@@ -91,7 +91,7 @@
         },
         "lint-format-whitespace": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-25-bring-the-t3-helper-s-launch-and-send-recovery-under-one-record-79abbaaf",
-          "tested_commit": "b293300736421f230f0c2ee0c9c7c525f1d29cb7",
+          "tested_commit": "93e2d6efd520fa7fa8fafd28677add589a740378",
           "dependencies": {
             "helper": {
               "kind": "sha256",

@@ -6,9 +6,9 @@
       "title": "Check skills-akaihola's skill instructions against the seven source changes since the 10-22 docs review",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "f35e0f6559c24564c8b3068f8ae5d8b2470121eb",
+      "base_commit": "2f2e336490ade3193efe76faa3f0347cc7e1b79b",
       "delivery_commits": [
-        "7b0d58fbcec774d01791bdc118ac121b4ed600db"
+        "95bea6c6ef92b21e368e9a2d93f954aa12483f66"
       ],
       "checks": [
         {
@@ -67,7 +67,7 @@
       "evidence": {
         "metadata": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
-          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "tested_commit": "95bea6c6ef92b21e368e9a2d93f954aa12483f66",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -89,7 +89,7 @@
         },
         "regressions": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
-          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "tested_commit": "95bea6c6ef92b21e368e9a2d93f954aa12483f66",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -111,7 +111,7 @@
         },
         "help": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
-          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "tested_commit": "95bea6c6ef92b21e368e9a2d93f954aa12483f66",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -133,7 +133,7 @@
         },
         "documents": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-29-check-skills-akaihola-s-skill-instructions-against-the-seven-sou-07b39348",
-          "tested_commit": "7b0d58fbcec774d01791bdc118ac121b4ed600db",
+          "tested_commit": "95bea6c6ef92b21e368e9a2d93f954aa12483f66",
           "dependencies": {
             "checker": {
               "kind": "sha256",

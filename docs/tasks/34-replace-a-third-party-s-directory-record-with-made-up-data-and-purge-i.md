@@ -15,10 +15,10 @@ Requested by Antti on 2026-11-01 in the thread of [15] (T3 thread `f8abbf09-403c
 
 Read the values from these places into the private files of step 2, never into a command line, log or commit. Line numbers are from 2026-10-21.
 
-- **The third party's record:** `fonecta-lookup/references/fonecta-api.md` lines 96–119, added in `07368a8`.
+- **The third party's record:** `fonecta-lookup/references/fonecta-api.md` lines 96–119, added in `b479cf6`.
 - **Antti's data in the tree** (finding P1):
   - `fonecta-lookup/scripts/fonecta_lookup.py` line 103: his first name, used as the login-success check.
-  - `kuluttaja/references/api.md` line 92: his personal email address, added in `cbcec65`.
+  - `kuluttaja/references/api.md` line 92: his personal email address, added in `deab7d3`.
   - `email-mailbox-analyzer/README.md` line 28: a personal email address and the mail provider's host.
   - `email-mailbox-analyzer/README.md` line 52 and `email-mailbox-analyzer/scripts/email-mailbox-analyzer.sh` line 80: his mail-client profile ID.
   - `jmap/SKILL.md` lines 12 and 33, and `jmap/sync_emails.py` line 22: his surname as the JMAP account ID.
@@ -26,8 +26,8 @@ Read the values from these places into the private files of step 2, never into a
   - `himalaya-email-manager/references/troubleshooting.md` lines 67 and 86: the mail provider's host.
   - `jmap/sync_emails.py` lines 42 and 44: a real-looking correspondent's name and domain.
 - **Data left only in older commits:**
-  - a sender organisation's domain, added to `jmap/SKILL.md` in `68943c4` and removed in `0caf1d1`;
-  - his email address in `email-mailbox-analyzer/SKILL.md`, in `8eb0a53` and `39236b2`;
+  - a sender organisation's domain, added to `jmap/SKILL.md` in `1ef0ad4` and removed in `e45db23`;
+  - his email address in `email-mailbox-analyzer/SKILL.md`, in `b71cce9` and `d54d81d`;
   - local paths in older tests that name his personal folders.
 - **Commit metadata:** on 2026-11-02, 28 author entries and 2 committer entries used 2 distinct addresses that are not GitHub noreply addresses. Map Antti's to `13725+akaihola@users.noreply.github.com`, the address the repository's recent commits use, with filter-repo's mailmap, and keep the author names. If an address belongs to someone else, ask Antti before changing it.
 - **Not purged:** Antti's name in copyright lines (`himalaya-email-manager/scripts/email_save.py` line 2, `ecb-rates/fetch_ecb_rates.py` line 1) and as commit author name. Both are his chosen public attribution. Change them only if Antti adds them to this record.

@@ -6,9 +6,9 @@
       "title": "Stop the T3 helper re-reading thread shells it already has",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "4eed49cfc5ee9ecd9ab66f8c656fd39bf7eed59a",
+      "base_commit": "6f4091850d1fe17ccb85ae0a944634b7422c0625",
       "delivery_commits": [
-        "b10db5be7b2cc402366c27237a6756a1c76c442c"
+        "7fb81b6d4e0190abe2476126f30886a5bdeb11b8"
       ],
       "checks": [
         {
@@ -81,7 +81,7 @@
       "evidence": {
         "rpc-trace-and-summary-pins": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
-          "tested_commit": "b10db5be7b2cc402366c27237a6756a1c76c442c",
+          "tested_commit": "7fb81b6d4e0190abe2476126f30886a5bdeb11b8",
           "dependencies": {
             "helper": {
               "kind": "sha256",
@@ -113,7 +113,7 @@
         },
         "helper-fake-suite": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
-          "tested_commit": "b10db5be7b2cc402366c27237a6756a1c76c442c",
+          "tested_commit": "7fb81b6d4e0190abe2476126f30886a5bdeb11b8",
           "dependencies": {
             "helper": {
               "kind": "sha256",
@@ -145,7 +145,7 @@
         },
         "lint-format-whitespace": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-26-stop-the-t3-helper-re-reading-thread-shells-it-already-has-d92f980d",
-          "tested_commit": "b10db5be7b2cc402366c27237a6756a1c76c442c",
+          "tested_commit": "7fb81b6d4e0190abe2476126f30886a5bdeb11b8",
           "dependencies": {
             "helper": {
               "kind": "sha256",

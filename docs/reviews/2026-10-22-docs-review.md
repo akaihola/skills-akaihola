@@ -1,6 +1,6 @@
 # Documentation review, 2026-10-22
 
-Reviewed current local main at `872546a` after the task’s start-state commit.
+Reviewed current local main at `a395b91` after the task’s start-state commit.
 This is the documentation-only result for [checking changed skills against
 their scripts][task]. No script, test, earlier review, task description or
 agent bootstrap file was edited. Only the authorized lifecycle moves affect
@@ -172,9 +172,9 @@ git diff --check
 
 ## Integration evidence
 
-The start move was committed on shared main as `872546a`. Documentation
-commit `0a087d2` was fast-forwarded to main before completion commit
-`21d0ffd`. A fresh Hai read confirmed `Completed / Accepted` with
+The start move was committed on shared main as `a395b91`. Documentation
+commit `9294622` was fast-forwarded to main before completion commit
+`d0e96dd`. A fresh Hai read confirmed `Completed / Accepted` with
 `accepted: false`, 18 unique issues and resolving detail links. The shared
 checkout was clean. The task branch and worktree were retained.
 No remote push, new issue, thread launch or coordination message was needed.

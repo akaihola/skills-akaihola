@@ -111,7 +111,7 @@ was used.
   uses `example-org` and `example.org` only.
 - Hai loaded all 22 issues with unique stable IDs and references; all 22
   numbered detail links resolve. The start move was committed on shared
-  `main` as `e78cd2b` and left no uncommitted tracker changes; the worktree
+  `main` as `454cefd` and left no uncommitted tracker changes; the worktree
   was rebased onto it.
 
 ### Memory record
@@ -138,8 +138,8 @@ treated as heavy. Nothing was stopped or skipped.
 
 ### Merge and completion
 
-Fast-forwarded `main` to the implementation commit `240fac1`, then moved the
-issue to Completed / Accepted through Hai in `a87473f`, with the acceptance
+Fast-forwarded `main` to the implementation commit `6aa92c0`, then moved the
+issue to Completed / Accepted through Hai in `d89fb25`, with the acceptance
 box left unchecked. The tracker then loaded with 22 unique issues and left no
 uncommitted changes. The task worktree and branch are kept.
 

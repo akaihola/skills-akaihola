@@ -6,9 +6,9 @@
       "title": "Correct T3 skill routing so paced follow-ups wait for pacer admission",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "6b38680b73b0168fa8b85bce8f7d87ae23b1d95c",
+      "base_commit": "a915fdccd67130059102d28983a0ca8874b2b766",
       "delivery_commits": [
-        "97f140b7fbc424d566235f12d425915464c8e46b"
+        "c286584e27ca0a82348f39fcf917ebbdec89d83f"
       ],
       "checks": [
         {
@@ -61,7 +61,7 @@
         },
         {
           "id": "installed-route-inspection",
-          "command": "sed -n '274678,274690p;277795,277805p;277869,277887p;282814,282847p;322927,322956p' /nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs && git show 97f140b7fbc424d566235f12d425915464c8e46b:t3-start-thread/scripts/start_thread.py | sed -n '211,230p;435,455p'",
+          "command": "sed -n '274678,274690p;277795,277805p;277869,277887p;282814,282847p;322927,322956p' /nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs && git show c286584e27ca0a82348f39fcf917ebbdec89d83f:t3-start-thread/scripts/start_thread.py | sed -n '211,230p;435,455p'",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -75,7 +75,7 @@
         },
         {
           "id": "delivery-scope",
-          "command": "git diff --check 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b && git diff --exit-code 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b -- t3-start-thread/scripts/start_thread.py && python3 - <<'PY'\nimport subprocess\nexpected = {\n    't3-start-thread/SKILL.md',\n    't3-start-thread/references/helper.md',\n    't3-start-thread/tests/test_start_thread.py',\n    'docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md',\n}\nactual = set(subprocess.check_output(['git', 'diff', '--name-only', '6b38680b73b0168fa8b85bce8f7d87ae23b1d95c', '97f140b7fbc424d566235f12d425915464c8e46b'], text=True).splitlines())\nassert actual == expected, sorted(actual)\nprint('Delivery scope: only routing docs, regression and task evidence; helper unchanged')\nPY",
+          "command": "git diff --check a915fdccd67130059102d28983a0ca8874b2b766 c286584e27ca0a82348f39fcf917ebbdec89d83f && git diff --exit-code a915fdccd67130059102d28983a0ca8874b2b766 c286584e27ca0a82348f39fcf917ebbdec89d83f -- t3-start-thread/scripts/start_thread.py && python3 - <<'PY'\nimport subprocess\nexpected = {\n    't3-start-thread/SKILL.md',\n    't3-start-thread/references/helper.md',\n    't3-start-thread/tests/test_start_thread.py',\n    'docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md',\n}\nactual = set(subprocess.check_output(['git', 'diff', '--name-only', 'a915fdccd67130059102d28983a0ca8874b2b766', 'c286584e27ca0a82348f39fcf917ebbdec89d83f'], text=True).splitlines())\nassert actual == expected, sorted(actual)\nprint('Delivery scope: only routing docs, regression and task evidence; helper unchanged')\nPY",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -87,7 +87,7 @@
       "evidence": {
         "regressions": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
-          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "tested_commit": "c286584e27ca0a82348f39fcf917ebbdec89d83f",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -104,7 +104,7 @@
         },
         "skill-validation": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
-          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "tested_commit": "c286584e27ca0a82348f39fcf917ebbdec89d83f",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -126,7 +126,7 @@
         },
         "helper-help": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
-          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "tested_commit": "c286584e27ca0a82348f39fcf917ebbdec89d83f",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -143,7 +143,7 @@
         },
         "python-lint": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
-          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "tested_commit": "c286584e27ca0a82348f39fcf917ebbdec89d83f",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -165,7 +165,7 @@
         },
         "installed-route-inspection": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
-          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "tested_commit": "c286584e27ca0a82348f39fcf917ebbdec89d83f",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -180,14 +180,14 @@
           },
           "issue": "skills-akaihola [31]",
           "check": "installed-route-inspection",
-          "command": "sed -n '274678,274690p;277795,277805p;277869,277887p;282814,282847p;322927,322956p' /nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs && git show 97f140b7fbc424d566235f12d425915464c8e46b:t3-start-thread/scripts/start_thread.py | sed -n '211,230p;435,455p'",
+          "command": "sed -n '274678,274690p;277795,277805p;277869,277887p;282814,282847p;322927,322956p' /nix/store/br62y8qdd3r0wzgmaw8ys419x80xhzkp-t3code-0.1.0/libexec/t3code/apps/server/dist/binCli-D845Gj8J.mjs && git show c286584e27ca0a82348f39fcf917ebbdec89d83f:t3-start-thread/scripts/start_thread.py | sed -n '211,230p;435,455p'",
           "result": "pass",
           "exit_code": 0,
           "timestamp": "2026-10-26T14:53:27.433592+00:00"
         },
         "delivery-scope": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admi-2bbac0e1",
-          "tested_commit": "97f140b7fbc424d566235f12d425915464c8e46b",
+          "tested_commit": "c286584e27ca0a82348f39fcf917ebbdec89d83f",
           "dependencies": {
             "lock": {
               "kind": "sha256",
@@ -197,7 +197,7 @@
           },
           "issue": "skills-akaihola [31]",
           "check": "delivery-scope",
-          "command": "git diff --check 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b && git diff --exit-code 6b38680b73b0168fa8b85bce8f7d87ae23b1d95c 97f140b7fbc424d566235f12d425915464c8e46b -- t3-start-thread/scripts/start_thread.py && python3 - <<'PY'\nimport subprocess\nexpected = {\n    't3-start-thread/SKILL.md',\n    't3-start-thread/references/helper.md',\n    't3-start-thread/tests/test_start_thread.py',\n    'docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md',\n}\nactual = set(subprocess.check_output(['git', 'diff', '--name-only', '6b38680b73b0168fa8b85bce8f7d87ae23b1d95c', '97f140b7fbc424d566235f12d425915464c8e46b'], text=True).splitlines())\nassert actual == expected, sorted(actual)\nprint('Delivery scope: only routing docs, regression and task evidence; helper unchanged')\nPY",
+          "command": "git diff --check a915fdccd67130059102d28983a0ca8874b2b766 c286584e27ca0a82348f39fcf917ebbdec89d83f && git diff --exit-code a915fdccd67130059102d28983a0ca8874b2b766 c286584e27ca0a82348f39fcf917ebbdec89d83f -- t3-start-thread/scripts/start_thread.py && python3 - <<'PY'\nimport subprocess\nexpected = {\n    't3-start-thread/SKILL.md',\n    't3-start-thread/references/helper.md',\n    't3-start-thread/tests/test_start_thread.py',\n    'docs/tasks/31-correct-t3-skill-routing-so-paced-follow-ups-wait-for-pacer-admission.md',\n}\nactual = set(subprocess.check_output(['git', 'diff', '--name-only', 'a915fdccd67130059102d28983a0ca8874b2b766', 'c286584e27ca0a82348f39fcf917ebbdec89d83f'], text=True).splitlines())\nassert actual == expected, sorted(actual)\nprint('Delivery scope: only routing docs, regression and task evidence; helper unchanged')\nPY",
           "result": "pass",
           "exit_code": 0,
           "timestamp": "2026-10-26T14:53:27.658609+00:00"

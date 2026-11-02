@@ -6,9 +6,9 @@
       "title": "Retire the T3 helper's V1 transport while keeping saved requests readable",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-8d77b9e6",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "6a6ffeab9fd88859e38221619722a6d32bc4a2e3",
+      "base_commit": "e4cace3560ab28b70304e7ece9c87b99e200ba79",
       "delivery_commits": [
-        "a671c38434aa8a3d21cfb27f2b76562d71418fd7"
+        "222b80c555aaa5995049145aa8691009431be2a3"
       ],
       "checks": [
         {
@@ -67,7 +67,7 @@
       "evidence": {
         "v2-first-socket-no-retry": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-8d77b9e6",
-          "tested_commit": "a671c38434aa8a3d21cfb27f2b76562d71418fd7",
+          "tested_commit": "222b80c555aaa5995049145aa8691009431be2a3",
           "dependencies": {
             "script_metadata": {
               "kind": "sha256",
@@ -89,7 +89,7 @@
         },
         "helper-fake-suite": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-8d77b9e6",
-          "tested_commit": "a671c38434aa8a3d21cfb27f2b76562d71418fd7",
+          "tested_commit": "222b80c555aaa5995049145aa8691009431be2a3",
           "dependencies": {
             "script_metadata": {
               "kind": "sha256",
@@ -111,7 +111,7 @@
         },
         "old-record-recovery": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-8d77b9e6",
-          "tested_commit": "a671c38434aa8a3d21cfb27f2b76562d71418fd7",
+          "tested_commit": "222b80c555aaa5995049145aa8691009431be2a3",
           "dependencies": {
             "script_metadata": {
               "kind": "sha256",
@@ -133,7 +133,7 @@
         },
         "reference-compatibility": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-24-retire-the-t3-helper-s-v1-transport-while-keeping-saved-requests-8d77b9e6",
-          "tested_commit": "a671c38434aa8a3d21cfb27f2b76562d71418fd7",
+          "tested_commit": "222b80c555aaa5995049145aa8691009431be2a3",
           "dependencies": {
             "reference": {
               "kind": "sha256",

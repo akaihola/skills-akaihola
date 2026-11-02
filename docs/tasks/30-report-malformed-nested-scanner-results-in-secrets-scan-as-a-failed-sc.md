@@ -4,7 +4,7 @@ Tracker: [TASKS.md](../../TASKS.md).
 
 ## Why
 
-[The 2026-10-25 docs recheck](../reviews/2026-10-25-docs-recheck.md#draft-issues), draft D1: `secrets-scan/SKILL.md` promises exit 2 when "a requested scanner failed", and `7e7a300` reports invalid JSON and wrong outer containers that way. But `run_secretlint()` assumes every result item and message is a dictionary, and `build_combined()` trusts nested detect-secrets results the same way. A synthetic probe whose fake `run_tool()` returned `[null]` ended in an uncaught `AttributeError` before any report: the agent gets a traceback and exit 1, which the table reads as "a finding needs review", instead of exit 2 and a named failed scanner. This is failure reporting, not detection: no rule or finding changes.
+[The 2026-10-25 docs recheck](../reviews/2026-10-25-docs-recheck.md#draft-issues), draft D1: `secrets-scan/SKILL.md` promises exit 2 when "a requested scanner failed", and `1218088` reports invalid JSON and wrong outer containers that way. But `run_secretlint()` assumes every result item and message is a dictionary, and `build_combined()` trusts nested detect-secrets results the same way. A synthetic probe whose fake `run_tool()` returned `[null]` ended in an uncaught `AttributeError` before any report: the agent gets a traceback and exit 1, which the table reads as "a finding needs review", instead of exit 2 and a named failed scanner. This is failure reporting, not detection: no rule or finding changes.
 
 ## What to do
 
@@ -60,7 +60,7 @@ Tracker: [TASKS.md](../../TASKS.md).
   harness's redaction assert would catch an echoed value.
 - **Red, then green.** Against the unchanged scanner, 24 of the 26 new cases
   failed with uncaught `AttributeError` or `TypeError`. The two non-mapping
-  `results` cases passed already, because `7e7a300` handles that shape;
+  `results` cases passed already, because `1218088` handles that shape;
   they stay as regression guards. With the change, all 42 scanner tests and
   the 27 security-boundary tests pass.
 
@@ -115,8 +115,8 @@ contain no command output.
 
 ### Integration and merged checks
 
-Base commit: `2e3340114abcbee3e6b96d8c7f8df2c06c4f2a1e`. Delivery and merged
-commit: `95bbe1f900414735f84acd25f513d2524c842b02`. The task branch was
+Base commit: `58742c6150ed4a31db5566b0014562a95eea3c01`. Delivery and merged
+commit: `792aec753bc2995a3725b2afe13325380b06f9b0`. The task branch was
 rebased onto `main` (adding only the start move beneath it) and
 fast-forwarded. The task worktree was detached at the merged commit for
 clean-checkout recording. The task branch and worktree are retained.
@@ -129,7 +129,7 @@ All four evidence commands passed at the merged commit:
 - **new-tests-fail-on-base:** exit 0. In a temporary export of the merged
   tree with the base commit's `scan.py`, the two new test functions gave
   `24 failed, 2 passed`. The two passes are the non-mapping `results` cases
-  that `7e7a300` already handled.
+  that `1218088` already handled.
 - **ruff:** exit 0; check and format passed on both changed Python files,
   and the Python 3.10 parse passed on `scan.py` (Ruff 0.16.8).
 

@@ -1,6 +1,6 @@
 Steward issue, 2026-10-22 03:00 refill. Goal: agentic-leverage (skills-akaihola is tier 2 on the goals page). Estimated 1 h. Source: draft D3 of [the 2026-10-22 docs review](../reviews/2026-10-22-docs-review.md#draft-issues).
 
-A secrets scan that never ran reads as clean. In `secrets-scan/scripts/scan.py` on `main` (`278d0d1`), `run_detect_secrets()` returns `{}` when detect-secrets exits with anything other than 0 or 1 or prints invalid JSON; `run_secretlint()` silently skips a batch whose output is empty or invalid; a secretlint setup failure only prints "skipping". `main()` then renders the report and exits 0 when nothing needs review. Placeholder classification also accepts a placeholder word anywhere on the line, so a real-format value beside such a word is classed as a placeholder.
+A secrets scan that never ran reads as clean. In `secrets-scan/scripts/scan.py` on `main` (`dcb627c`), `run_detect_secrets()` returns `{}` when detect-secrets exits with anything other than 0 or 1 or prints invalid JSON; `run_secretlint()` silently skips a batch whose output is empty or invalid; a secretlint setup failure only prints "skipping". `main()` then renders the report and exits 0 when nothing needs review. Placeholder classification also accepts a placeholder word anywhere on the line, so a real-format value beside such a word is classed as a placeholder.
 
 ## What to do
 

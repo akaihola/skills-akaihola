@@ -20,7 +20,7 @@ Tracker: [the skills-akaihola tracker](../../TASKS.md).
 ## Task record
 
 Implemented 2026-10-22. The start move was committed on shared `main` as
-`d4d6c92`, left the tracker clean, and was incorporated by rebasing the task
+`3cd2988`, left the tracker clean, and was incorporated by rebasing the task
 worktree. Implementation changes only [the README], [the backlog] and this
 record. Scripts, earlier reviews, the adoption proposal and [the JMAP skill]
 are unchanged.
@@ -116,9 +116,9 @@ once**. Readings are MiB; elapsed time is seconds.
 
 ### Merge and completion
 
-Fast-forwarded shared `main` to implementation commit `0f0280d`, including the
+Fast-forwarded shared `main` to implementation commit `d35871b`, including the
 backlog amendment. Then moved this issue through Hai to Completed / Accepted
-in `73164a0`, leaving `[ ]` for user acceptance. The final Hai read confirmed
+in `5f3f708`, leaving `[ ]` for user acceptance. The final Hai read confirmed
 22 unique issues and resolving detail links; shared `main` had no uncommitted
 tracker changes. The worktree and branch are retained. The only check failure
 is the pre-existing topology debt documented above; no implementation

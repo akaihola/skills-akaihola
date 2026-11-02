@@ -1,6 +1,6 @@
 # Security review, 2026-10-21
 
-Reviewed `main` at `6241ec12010e5b466dad7110a8cc51ce6a042763`. Evidence
+Reviewed `main` at `b581e8601543f24f0dcac7116140f555598ab9b1`. Evidence
 locations refer to that commit. This report is the only deliverable: nothing
 was fixed and the drafted issues have not been filed.
 
@@ -676,13 +676,13 @@ data only.
 - **Third party:** [`fonecta-lookup/references/fonecta-api.md:99-104`][fonecta-api]
   and [`:114-117`][fonecta-api] show what looks like a real person's directory
   record, not placeholders. It has a full name, a mobile number, an employer
-  and a business ID whose check digit is valid. Added in `07368a8`.
+  and a business ID whose check digit is valid. Added in `b479cf6`.
 - **Owner:**
   - [`fonecta-lookup/scripts/fonecta_lookup.py:103`][fonecta_lookup]
-    hard-codes the owner's first name as its login check; added in `07368a8`.
+    hard-codes the owner's first name as its login check; added in `b479cf6`.
   - [`kuluttaja/references/api.md:92`][kuluttaja-api] has the owner's
-    personal email address. It was added in `cbcec65`, after the earlier PII
-    cleanup in `0caf1d1`.
+    personal email address. It was added in `deab7d3`, after the earlier PII
+    cleanup in `e45db23`.
   - [`email-mailbox-analyzer/README.md:28`][analyzer-readme] has a personal
     email address and the mail provider's host. [`:52`][analyzer-readme] has
     a real mail-client profile ID, which is also hard-coded in
@@ -823,7 +823,7 @@ ever added that looks like a credential file.
     and [`secrets-scan/references/classifying-findings.md:60-61`][classifying]
     hold placeholder connection strings.
   - `credentials-check/references/detect_secrets_cli.md`, removed since
-    commit `3296780a85`, and `classifying-findings.md` at `488d545f59` held
+    commit `4768d9eec8`, and `classifying-findings.md` at `de8fed306c` held
     the same allowlisted placeholder.
   - [`pdf-to-markdown/examples/yhteisoohjautuvuus/config.toml:3`][pdf-config]
     holds a three-character placeholder.

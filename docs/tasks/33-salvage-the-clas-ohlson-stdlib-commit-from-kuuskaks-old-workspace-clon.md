@@ -69,9 +69,9 @@ reverted that improvement, so it adds nothing to preserve.
   `4de086ebefad5e7f2ab1ebd07c6e540b5ff97385` exactly matches the saved
   commit's parent script: the entire staged diff undoes the stdlib change.
   Apart from the first line, it also matches all compared branch scripts.
-- **Branch comparison:** local main `dbf2642de3e145b242bc1cbba8ae8469b23b29ea`,
-  fetched origin/main `ed29af204f248978ca3147ef1c8e1134508ac7d7`, and
-  local/fetched clasohlson `559f9a570225daa312d59c53b14d198e3fda41e1`
+- **Branch comparison:** local main `fd13f3fd51f2fca861cfdbe102b1b42d395bc68c`,
+  fetched origin/main `1c6d2a3f3f9ab2d76b0a6ef117e7e598e51441a6`, and
+  local/fetched clasohlson `65b93461493a59a564523d37b1dfb43389e8d024`
   still used `httpx`. Both GitHub branches were fetched on 2026-11-01.
 - **Safety:** extracted into a fresh scratch directory outside this repository
   using Python's tarfile data filter. Archive Git commands disabled hooks
@@ -99,8 +99,8 @@ reverted that improvement, so it adds nothing to preserve.
 ## Merged verification
 
 The recovered stdlib change was merged into main at
-`d75873d70ac57b440a0b2b21d74fb011a00271e2`; the staged inverse is superseded.
-The previous main commit was `dbf2642de3e145b242bc1cbba8ae8469b23b29ea`.
+`19c8222359e3b52927625abf5307436f04c00243`; the staged inverse is superseded.
+The previous main commit was `fd13f3fd51f2fca861cfdbe102b1b42d395bc68c`.
 The delivery consists of that single new commit. The task worktree remains
 at the delivery commit, clean and available for rerunning checks.
 

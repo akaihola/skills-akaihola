@@ -6,9 +6,9 @@
       "title": "Fold the T3 helper's duplicate handoff test fakes into the V2 wire fixture",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wi-ad982a02",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "ce57f4c64997f9879dfcf90160c4fa4b8e67bf37",
+      "base_commit": "49597bd7be69f2991eb7ab12f205de836dfd6366",
       "delivery_commits": [
-        "32cb1fce1b46528a23eefafa34e16e124473de0d"
+        "e94d5a1b2f130cd7aa8e5b6dfb5289180b9dedc6"
       ],
       "checks": [
         {
@@ -35,7 +35,7 @@
         },
         {
           "id": "lint-format-whitespace",
-          "command": "bash -c 'ruff check t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/tests/test_start_thread.py && git diff --check ce57f4c64997f9879dfcf90160c4fa4b8e67bf37 HEAD'",
+          "command": "bash -c 'ruff check t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/tests/test_start_thread.py && git diff --check 49597bd7be69f2991eb7ab12f205de836dfd6366 HEAD'",
           "dependencies": {
             "helper": {
               "kind": "sha256",
@@ -59,7 +59,7 @@
       "evidence": {
         "helper-fake-suite": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wi-ad982a02",
-          "tested_commit": "32cb1fce1b46528a23eefafa34e16e124473de0d",
+          "tested_commit": "e94d5a1b2f130cd7aa8e5b6dfb5289180b9dedc6",
           "dependencies": {
             "helper": {
               "kind": "sha256",
@@ -91,7 +91,7 @@
         },
         "lint-format-whitespace": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-27-fold-the-t3-helper-s-duplicate-handoff-test-fakes-into-the-v2-wi-ad982a02",
-          "tested_commit": "32cb1fce1b46528a23eefafa34e16e124473de0d",
+          "tested_commit": "e94d5a1b2f130cd7aa8e5b6dfb5289180b9dedc6",
           "dependencies": {
             "helper": {
               "kind": "sha256",
@@ -116,7 +116,7 @@
           },
           "issue": "skills-akaihola [27]",
           "check": "lint-format-whitespace",
-          "command": "bash -c 'ruff check t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/tests/test_start_thread.py && git diff --check ce57f4c64997f9879dfcf90160c4fa4b8e67bf37 HEAD'",
+          "command": "bash -c 'ruff check t3-start-thread/tests/test_start_thread.py && ruff format --check t3-start-thread/tests/test_start_thread.py && git diff --check 49597bd7be69f2991eb7ab12f205de836dfd6366 HEAD'",
           "result": "pass",
           "exit_code": 0,
           "timestamp": "2026-10-22T07:02:14.782085+00:00"

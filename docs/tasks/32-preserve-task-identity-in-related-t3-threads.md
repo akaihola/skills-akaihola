@@ -4,4 +4,4 @@ Carry the complete Task thread identity JSON line from the main task prompt into
 
 ## Outcome
 
-Merged the identity and settlement guidance in commit `d1676b6`. The skill applies to native tools, ACP and the helper, preserves the original task identity across projects, and distinguishes the main thread from supporting work. Read-only standards and specification reviews found no unresolved issues. Documentation-only change; diff and private-information checks passed.
+Merged the identity and settlement guidance in commit `28a9f67`. The skill applies to native tools, ACP and the helper, preserves the original task identity across projects, and distinguishes the main thread from supporting work. Read-only standards and specification reviews found no unresolved issues. Documentation-only change; diff and private-information checks passed.

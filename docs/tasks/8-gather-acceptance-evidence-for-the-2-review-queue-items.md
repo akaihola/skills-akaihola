@@ -59,7 +59,7 @@ grouped by verdict and the counts per verdict at the end.
 
 ## Evidence, 2026-10-17
 
-Checked on `main` at `e846843` in a detached `$TMPDIR/revert-check` worktree,
+Checked on `main` at `9693ad8` in a detached `$TMPDIR/revert-check` worktree,
 removed afterwards. Both items have Hai timestamps from 2026-10-17, so neither
 is a legacy bullet. Neither `README.md` nor `AGENTS.md` documents a test suite,
 so the checks were the helper's own tests and the suites the CI workflows run.
@@ -73,7 +73,7 @@ Results on `main`:
   'websocket-client>=1.8,<2' pytest t3-start-thread/tests -q`: 83 passed,
   0 failed. `ruff check t3-start-thread` passed. `ty check --python <venv>
   t3-start-thread` (ty 0.0.89, venv holding the helper's dependencies) passed.
-  `git diff --check` of `2aadff5` and of `65fec29` is clean.
+  `git diff --check` of `953dedb` and of `4eaf9a3` is clean.
 - CI suites, none of which touch `t3-start-thread/`: reflect-extensions 36
   passed, 0 failed. android-diagnostics 948 passed, 0 failed outside the
   sandbox. Inside it, 50 failed because the sandbox shows root-owned `/tmp` as
@@ -89,7 +89,7 @@ Results on `main`:
   tries V1 and switches to V2 only when the WebSocket upgrade returns 426
   `orchestration_protocol_incompatible`; `inspect`, `start`, `send` and
   `resume` keep their CLI and output on both, and `inspect` adds `active`.
-  Evidence: commit `2aadff5` (fast-forwarded, no merge commit) in
+  Evidence: commit `953dedb` (fast-forwarded, no merge commit) in
   `t3-start-thread/scripts/start_thread.py`, `SKILL.md` (the `...`/`…` parking
   warning) and `tests/test_start_thread.py`, whose `wire_server` fixture runs
   every action on protocols 1 and 2, including old V1 records and repeated
@@ -98,17 +98,17 @@ Results on `main`:
   description. No functionality is removed and V1 still works. One line goes
   beyond the requirements: `main()` sets `SHELL` to Bash for the helper's
   subprocesses. It follows the user's standing rule for agent subprocess
-  environments and changes no CLI or output. Revert: `git revert 65fec29
-  2aadff5`. [7] builds on [6], so reverting `2aadff5` alone conflicts in
+  environments and changes no CLI or output. Revert: `git revert 4eaf9a3
+  953dedb`. [7] builds on [6], so reverting `953dedb` alone conflicts in
   `tests/test_start_thread.py`. The pair reverts without conflicts and restores
-  `t3-start-thread/` exactly as it was at `2aadff5^`.
+  `t3-start-thread/` exactly as it was at `953dedb^`.
 - [7] `settle` command. Outcome: `settle --thread ID [--thread ID …]` sends
   `thread.settle` with a fresh `commandId` per target on both protocols. It
   refuses archived threads, active threads and threads waiting for an answer,
   an approval or runtime input before dispatch, and carries on with the rest.
   `--dry-run` dispatches nothing. It prints one JSON line per target and exits
   1 on any refusal or error. `inspect` shows `settledAt`. Evidence: commit
-  `65fec29` (fast-forwarded) with `test_settle_batch`,
+  `4eaf9a3` (fast-forwarded) with `test_settle_batch`,
   `test_settle_refuses_and_continues` (every refusal, with and without
   `--dry-run`, on both protocols), `test_settle_archived_collection_and_missing`,
   `test_settle_server_error_continues` and `test_inspect_settled_timestamp`,
@@ -117,8 +117,8 @@ Results on `main`:
   steward run threads on gogo's V1 server (six at 14:16 UTC, then one each at
   18:42, 20:08 and 23:11 local), with no refusal or error. Threads holding the
   user's messages were left alone. Settling deletes nothing. Revert:
-  `git revert 65fec29`, which has no conflicts and restores `t3-start-thread/`
-  exactly as it was at `65fec29^`.
+  `git revert 4eaf9a3`, which has no conflicts and restores `t3-start-thread/`
+  exactly as it was at `4eaf9a3^`.
 
 ### Left to Antti
 
