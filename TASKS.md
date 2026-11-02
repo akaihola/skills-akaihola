@@ -10,11 +10,11 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Scheduled
 
-- [34] Replace personal data with made-up data and purge it from the public
-  history and every clone
-  <!-- hai:{"id":"simple-954330e6-620c-43b1-8e13-e1826df5636f","labels":["security","privacy"],"createdAt":"2026-11-01T19:02:05.094Z","updatedAt":"2026-11-02T04:43:20.903Z"} -->
-
 ## In Progress
+
+- [~] [34] Replace personal data with made-up data and purge it from the public
+  history and every clone
+      <!-- hai:{"id":"simple-954330e6-620c-43b1-8e13-e1826df5636f","labels":["security","privacy"],"createdAt":"2026-11-01T19:02:05.094Z","updatedAt":"2026-11-02T04:43:28.035Z"} -->
 
 ## Completed / Accepted
 
