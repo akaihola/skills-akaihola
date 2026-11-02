@@ -91,7 +91,11 @@ on GitHub, in the clones on his other accounts and in the clones listed under
 
 Values were read into private files with mode 0600 under the session's
 `$TMPDIR` and never printed; this record gives counts only. Those files are
-deleted at the end of the session.
+deleted at the end of the session. One exception: while locating the receipt
+example (below), one `grep` read unmasked text, and the transport company's
+business ID, a public company registry number rather than a private
+person's, appeared once in the agent's session transcript. It was not
+committed.
 
 ### Step 1: the skills without the real values
 
@@ -118,15 +122,21 @@ missing-account error (exit 2); `uv run fonecta_lookup.py --help` (exit 0).
 
 ### Values found
 
-The private list holds 41 values. Beyond the locations above, the history
-search found three more kinds, all now replaced:
+The private lists hold 41 values plus 8 from the receipt. Beyond the
+locations above, the history search found four more kinds, all now replaced:
 
 - the first version of the JMAP skill used two company names in personal
   folder paths, a correspondent's address fragment and two example comments
   naming the organisations;
 - an older Himalaya test used a personal folder name in 14 paths;
 - `pi-session-logs/SKILL.md` contained the surname in a misspelt repository
-  name, now corrected to `skills-akaihola`.
+  name, now corrected to `skills-akaihola`;
+- on Antti's decision ("include receipt", 2026-11-02), a second pass replaced
+  a real receipt in older versions of `processing-scanned-receipts/SKILL.md`:
+  a transport company's name and business ID, a date and time, a trip's start
+  and destination addresses and distance, and an example file name built
+  from the same trip. They now read "Esimerkkiyritys Oy", `1234567-8`,
+  "Esimerkkikatu" and "Testitie".
 
 Antti's first name, the city and the operator name also occur in unrelated
 text, so their replacements were limited to the login check and the record's
@@ -154,13 +164,23 @@ disappears. Results:
   one committer entry of the OpenClaw agent keep its `.local` address, which
   names no person; changing it needs Antti's decision.
 
+The second pass, for the receipt, ran `git filter-repo --replace-text` and
+`--replace-message` over the 503 commits of the first rewrite. It changed
+345 commits; only `processing-scanned-receipts/SKILL.md` changed content.
+No receipt value remains in the 2687 objects, none of the 47 objects found
+earlier and no old commit is present, and every changed file equals the
+previous one with only the receipt rules applied. GitHub's 4 pull-request
+refs reach none of the receipt objects.
+
 ### Step 4: commit references
 
 Commit `8c2e96e` rewrites 178 commit-hash mentions in 33 reviews, task
 records and evidence receipts with rebase-all's `rewrite-refs`. Commit
-messages were translated by filter-repo itself. The commit map, ref map,
-the list of the 47 objects that held a value, the rewritten bundle and the
-resync script are kept privately in
+messages were translated by filter-repo itself. After the second pass,
+commit `7602f05` rewrote 172 mentions in the same 33 files. The commit maps
+(old to final, and first rewrite to final), the list of the 49 objects that
+held a value, the rewritten bundles and the resync script are kept privately
+in
 [agent@tinni:~/.local/state/skills-akaihola-history-rewrite/2026-11-02/](http://tinni/.local/state/skills-akaihola-history-rewrite/2026-11-02/?f).
 Other repositories that cite this repository's commits are unchanged.
 
@@ -187,8 +207,18 @@ its git directory as `skills-rewrite-record-*.json`.
 - **Scratch clone `~/tmp/hai261-review/skills-akaihola`:** no local work; 2
   refs moved.
 
-After `gc`, a scan of every object left in the three databases (2681, 1627
-and 2465 objects) found no value. Their working trees, including ignored
+Between the two passes, old objects came back into the main checkout twice:
+T3 Code's background fetch of `origin/main` from GitHub, and a push from
+Antti's laptop clone into this checkout's remote-tracking refs for that
+laptop. The second resync moved 128 refs to the final history and deleted
+the old objects again. Both sources will bring the old history back until
+GitHub has the rewritten branches and the laptop clone is resynced, so the
+cleanup is repeated after those steps.
+
+After the first resync's `gc`, a scan of every object left in the three
+databases (2681, 1627 and 2465 objects) found no value; after the second,
+none of the 49 objects, no old commit and no receipt value remained (2725,
+1627 and 2465 objects). Their working trees, including ignored
 files, hold no value either. The only matches are in installed third-party
 packages under `.venv` (authors who share the third party's first name, and a
 brand name), which are not this repository's data.
@@ -206,10 +236,6 @@ brand name), which are not this repository's data.
   on.
 - **Verification of a fresh GitHub clone:** after the push, by comparing
   GitHub's branch tips with the verified hashes.
-- **Outside this task:** an older version of
-  `processing-scanned-receipts/SKILL.md` holds what looks like a real shop
-  receipt (shop, business ID, date, items). It is not personal data under
-  this task's list; including it would need another rewrite.
 
 ### Guarded heavy commands
 
@@ -219,6 +245,9 @@ brand name), which are not this repository's data.
 | `verify_mirror.py` (value checks, per-commit equivalence) | started at once (no wait) | 54436, 54463 MiB | 413, 0 MiB | 9 s | 0 |
 | `refcheck.py` (values reachable from GitHub refs) | started at once (no wait) | 54299, 54289 MiB | 413, 0 MiB | 2 s | 0 |
 | `resync.py --apply` on the three agent clones | started at once (no wait) | 54761, 54761 MiB | 413, 0 MiB | 3 s | 0 |
+| `git filter-repo`, receipt pass | started at once (no wait) | 55874, 55853 MiB | 412, 0 MiB | 1 s | 0 |
+| `verify2.py` (receipt checks, per-commit equivalence) | started at once (no wait) | 55912, 55841 MiB | 412, 0 MiB | 4 s | 0 |
+| `resync.py --apply`, second pass, three agent clones | started at once (no wait) | 54930, 55827 MiB | 412, 0 MiB | 2 s | 0 |
 
 The first history scans (value counts with `git log --all -p` over the 8 MiB
 repository) ran before the guard existed, without an admission check. The
