@@ -83,11 +83,10 @@ sat in this public repository's files and in every earlier commit and clone.
 **What changed:** the files now carry made-up values, the whole history has
 been rewritten without the real values, and the clones on the agent account
 have been moved onto the rewritten history with the old objects deleted.
-**What is different:** once Antti force-pushes the rewritten branches and
-GitHub Support removes the four pull-request references, the data can no
-longer be read from GitHub or from the cleaned clones. Until then it remains
-on GitHub, in the clones on his other accounts and in the clones listed under
-"Pending" below.
+**What is different:** GitHub's branches and the cleaned clones no longer
+contain the data. Until GitHub Support removes the four pull-request
+references, the old commits can still be read on GitHub by hash, and the
+clones listed under "Pending" below still hold them.
 
 Values were read into private files with mode 0600 under the session's
 `$TMPDIR` and never printed; this record gives counts only. Those files are
@@ -229,24 +228,57 @@ files, hold no value either. The only matches are in installed third-party
 packages under `.venv` (authors who share the third party's first name, and a
 brand name), which are not this repository's data.
 
+### After the push
+
+Antti force-pushed on 2026-11-02 and sent the GitHub Support request. The
+agent then checked:
+
+- **A fresh clone from GitHub:** its tips are `bcc3abc` (`main`) and
+  `65b9346` (`clasohlson`), the verified commits. It holds the same 2633
+  objects as the verified push bundle, none of the 49 objects that held a
+  value and none of the 814 replaced commits. Its author and committer
+  addresses are GitHub noreply addresses, `noreply@example.com` and the
+  OpenClaw agent's `.local` address.
+- **What GitHub still serves:** the old commits still resolve by hash, and
+  the four `refs/pull/N/head` refs still exist, until Support acts.
+- **The agent account:** on Antti's answers, the pre-migration backup clone
+  was deleted (it had no local work) and the HAI-215 evidence checkout was
+  resynced (34 refs; its recorded base commit belongs to another repository).
+  The main checkout had taken 210 old commits back from the laptop's pushes
+  and from T3 Code's fetches before the push; a third resync removed them.
+  All four repositories hold none of the 49 objects and no old commit.
+
+Antti ran the resync script on his other accounts (output pasted in the
+task thread):
+
+- **The agent account on Antti's laptop:** 1 clone, no local work, clean.
+- **akaihola@hopeli:** 3 clones, all clean, including two copies migrated
+  from the closet laptop; 2 untracked files in one were set aside and
+  restored.
+- **coleaders@hopeli:** 1 clone, no local work, clean.
+- **akaihola@tinni:** 1 clone without old commits. That version of the script
+  did not check for leftover objects in such a clone, so it is rerun.
+- **Antti's laptop account:** the plugin-marketplace clone is clean. The main
+  clone (84 refs; 8 local commits outside the map; 1 untracked file, set
+  aside and restored) moved 38 refs, but 10 refs went pending and its old
+  objects were kept. The script treated commits made on top of the rewritten
+  history after the push, such as T3 checkpoints and the fetched `main`, as
+  needing a move. The fixed script leaves such refs alone. A test on a copy
+  of the old backup clone, set up the same way, ended clean.
+
 ### Pending
 
-- **Force push:** Antti pushes the rewritten `main` and `clasohlson`.
-- **GitHub Support:** Antti asks Support to dereference the four pull
-  requests, run garbage collection and remove cached views.
-- **Antti's other accounts:** the five other accounts in the fleet
-  definition run the resync script after the push.
-- **The pre-migration backup clone on this account** and **the fallback copy
-  of the agent home:** left unchanged; they need Antti's decision.
-- **The pacer's HAI-215 evidence checkout**
-  (`~/.local/state/kandev-pacer/t3/evidence/hai215-checks/skills-source`):
-  old history, no local work. Files beside it cite old commit hashes as
-  evidence, so it was left unchanged for Antti's decision. A search of the
-  whole agent home for the history's first commit found no other clone.
-- **The powered-off closet laptop's accounts:** pending until it is powered
-  on.
-- **Verification of a fresh GitHub clone:** after the push, by comparing
-  GitHub's branch tips with the verified hashes.
+- **Antti's laptop:** rerun the resync script with the fixed version.
+- **akaihola@tinni:** rerun the resync script.
+- **agent@hopeli (the fallback copy of the agent home):** Antti approved the
+  resync and runs it.
+- **Fleet audit:** the first attempt failed because the laptop checkout has
+  `clasohlson` checked out, which lacks `fleet-audit/`. Rerun from `origin/main`.
+- **GitHub Support:** the request is sent; the old commits stay reachable
+  until Support dereferences the pull requests and collects the garbage.
+- **The closet laptop's accounts:** Antti decided to remove every
+  skills-akaihola clone there the next time it is powered on, instead of
+  resyncing them.
 
 ### Guarded heavy commands
 
@@ -259,6 +291,7 @@ brand name), which are not this repository's data.
 | `git filter-repo`, receipt pass | started at once (no wait) | 55874, 55853 MiB | 412, 0 MiB | 1 s | 0 |
 | `verify2.py` (receipt checks, per-commit equivalence) | started at once (no wait) | 55912, 55841 MiB | 412, 0 MiB | 4 s | 0 |
 | `resync.py --apply`, second pass, three agent clones | started at once (no wait) | 54930, 55827 MiB | 412, 0 MiB | 2 s | 0 |
+| `resync.py --apply` after the push, four agent clones | started at once (no wait) | 55675, 55676 MiB | 412, 0 MiB | 3 s | 0 |
 
 The first history scans (value counts with `git log --all -p` over the 8 MiB
 repository) ran before the guard existed, without an admission check. The
