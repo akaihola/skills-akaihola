@@ -83,4 +83,4 @@ Validation:
   A synthetic provider turn un-settled it, and the helper refused settlement
   while that scratch thread was running.
 
-Implementation merged into local main at `4eaf9a3`. User acceptance is pending.
+Implementation merged into local main at `f855b0b`. User acceptance is pending.

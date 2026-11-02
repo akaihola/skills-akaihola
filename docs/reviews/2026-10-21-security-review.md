@@ -1,6 +1,6 @@
 # Security review, 2026-10-21
 
-Reviewed `main` at `b581e8601543f24f0dcac7116140f555598ab9b1`. Evidence
+Reviewed `main` at `c3052ca18d950657cab210d00f9adcb5364582b7`. Evidence
 locations refer to that commit. This report is the only deliverable: nothing
 was fixed and the drafted issues have not been filed.
 
@@ -681,8 +681,8 @@ data only.
   - [`fonecta-lookup/scripts/fonecta_lookup.py:103`][fonecta_lookup]
     hard-codes the owner's first name as its login check; added in `b479cf6`.
   - [`kuluttaja/references/api.md:92`][kuluttaja-api] has the owner's
-    personal email address. It was added in `deab7d3`, after the earlier PII
-    cleanup in `e45db23`.
+    personal email address. It was added in `35e6224`, after the earlier PII
+    cleanup in `f888119`.
   - [`email-mailbox-analyzer/README.md:28`][analyzer-readme] has a personal
     email address and the mail provider's host. [`:52`][analyzer-readme] has
     a real mail-client profile ID, which is also hard-coded in

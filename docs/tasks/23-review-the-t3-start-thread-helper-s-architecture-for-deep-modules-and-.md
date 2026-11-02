@@ -34,7 +34,7 @@ identifies one launch/recovery asymmetry and distinguishes its correction
 from behavior-preserving simplification.
 
 Read the complete helper, tests, skill/reference and the requested historical
-tasks at main commit `c42bc4c020777d7c349c456b3a90657eee103882`. Checked all
+tasks at main commit `8e45bbda384ace41013fce0cd8f4c7105dfec9bb`. Checked all
 tracker sections and both older backlogs for overlap. No drafts were filed,
 no implementation or test files changed, and no T3 calls or messages were made.
 V2-only deployment is the task's premise; the V1-retirement draft explicitly
@@ -72,8 +72,8 @@ git diff --check
 
 ## Merge and recorded checks
 
-Fast-forwarded from `c42bc4c020777d7c349c456b3a90657eee103882` to delivery
-commit `df09186aa060038d461729f35fa25ca9b2361c58`. Retained the task branch
+Fast-forwarded from `8e45bbda384ace41013fce0cd8f4c7105dfec9bb` to delivery
+commit `4854e22483f5fd1efa92e30dae43e13967144294`. Retained the task branch
 and worktree; the task worktree is detached at the tested delivery commit.
 
 - **Report acceptance:** the evidence recorder ran the document checks and

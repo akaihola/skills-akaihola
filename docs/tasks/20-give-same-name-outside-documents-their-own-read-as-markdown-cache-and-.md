@@ -1,6 +1,6 @@
 Steward issue, 2026-10-22 03:00 refill. Goal: agentic-leverage (skills-akaihola is tier 2). Estimated 1 h. Source: draft D6 of [the 2026-10-22 docs review](../reviews/2026-10-22-docs-review.md#draft-issues).
 
-`read-as-markdown` can return another document's Markdown. In `read-as-markdown/scripts/read_as_markdown.py` on `main` (`dcb627c`), `compute_cache_paths()` uses only the file name for a source outside the workspace, so `/a/report.pdf` and `/b/report.pdf` share `.cache/markdown/report.pdf.md`, and `check_cache()`'s mtime-and-size test can let the second file pass the fast path. `main()` also exits 0 when a conversion failed and was reported as an error object.
+`read-as-markdown` can return another document's Markdown. In `read-as-markdown/scripts/read_as_markdown.py` on `main` (`deecde8`), `compute_cache_paths()` uses only the file name for a source outside the workspace, so `/a/report.pdf` and `/b/report.pdf` share `.cache/markdown/report.pdf.md`, and `check_cache()`'s mtime-and-size test can let the second file pass the fast path. `main()` also exits 0 when a conversion failed and was reported as an error object.
 
 ## What to do
 
@@ -59,7 +59,7 @@ Implemented 2026-10-22 in the isolated task worktree.
   against the requirements and the PII checklist; only synthetic document content
   and generic examples were added. The index implementation was not changed.
 - Hai loaded all 22 issues with unique stable IDs; every numbered detail link
-  resolves. The required start move was committed on shared `main` as `7aaff90`
+  resolves. The required start move was committed on shared `main` as `f1c4c44`
   and left no uncommitted tracker changes. The worktree was rebased onto it.
 - **Existing check failure:** the repository topology check fails on five
   pre-existing task documents. Comparing matched filenames with `main` confirms
@@ -84,8 +84,8 @@ are the guarded test commands; no heavy command was stopped or skipped.
 
 ### Merge and completion
 
-Implementation commit `0b77927` was fast-forward merged into `main`. Completion
-was recorded afterward in `6a972d7`, with acceptance left unchecked. A fresh Hai
+Implementation commit `b9b8a77` was fast-forward merged into `main`. Completion
+was recorded afterward in `f4be810`, with acceptance left unchecked. A fresh Hai
 read confirms 22 unique issues, resolving detail links and the completed state;
 the tracker is clean. The task branch and worktree are retained.
 

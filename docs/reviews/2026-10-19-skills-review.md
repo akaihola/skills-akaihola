@@ -1,6 +1,6 @@
 # Skills review, 2026-10-19
 
-Reviewed `main` at `d2a91d8396f4ea5398f3a728ce3503c497446132`.
+Reviewed `main` at `9da2f9db826b4e28ab94fda9fa986b50434939be`.
 All evidence locations below refer to that commit, not installed skill copies.
 The only implementation deliverable is this report. Drafts have not been filed.
 

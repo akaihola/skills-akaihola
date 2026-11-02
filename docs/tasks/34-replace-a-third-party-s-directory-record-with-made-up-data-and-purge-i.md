@@ -18,7 +18,7 @@ Read the values from these places into the private files of step 2, never into a
 - **The third party's record:** `fonecta-lookup/references/fonecta-api.md` lines 96–119, added in `b479cf6`.
 - **Antti's data in the tree** (finding P1):
   - `fonecta-lookup/scripts/fonecta_lookup.py` line 103: his first name, used as the login-success check.
-  - `kuluttaja/references/api.md` line 92: his personal email address, added in `deab7d3`.
+  - `kuluttaja/references/api.md` line 92: his personal email address, added in `35e6224`.
   - `email-mailbox-analyzer/README.md` line 28: a personal email address and the mail provider's host.
   - `email-mailbox-analyzer/README.md` line 52 and `email-mailbox-analyzer/scripts/email-mailbox-analyzer.sh` line 80: his mail-client profile ID.
   - `jmap/SKILL.md` lines 12 and 33, and `jmap/sync_emails.py` line 22: his surname as the JMAP account ID.
@@ -26,7 +26,7 @@ Read the values from these places into the private files of step 2, never into a
   - `himalaya-email-manager/references/troubleshooting.md` lines 67 and 86: the mail provider's host.
   - `jmap/sync_emails.py` lines 42 and 44: a real-looking correspondent's name and domain.
 - **Data left only in older commits:**
-  - a sender organisation's domain, added to `jmap/SKILL.md` in `1ef0ad4` and removed in `e45db23`;
+  - a sender organisation's domain, added to `jmap/SKILL.md` in `c66c1ff` and removed in `f888119`;
   - his email address in `email-mailbox-analyzer/SKILL.md`, in `b71cce9` and `d54d81d`;
   - local paths in older tests that name his personal folders.
 - **Commit metadata:** on 2026-11-02, 28 author entries and 2 committer entries used 2 distinct addresses that are not GitHub noreply addresses. Map Antti's to `13725+akaihola@users.noreply.github.com`, the address the repository's recent commits use, with filter-repo's mailmap, and keep the author names. If an address belongs to someone else, ask Antti before changing it.
@@ -95,7 +95,7 @@ deleted at the end of the session.
 
 ### Step 1: the skills without the real values
 
-Commit `764e9e4` (merged to `main`):
+Commit `70f7c21` (merged to `main`):
 
 - [fonecta-api.md](../../fonecta-lookup/references/fonecta-api.md) shows a
   made-up record ("Example Person", "Esimerkki Oy", business ID `12345678`).
@@ -156,7 +156,7 @@ disappears. Results:
 
 ### Step 4: commit references
 
-Commit `e9f095f` rewrites 178 commit-hash mentions in 33 reviews, task
+Commit `8c2e96e` rewrites 178 commit-hash mentions in 33 reviews, task
 records and evidence receipts with rebase-all's `rewrite-refs`. Commit
 messages were translated by filter-repo itself. The commit map, ref map,
 the list of the 47 objects that held a value, the rewritten bundle and the

@@ -69,8 +69,8 @@ reverted that improvement, so it adds nothing to preserve.
   `4de086ebefad5e7f2ab1ebd07c6e540b5ff97385` exactly matches the saved
   commit's parent script: the entire staged diff undoes the stdlib change.
   Apart from the first line, it also matches all compared branch scripts.
-- **Branch comparison:** local main `fd13f3fd51f2fca861cfdbe102b1b42d395bc68c`,
-  fetched origin/main `1c6d2a3f3f9ab2d76b0a6ef117e7e598e51441a6`, and
+- **Branch comparison:** local main `e1ddb1499bd7fe165a2b6dbe684115a384d90a8f`,
+  fetched origin/main `11f147cbece84c97ec2757da7a2103637b1d73f1`, and
   local/fetched clasohlson `65b93461493a59a564523d37b1dfb43389e8d024`
   still used `httpx`. Both GitHub branches were fetched on 2026-11-01.
 - **Safety:** extracted into a fresh scratch directory outside this repository
@@ -99,8 +99,8 @@ reverted that improvement, so it adds nothing to preserve.
 ## Merged verification
 
 The recovered stdlib change was merged into main at
-`19c8222359e3b52927625abf5307436f04c00243`; the staged inverse is superseded.
-The previous main commit was `fd13f3fd51f2fca861cfdbe102b1b42d395bc68c`.
+`00854eb892e2adab33fb8c5d1d46eeea17f8fc33`; the staged inverse is superseded.
+The previous main commit was `e1ddb1499bd7fe165a2b6dbe684115a384d90a8f`.
 The delivery consists of that single new commit. The task worktree remains
 at the delivery commit, clean and available for rerunning checks.
 

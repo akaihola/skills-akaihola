@@ -118,12 +118,12 @@ All commands ran sequentially with a 300-second timeout, process-group cleanup,
 
 ## Merge and recorded acceptance checks
 
-Base commit: `a915fdccd67130059102d28983a0ca8874b2b766`. Delivery commits, oldest first:
+Base commit: `945a4195a22e7e5e9121cc5a794616f8b6d33c76`. Delivery commits, oldest first:
 
-- `c286584e27ca0a82348f39fcf917ebbdec89d83f`
+- `db3983b059673a252e9df1ce122bc1f15d3e682d`
 
 Fast-forward merged locally to `main`. The task worktree is clean and detached
-at `c286584e27ca0a82348f39fcf917ebbdec89d83f`; the task branch remains available.
+at `db3983b059673a252e9df1ce122bc1f15d3e682d`; the task branch remains available.
 No push or deployment occurred.
 
 The [check receipt] records six passing checks at that exact merged commit:

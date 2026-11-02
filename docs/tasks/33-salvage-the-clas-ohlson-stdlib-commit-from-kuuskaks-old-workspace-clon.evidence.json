@@ -6,9 +6,9 @@
       "title": "Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone",
       "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspac-ec83c40b",
       "source_repository": "/home/agent/prg/skills-akaihola",
-      "base_commit": "fd13f3fd51f2fca861cfdbe102b1b42d395bc68c",
+      "base_commit": "e1ddb1499bd7fe165a2b6dbe684115a384d90a8f",
       "delivery_commits": [
-        "19c8222359e3b52927625abf5307436f04c00243"
+        "00854eb892e2adab33fb8c5d1d46eeea17f8fc33"
       ],
       "handoff": {
         "thread_id": "ec83c40b-62c1-446c-a7dd-00b7fe584aeb",
@@ -25,14 +25,14 @@
         },
         {
           "id": "outcomes-scope-cleanup",
-          "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess\npaths=set(subprocess.check_output(['git','diff','--name-only','fd13f3fd51f2fca861cfdbe102b1b42d395bc68c','19c8222359e3b52927625abf5307436f04c00243','--','.',':(exclude)TASKS.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.evidence.json'],text=True).splitlines())\nexpected={'clasohlson/SKILL.md','clasohlson/scripts/search.py','clasohlson/tests/test_search.py'}\nassert paths == expected, paths\nsubprocess.run(['git','diff','--check','fd13f3fd51f2fca861cfdbe102b1b42d395bc68c','19c8222359e3b52927625abf5307436f04c00243'],check=True)\ntext=Path('docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md').read_text()\nassert '2f24303308692e717ce99046049198048fb7a6b7' in text and '**Staged change:** superseded' in text\nassert not Path('/home/agent/tmp/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz').exists()\nassert not Path('/home/agent/tmp/clasohlson-salvage-l5ndgvjl').exists()\nprint('Reviewed delivery scope, both saved outcomes, whitespace and archive cleanup: OK')\nPY",
+          "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess\npaths=set(subprocess.check_output(['git','diff','--name-only','e1ddb1499bd7fe165a2b6dbe684115a384d90a8f','00854eb892e2adab33fb8c5d1d46eeea17f8fc33','--','.',':(exclude)TASKS.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.evidence.json'],text=True).splitlines())\nexpected={'clasohlson/SKILL.md','clasohlson/scripts/search.py','clasohlson/tests/test_search.py'}\nassert paths == expected, paths\nsubprocess.run(['git','diff','--check','e1ddb1499bd7fe165a2b6dbe684115a384d90a8f','00854eb892e2adab33fb8c5d1d46eeea17f8fc33'],check=True)\ntext=Path('docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md').read_text()\nassert '2f24303308692e717ce99046049198048fb7a6b7' in text and '**Staged change:** superseded' in text\nassert not Path('/home/agent/tmp/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz').exists()\nassert not Path('/home/agent/tmp/clasohlson-salvage-l5ndgvjl').exists()\nprint('Reviewed delivery scope, both saved outcomes, whitespace and archive cleanup: OK')\nPY",
           "dependencies": {}
         }
       ],
       "evidence": {
         "offline-search": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspac-ec83c40b",
-          "tested_commit": "19c8222359e3b52927625abf5307436f04c00243",
+          "tested_commit": "00854eb892e2adab33fb8c5d1d46eeea17f8fc33",
           "dependencies": {},
           "issue": "skills-akaihola [33]",
           "check": "offline-search",
@@ -43,11 +43,11 @@
         },
         "outcomes-scope-cleanup": {
           "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspac-ec83c40b",
-          "tested_commit": "19c8222359e3b52927625abf5307436f04c00243",
+          "tested_commit": "00854eb892e2adab33fb8c5d1d46eeea17f8fc33",
           "dependencies": {},
           "issue": "skills-akaihola [33]",
           "check": "outcomes-scope-cleanup",
-          "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess\npaths=set(subprocess.check_output(['git','diff','--name-only','fd13f3fd51f2fca861cfdbe102b1b42d395bc68c','19c8222359e3b52927625abf5307436f04c00243','--','.',':(exclude)TASKS.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.evidence.json'],text=True).splitlines())\nexpected={'clasohlson/SKILL.md','clasohlson/scripts/search.py','clasohlson/tests/test_search.py'}\nassert paths == expected, paths\nsubprocess.run(['git','diff','--check','fd13f3fd51f2fca861cfdbe102b1b42d395bc68c','19c8222359e3b52927625abf5307436f04c00243'],check=True)\ntext=Path('docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md').read_text()\nassert '2f24303308692e717ce99046049198048fb7a6b7' in text and '**Staged change:** superseded' in text\nassert not Path('/home/agent/tmp/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz').exists()\nassert not Path('/home/agent/tmp/clasohlson-salvage-l5ndgvjl').exists()\nprint('Reviewed delivery scope, both saved outcomes, whitespace and archive cleanup: OK')\nPY",
+          "command": "python3 - <<'PY'\nfrom pathlib import Path\nimport subprocess\npaths=set(subprocess.check_output(['git','diff','--name-only','e1ddb1499bd7fe165a2b6dbe684115a384d90a8f','00854eb892e2adab33fb8c5d1d46eeea17f8fc33','--','.',':(exclude)TASKS.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md',':(exclude)docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.evidence.json'],text=True).splitlines())\nexpected={'clasohlson/SKILL.md','clasohlson/scripts/search.py','clasohlson/tests/test_search.py'}\nassert paths == expected, paths\nsubprocess.run(['git','diff','--check','e1ddb1499bd7fe165a2b6dbe684115a384d90a8f','00854eb892e2adab33fb8c5d1d46eeea17f8fc33'],check=True)\ntext=Path('docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md').read_text()\nassert '2f24303308692e717ce99046049198048fb7a6b7' in text and '**Staged change:** superseded' in text\nassert not Path('/home/agent/tmp/skills-akaihola-from-kuuskaks-2026-11-01.tar.gz').exists()\nassert not Path('/home/agent/tmp/clasohlson-salvage-l5ndgvjl').exists()\nprint('Reviewed delivery scope, both saved outcomes, whitespace and archive cleanup: OK')\nPY",
           "result": "pass",
           "exit_code": 0,
           "timestamp": "2026-11-01T16:47:49.194227+00:00"

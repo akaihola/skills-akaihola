@@ -108,8 +108,8 @@ deployed server after the merge confirms the V2-only premise.
 
 ## Merge and recorded checks
 
-Fast-forwarded `main` from `e4cace3560ab28b70304e7ece9c87b99e200ba79` to
-delivery commit `222b80c555aaa5995049145aa8691009431be2a3`. The task branch
+Fast-forwarded `main` from `dd07584fed25e953c8a76fe4b621e358d4f574a6` to
+delivery commit `6322ecbbb6fa840cd8889cb7a5790190c7d5a51b`. The task branch
 and worktree are kept. The evidence recorder ran four checks against the task
 worktree, detached at the delivery commit, and all four passed (exit 0):
 

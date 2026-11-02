@@ -2,11 +2,11 @@ Steward issue, 2026-10-25 02:43 refill (steward decisions D43, D68 and D95). Goa
 
 ## Why
 
-[The 2026-10-22 docs review](../reviews/2026-10-22-docs-review.md) matched the documents to the code at `dcb627c`. Since then seven source commits changed three skills that agents load: `secrets-scan` fails when a requested scanner doesn't finish; `read-as-markdown` isolates external document caches and reports failures; `t3-start-thread` retired its V1 transport (keeping saved requests readable), reconciles launches and sends through one record path, reuses observed shells when checking messages, consolidated its test fakes, and discovers and trusts the local runtime origin ([28]). An agent follows a skill's text literally, so a stale command, flag, default or failure message there costs a retry in every session that loads it.
+[The 2026-10-22 docs review](../reviews/2026-10-22-docs-review.md) matched the documents to the code at `deecde8`. Since then seven source commits changed three skills that agents load: `secrets-scan` fails when a requested scanner doesn't finish; `read-as-markdown` isolates external document caches and reports failures; `t3-start-thread` retired its V1 transport (keeping saved requests readable), reconciles launches and sends through one record path, reuses observed shells when checking messages, consolidated its test fakes, and discovers and trusts the local runtime origin ([28]). An agent follows a skill's text literally, so a stale command, flag, default or failure message there costs a retry in every session that loads it.
 
 ## What to do
 
-1. List the source commits since `dcb627c` (`git log --no-merges --reverse dcb627c..main -- . ':!docs' ':!*.md'`) and, for each, what it changed in commands, flags, defaults, files written, messages or failure behaviour.
+1. List the source commits since `deecde8` (`git log --no-merges --reverse deecde8..main -- . ':!docs' ':!*.md'`) and, for each, what it changed in commands, flags, defaults, files written, messages or failure behaviour.
 2. Read `README.md`, `AGENTS.md`, and the `SKILL.md` and `references/` files of `t3-start-thread`, `read-as-markdown` and `secrets-scan` against current `main` for those changes.
 3. Fix plain discrepancies and stale statements. Where two documents explain the same thing, keep one explanation and link to it from the other. Prefer shorter text: delete statements the code no longer supports rather than adding caveats. Keep every rule, warning and runnable example that is still true; a skill's instructions change only where they are wrong or duplicated.
 4. Where it's unclear whether the code or the text is wrong, don't guess: list it with the evidence and a proposed answer in `docs/reviews/<run date>-docs-recheck.md`. That file also lists each change you made, by document, with the commit or code it now matches, and ends with a `## Draft issues` section for anything larger than a documentation fix. Don't file those issues; the steward decides.
@@ -51,7 +51,7 @@ thread mutation or repository scan was performed.
   committed symlinks passed. A manual diff review checked preservation of
   warnings and runnable examples.
 - **Tracker:** Hai read found 29 unique issues with resolving detail links;
-  this issue was In Progress and unaccepted after start commit `2f2e336`.
+  this issue was In Progress and unaccepted after start commit `38f5678`.
 
 The repository has no lockfile. An external requirements lock pins the test
 packages; it and the document-check helper are declared SHA-256 dependencies
@@ -106,8 +106,8 @@ stop occurred. These measurements contain no command output.
 
 ### Integration and merged checks
 
-Base commit: `2f2e336490ade3193efe76faa3f0347cc7e1b79b`. Delivery and merged commit:
-`95bea6c6ef92b21e368e9a2d93f954aa12483f66`. The delivery was fast-forwarded onto `main`;
+Base commit: `38f5678827b159a067213f3837602e61765c3515`. Delivery and merged commit:
+`19e83364748f7176ce5e59e4575fd6ad013b8945`. The delivery was fast-forwarded onto `main`;
 the task checkout was detached at that commit for clean-checkout recording.
 The task branch and worktree are retained.
 

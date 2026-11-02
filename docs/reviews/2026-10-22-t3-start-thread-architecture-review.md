@@ -7,7 +7,7 @@ for each command would add interfaces without hiding useful complexity.
 
 ## Scope and baseline
 
-Reviewed `main` at `c42bc4c020777d7c349c456b3a90657eee103882`.
+Reviewed `main` at `8e45bbda384ace41013fce0cd8f4c7105dfec9bb`.
 Every line citation below refers to that revision, including citations in
 drafts. Repository-relative links open the corresponding file; use the baseline
 commit when its current line numbers differ.

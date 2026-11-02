@@ -132,10 +132,10 @@ memory/swap monitoring.
 
 ## Merge and evidence
 
-Fast-forwarded `main` from `49597bd7be69f2991eb7ab12f205de836dfd6366` to
-`e94d5a1b2f130cd7aa8e5b6dfb5289180b9dedc6`. Delivery commits, oldest first:
+Fast-forwarded `main` from `d54154faf05ba2a16b984aca58bf100162f1c6a6` to
+`12d5a78703648a38836a8f5303bdf3c0ac989ed6`. Delivery commits, oldest first:
 
-- `e94d5a1b2f130cd7aa8e5b6dfb5289180b9dedc6`
+- `12d5a78703648a38836a8f5303bdf3c0ac989ed6`
 
 The task worktree remains detached at the merged commit for clean-checkout
 recording; its branch is retained. The shared checkout remains on `main`.

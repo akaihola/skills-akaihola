@@ -102,10 +102,10 @@ test results are recorded separately above.
 
 ## Merge and recorded evidence
 
-Fast-forwarded `main` from `24e1088a66e3d2815e7a73a259c57067e40664ac` to
-`93e2d6efd520fa7fa8fafd28677add589a740378`. Delivery commits, oldest first:
+Fast-forwarded `main` from `5aaa11629767be3e1dbf0ca9218beec9ee992248` to
+`1c56f4171285079dbdccaa40f887672b816ce8df`. Delivery commits, oldest first:
 
-- `93e2d6efd520fa7fa8fafd28677add589a740378`
+- `1c56f4171285079dbdccaa40f887672b816ce8df`
 
 The task branch and worktree remain. The worktree is detached at that merged
 commit for clean-checkout evidence recording; the shared checkout stays on

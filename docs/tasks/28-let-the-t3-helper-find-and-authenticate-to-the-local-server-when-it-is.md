@@ -84,10 +84,10 @@ monitoring available memory and swap against the launch thresholds.
 
 ## Merge and recorded evidence
 
-Fast-forwarded `main` from `38a7941f94c48925b7da8d53d6c0dc5e9792ea41` to
-`1c3fce303eb22ad3f27a4078b6a01e4262a51914`. Delivery commits, oldest first:
+Fast-forwarded `main` from `9963776caf3a1644e32ae5543138d50b1c5cfc38` to
+`4d9100398749407c25629c7ff7dd4cd37670b29d`. Delivery commits, oldest first:
 
-- `1c3fce303eb22ad3f27a4078b6a01e4262a51914`
+- `4d9100398749407c25629c7ff7dd4cd37670b29d`
 
 The task worktree remains clean and detached at the merged commit; its branch
 is retained. The shared checkout remains on `main`.
