@@ -257,7 +257,8 @@ task thread):
   restored.
 - **coleaders@hopeli:** 1 clone, no local work, clean.
 - **akaihola@tinni:** 1 clone without old commits. That version of the script
-  did not check for leftover objects in such a clone, so it is rerun.
+  did not check for leftover objects in such a clone. The rerun on
+  2026-11-03 found no old commit and none of the 49 objects: clean.
 - **Antti's laptop account:** the plugin-marketplace clone is clean. The main
   clone (84 refs; 8 local commits outside the map; 1 untracked file, set
   aside and restored) moved 38 refs, but 10 refs went pending and its old
@@ -265,13 +266,30 @@ task thread):
   history after the push, such as T3 checkpoints and the fetched `main`, as
   needing a move. The fixed script leaves such refs alone. A test on a copy
   of the old backup clone, set up the same way, ended clean.
+- **agent@hopeli (the fallback copy of the agent home), 2026-11-03:** two
+  plugin-marketplace clones, the account's own and the one inside the copied
+  closet-laptop home, moved 2 refs each and are clean. The script then
+  stopped on the third clone before changing it: one of the clone's
+  registered worktrees has no directory, and the script read the status of
+  every worktree from its directory. The fixed script moves such a worktree,
+  and one whose path now holds another clone's worktree, through the HEAD
+  and index kept in the clone's git directory. It never touches the
+  directory, and it keeps any staged changes as a commit under
+  `refs/skills-rewrite-wip/` before resetting that index. A synthetic test
+  clone with a missing detached worktree, a missing one with staged changes,
+  a missing one with a local commit, one whose path holds another clone's
+  worktree, and a normal one with an unstaged change ended clean, with each
+  change kept and the other clone's worktree unchanged.
+
+On 2026-11-04 the agent account's main checkout and plugin-marketplace clone
+still held none of the 49 objects and no old commit, and the laptop's
+remote-tracking refs in the main checkout pointed at rewritten commits.
 
 ### Pending
 
 - **Antti's laptop:** rerun the resync script with the fixed version.
-- **akaihola@tinni:** rerun the resync script.
-- **agent@hopeli (the fallback copy of the agent home):** Antti approved the
-  resync and runs it.
+- **agent@hopeli:** rerun the fixed resync script for the third and any
+  later clones.
 - **Fleet audit:** the first attempt failed because the laptop checkout has
   `clasohlson` checked out, which lacks `fleet-audit/`. Rerun from `origin/main`.
 - **GitHub Support:** the request is sent; the old commits stay reachable
