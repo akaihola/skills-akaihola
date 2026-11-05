@@ -1,0 +1,144 @@
+{
+  "items": [
+    {
+      "issue": "skills-akaihola [34]",
+      "hai_id": "simple-954330e6-620c-43b1-8e13-e1826df5636f",
+      "title": "Replace personal data with made-up data and purge it from the public history and every clone",
+      "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-34-replace-personal-data-with-made-up-data-and-purge-it-from-the-pu-27dd2c20",
+      "source_repository": "/home/agent/prg/skills-akaihola",
+      "base_commit": "481e4004ba59cec9132fb48cc18287f4dd61485c",
+      "delivery_commits": [
+        "ff5dd4de0f1be62a2a4d813a19d3430d850863f1"
+      ],
+      "handoff": {
+        "thread_id": "27dd2c20-5f83-4d5d-9d17-ba6f983fa0c1",
+        "run_id": "run:thread:27dd2c20-5f83-4d5d-9d17-ba6f983fa0c1:ordinal:7",
+        "disposition": "owner_action",
+        "outcome": "GitHub's branches and every reachable clone on six accounts hold only the made-up data; a scan of every stored file version and checkout file finds no line that held personal data. Limits: GitHub still serves the old commits by hash and keeps four pull-request refs until Support acts; the closet laptop's clones remain until it is powered on; Antti's private vault history keeps copies of one skill's old files.",
+        "next_actor": "Antti",
+        "obligation": "When the closet laptop is next powered on, run the removal commands given in the task thread; forward GitHub Support's reply to the thread; decide whether the private vault's history should lose the copied skill files.",
+        "prerequisite": "The removal needs the closet laptop powered on; the Support step needs GitHub's reply; the vault decision has no prerequisite.",
+        "response_destination": "t3-thread://v1/27dd2c20-5f83-4d5d-9d17-ba6f983fa0c1"
+      },
+      "checks": [
+        {
+          "id": "changed-scripts-offline",
+          "command": "A=email-mailbox-analyzer/scripts/email-mailbox-analyzer.sh; d=$(mktemp -d); bash -n \"$A\" && bash \"$A\" --help >/dev/null && { (cd \"$d\" && HOME=\"$d\" THUNDERBIRD_PROFILE= bash \"$OLDPWD/$A\" >/dev/null 2>&1); test $? -eq 1; } && python3 jmap/sync_emails.py --help >/dev/null && { env -u JMAP_ACCOUNT_ID python3 jmap/sync_emails.py >/dev/null 2>&1; test $? -eq 2; } && uv run --script fonecta-lookup/scripts/fonecta_lookup.py --help >/dev/null 2>&1; rc=$?; rm -rf \"$d\"; exit $rc",
+          "dependencies": {}
+        },
+        {
+          "id": "merged-history-free-of-old-objects",
+          "command": "S=/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02; t=$(mktemp); git rev-list --objects ff5dd4de0f1be62a2a4d813a19d3430d850863f1 | cut -d' ' -f1 > \"$t\" && a=$(grep -cxFf \"$S/poisoned-objects.txt\" \"$t\" || true) && b=$(awk 'NR>1 && $1!=$2 {print $1}' \"$S/commit-map.txt\" | grep -cxFf \"$t\" || true) && echo \"objects that held personal data: $a; replaced commits: $b\"; rm -f \"$t\"; test \"$a\" = 0 && test \"$b\" = 0",
+          "dependencies": {
+            "poisoned_objects": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/poisoned-objects.txt"
+            },
+            "commit_map": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt"
+            }
+          }
+        },
+        {
+          "id": "no-old-commit-references",
+          "command": "git grep -I -h -o -E '\\b[0-9a-f]{7,40}\\b' ff5dd4de0f1be62a2a4d813a19d3430d850863f1 -- . ':!docs/tasks/34-*' | sort -u | python3 -c \"import sys; m=[l.split() for l in open(sys.argv[1]).read().splitlines()[1:] if len(l.split())==2]; old={a for a,b in m if a!=b}; new={b for a,b in m}; t=[x.strip() for x in sys.stdin]; bad=[x for x in t if any(o.startswith(x) for o in old) and not any(n.startswith(x) for n in new)]; print('old commit references:', len(bad)); sys.exit(1 if bad else 0)\" /home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt",
+          "dependencies": {
+            "commit_map": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt"
+            }
+          }
+        },
+        {
+          "id": "github-clone-free-of-old-objects",
+          "command": "S=/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02; d=$(mktemp -d); git clone -q https://github.com/akaihola/skills-akaihola.git \"$d/c\" && a=$(git -C \"$d/c\" cat-file --batch-check < \"$S/poisoned-objects.txt\" | grep -vc ' missing$' || true) && b=$(awk 'NR>1 && $1!=$2 {print $1}' \"$S/commit-map.txt\" | git -C \"$d/c\" cat-file --batch-check | grep -vc ' missing$' || true) && c=$(git -C \"$d/c\" log --all --format='%ae%n%ce' | sort -u | grep -cvE '@users\\.noreply\\.github\\.com$|^noreply@github\\.com$|^noreply@example\\.com$|@openclaw\\.local$' || true) && echo \"objects that held personal data: $a; replaced commits: $b; other addresses: $c\" && test \"$a\" = 0 && test \"$b\" = 0 && test \"$c\" = 0; rc=$?; rm -rf \"$d\"; exit $rc",
+          "dependencies": {
+            "poisoned_objects": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/poisoned-objects.txt"
+            },
+            "commit_map": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "changed-scripts-offline": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-34-replace-personal-data-with-made-up-data-and-purge-it-from-the-pu-27dd2c20",
+          "tested_commit": "ff5dd4de0f1be62a2a4d813a19d3430d850863f1",
+          "dependencies": {},
+          "issue": "skills-akaihola [34]",
+          "check": "changed-scripts-offline",
+          "command": "A=email-mailbox-analyzer/scripts/email-mailbox-analyzer.sh; d=$(mktemp -d); bash -n \"$A\" && bash \"$A\" --help >/dev/null && { (cd \"$d\" && HOME=\"$d\" THUNDERBIRD_PROFILE= bash \"$OLDPWD/$A\" >/dev/null 2>&1); test $? -eq 1; } && python3 jmap/sync_emails.py --help >/dev/null && { env -u JMAP_ACCOUNT_ID python3 jmap/sync_emails.py >/dev/null 2>&1; test $? -eq 2; } && uv run --script fonecta-lookup/scripts/fonecta_lookup.py --help >/dev/null 2>&1; rc=$?; rm -rf \"$d\"; exit $rc",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-11-05T21:00:22.043753+00:00"
+        },
+        "merged-history-free-of-old-objects": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-34-replace-personal-data-with-made-up-data-and-purge-it-from-the-pu-27dd2c20",
+          "tested_commit": "ff5dd4de0f1be62a2a4d813a19d3430d850863f1",
+          "dependencies": {
+            "poisoned_objects": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/poisoned-objects.txt",
+              "value": "1bf7b40e527ff0a7657c14676891dc4544ea85e5e257fec8a64ded9f7bccc938"
+            },
+            "commit_map": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt",
+              "value": "c9f97acf899c315b9072d187951eaeec56ad07c0609e01cd63009e9d85029343"
+            }
+          },
+          "issue": "skills-akaihola [34]",
+          "check": "merged-history-free-of-old-objects",
+          "command": "S=/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02; t=$(mktemp); git rev-list --objects ff5dd4de0f1be62a2a4d813a19d3430d850863f1 | cut -d' ' -f1 > \"$t\" && a=$(grep -cxFf \"$S/poisoned-objects.txt\" \"$t\" || true) && b=$(awk 'NR>1 && $1!=$2 {print $1}' \"$S/commit-map.txt\" | grep -cxFf \"$t\" || true) && echo \"objects that held personal data: $a; replaced commits: $b\"; rm -f \"$t\"; test \"$a\" = 0 && test \"$b\" = 0",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-11-05T21:00:22.149631+00:00"
+        },
+        "no-old-commit-references": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-34-replace-personal-data-with-made-up-data-and-purge-it-from-the-pu-27dd2c20",
+          "tested_commit": "ff5dd4de0f1be62a2a4d813a19d3430d850863f1",
+          "dependencies": {
+            "commit_map": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt",
+              "value": "c9f97acf899c315b9072d187951eaeec56ad07c0609e01cd63009e9d85029343"
+            }
+          },
+          "issue": "skills-akaihola [34]",
+          "check": "no-old-commit-references",
+          "command": "git grep -I -h -o -E '\\b[0-9a-f]{7,40}\\b' ff5dd4de0f1be62a2a4d813a19d3430d850863f1 -- . ':!docs/tasks/34-*' | sort -u | python3 -c \"import sys; m=[l.split() for l in open(sys.argv[1]).read().splitlines()[1:] if len(l.split())==2]; old={a for a,b in m if a!=b}; new={b for a,b in m}; t=[x.strip() for x in sys.stdin]; bad=[x for x in t if any(o.startswith(x) for o in old) and not any(n.startswith(x) for n in new)]; print('old commit references:', len(bad)); sys.exit(1 if bad else 0)\" /home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-11-05T21:00:22.274846+00:00"
+        },
+        "github-clone-free-of-old-objects": {
+          "repository": "/home/agent/.t3/worktrees/skills-akaihola/pacer-34-replace-personal-data-with-made-up-data-and-purge-it-from-the-pu-27dd2c20",
+          "tested_commit": "ff5dd4de0f1be62a2a4d813a19d3430d850863f1",
+          "dependencies": {
+            "poisoned_objects": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/poisoned-objects.txt",
+              "value": "1bf7b40e527ff0a7657c14676891dc4544ea85e5e257fec8a64ded9f7bccc938"
+            },
+            "commit_map": {
+              "kind": "sha256",
+              "path": "/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02/commit-map.txt",
+              "value": "c9f97acf899c315b9072d187951eaeec56ad07c0609e01cd63009e9d85029343"
+            }
+          },
+          "issue": "skills-akaihola [34]",
+          "check": "github-clone-free-of-old-objects",
+          "command": "S=/home/agent/.local/state/skills-akaihola-history-rewrite/2026-11-02; d=$(mktemp -d); git clone -q https://github.com/akaihola/skills-akaihola.git \"$d/c\" && a=$(git -C \"$d/c\" cat-file --batch-check < \"$S/poisoned-objects.txt\" | grep -vc ' missing$' || true) && b=$(awk 'NR>1 && $1!=$2 {print $1}' \"$S/commit-map.txt\" | git -C \"$d/c\" cat-file --batch-check | grep -vc ' missing$' || true) && c=$(git -C \"$d/c\" log --all --format='%ae%n%ce' | sort -u | grep -cvE '@users\\.noreply\\.github\\.com$|^noreply@github\\.com$|^noreply@example\\.com$|@openclaw\\.local$' || true) && echo \"objects that held personal data: $a; replaced commits: $b; other addresses: $c\" && test \"$a\" = 0 && test \"$b\" = 0 && test \"$c\" = 0; rc=$?; rm -rf \"$d\"; exit $rc",
+          "result": "pass",
+          "exit_code": 0,
+          "timestamp": "2026-11-05T21:00:23.302212+00:00"
+        }
+      }
+    }
+  ]
+}

@@ -401,6 +401,27 @@ is quoted in the task thread.
 - **Antti's private vault:** decide whether its history should lose the
   copied skill files too.
 
+### Checks at the merged commit, 2026-11-05
+
+The agent recorded these checks at `ff5dd4d` (base `481e400`) in a clean
+checkout. The commands are in the
+[receipt](34-replace-a-third-party-s-directory-record-with-made-up-data-and-purge-i.evidence.json).
+All four passed:
+
+- **`changed-scripts-offline`:** the analyzer script's syntax check and
+  `--help` exit 0, and its missing-profile error exits 1.
+  `sync_emails.py --help` exits 0 and its missing-account error exits 2.
+  `fonecta_lookup.py --help` exits 0.
+- **`merged-history-free-of-old-objects`:** the merged commit's history
+  holds none of the 49 objects that held personal data and none of the
+  replaced commits.
+- **`no-old-commit-references`:** no file outside this task's record names
+  a replaced commit.
+- **`github-clone-free-of-old-objects`:** a fresh clone of GitHub's
+  branches holds none of the 49 objects and none of the replaced commits.
+  Its author and committer addresses are GitHub noreply addresses,
+  `noreply@example.com` and the OpenClaw agent's `.local` address.
+
 ### Guarded heavy commands
 
 | Command | Outcome | MemAvailable at admission, final | Swap start, growth | Time | Exit |
@@ -413,6 +434,10 @@ is quoted in the task thread.
 | `verify2.py` (receipt checks, per-commit equivalence) | started at once (no wait) | 55912, 55841 MiB | 412, 0 MiB | 4 s | 0 |
 | `resync.py --apply`, second pass, three agent clones | started at once (no wait) | 54930, 55827 MiB | 412, 0 MiB | 2 s | 0 |
 | `resync.py --apply` after the push, four agent clones | started at once (no wait) | 55675, 55676 MiB | 412, 0 MiB | 3 s | 0 |
+| check recording: `changed-scripts-offline` | started at once (no wait) | 56742, 56711 MiB | 667, 0 MiB | 1 s | 0 |
+| check recording: `merged-history-free-of-old-objects` | started at once (no wait) | 56711, 56714 MiB | 667, 0 MiB | 0 s | 0 |
+| check recording: `no-old-commit-references` | started at once (no wait) | 56714, 56699 MiB | 667, 0 MiB | 0 s | 0 |
+| check recording: `github-clone-free-of-old-objects` | started at once (no wait) | 56699, 56761 MiB | 667, 0 MiB | 1 s | 0 |
 
 The first history scans (value counts with `git log --all -p` over the 8 MiB
 repository) ran before the guard existed, without an admission check. The
