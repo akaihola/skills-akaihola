@@ -285,18 +285,121 @@ On 2026-11-04 the agent account's main checkout and plugin-marketplace clone
 still held none of the 49 objects and no old commit, and the laptop's
 remote-tracking refs in the main checkout pointed at rewritten commits.
 
+### Remaining clones, 2026-11-05
+
+Every clone that can be reached is now on the rewritten history. No stored
+file version and no checkout file in any of them holds a line that held
+personal data. The only copies left are the closet laptop's clones, which
+Antti will delete when it is next powered on.
+
+At Antti's request the agent ran the remaining steps itself, in his existing
+terminal session on his laptop, with his login.
+
+**Fallback copy of the agent home (agent@hopeli), 30 clones:**
+
+- Five clones needed nothing more or moved cleanly: the account's own main
+  checkout (108 refs), its plugin-marketplace clone, the copy saved before
+  the move to tinni (4 refs), the copied closet-laptop marketplace clone and
+  a scratch lender clone (30 refs). None had local work.
+- Two clones inside the copied closet-laptop homes had checkouts far behind
+  their branch: 244 changed files and 501 untracked files in the agent
+  copy, 257 changed files in the coleaders copy, and no staged changes.
+  The script set these changes aside but could not put them back on the
+  rewritten history. A new repair script wrote each saved snapshot back.
+  The one file version in it that held personal data was replaced by its
+  rewritten version. Afterwards each checkout had the same changed and
+  untracked files as before, on the rewritten history.
+- 23 scratch clones from an earlier task's tests borrow objects from the
+  scratch lender clone (`git clone --shared`). Each was frozen in a
+  conflicted `git revert`, with 0 to 30 staged files and 0 to 7 conflicted
+  files. The resync script had purged the lender first, so their refs
+  pointed at deleted commits. The repair script moved them in place:
+  - 8 to 13 checkout files per clone that still held old versions got their
+    rewritten versions;
+  - the index, the revert state and the revert message moved to rewritten
+    commits;
+  - staged results and conflicts were kept, with Git's original conflict
+    markers;
+  - each conflicted-merge snapshot (`AUTO_MERGE`) was removed, because it
+    can hold old lines and Git recreates it.
+
+**Antti's laptop, 2 clones:** the plugin-marketplace clone needed nothing.
+The main clone (84 refs, 9 local commits outside the map, 1 changed file,
+47 ignored files) held six T3 checkpoint refs. Each points at a parentless
+snapshot commit holding 13 old file versions with personal data. The
+script rebuilt them with the rewritten file versions and otherwise
+identical headers and messages. The changed file was set aside and put
+back.
+
+**Other accounts:** the agent account on Antti's laptop (1 clone),
+akaihola@hopeli (3), coleaders@hopeli (1), akaihola@tinni (1) and this
+account (4 clones) needed nothing.
+
+**What the scripts gained,** each covered by a synthetic test (31 checks
+in four suites, all passing):
+
+- The resync script handles clones that borrow objects before the clone
+  they borrow from. It keeps that lender's old objects while a borrower is
+  unfinished, and counts a borrower's own objects only.
+- It reports refs that point at missing objects instead of stopping the
+  run, and it never overwrites changes set aside by an earlier run.
+- It rebuilds local commits it cannot rebase, such as parentless T3
+  checkpoints, with rewritten file versions.
+- The new repair script restores set-aside snapshots and repairs
+  borrowers. Its `--scan` mode looks for lines that held personal data.
+  Both scripts are in the state directory named under "Step 4".
+
+**How the scan works:** before the laptop clone's purge, the agent paired
+each of the 47 old file versions that held personal data with its
+rewritten version (`blob-map.txt`, hashes only). It then built a private
+line map from those pairs: for each of the 67 changed lines, a SHA-256
+fingerprint and the rewritten line. Applying the map reproduced all 47
+rewritten versions exactly. The map was kept with mode 0600 in temporary
+directories only, and deleted on every account at the end.
+
+**Scan results:** the scan read every stored file version and every
+tracked or untracked checkout file. It found none with such a line on
+Antti's laptop (2 clones), agent@hopeli (30), the agent account on his
+laptop, akaihola@hopeli, coleaders@hopeli, akaihola@tinni and this account.
+Before the repairs it had found 244 in the scratch clones and 55 in the
+laptop clone.
+
+**Antti's private vault:** the scan also found 11 stored file versions
+with such lines in the vault repository on this account. Two of them are
+exact old versions. They are copies of the `himalaya-email-manager` skill
+that the vault kept under `.agent/skills/` and `.claude/skills/` in 8
+commits from 2025-12-31 to 2026-02-15, not in its current files. The vault
+is a private GitHub repository, not a clone of this one, so the agent left
+it unchanged for Antti to decide.
+
+**Fleet audit** (run from a temporary checkout of `main` at `bcc3abc`,
+48 skills): 280 anomalies, none from the rewrite.
+
+- **Checkouts behind `main`, 9:** each can fast-forward, so every
+  checked clone's `main` is on the rewritten history.
+- **Checkout ahead of `main`, 1:** this account's main checkout, with
+  unpushed task-record commits.
+- **Checkout with a tracked change, 1:** Antti's laptop, the change kept
+  above.
+- **Broken links, 268:** relative skill links inside copied scratch and
+  test directories, and `/nix/store` links inside the copied closet-laptop
+  home.
+
+**Logs:** the saved captures of the agent@hopeli inspection, dry runs and
+repair, and of the audit, are in the state directory's
+`round-2026-11-05/`. The raw logs of the laptop run and the check of the
+other accounts were deleted on the laptop after a failed copy. Their output
+is quoted in the task thread.
+
 ### Pending
 
-- **Antti's laptop:** rerun the resync script with the fixed version.
-- **agent@hopeli:** rerun the fixed resync script for the third and any
-  later clones.
-- **Fleet audit:** the first attempt failed because the laptop checkout has
-  `clasohlson` checked out, which lacks `fleet-audit/`. Rerun from `origin/main`.
 - **GitHub Support:** the request is sent; the old commits stay reachable
   until Support dereferences the pull requests and collects the garbage.
 - **The closet laptop's accounts:** Antti decided to remove every
   skills-akaihola clone there the next time it is powered on, instead of
   resyncing them.
+- **Antti's private vault:** decide whether its history should lose the
+  copied skill files too.
 
 ### Guarded heavy commands
 
@@ -314,3 +417,11 @@ remote-tracking refs in the main checkout pointed at rewritten commits.
 The first history scans (value counts with `git log --all -p` over the 8 MiB
 repository) ran before the guard existed, without an admission check. The
 first reading after them showed 54 GiB available and 413 MiB of swap in use.
+
+On 2026-11-05 two scans of every stored file version in the private vault
+(2.4 GiB of Git data, 25,202 file versions) ran on this host without the
+admission check. One ran inside the check of all accounts and the other
+listed the matching paths. Both finished. The reading taken afterwards
+showed 56,754 MiB available and 667 MiB of swap in use. The other commands
+of that round ran on Antti's laptop and the fallback host, or were small
+synthetic tests.
