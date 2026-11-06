@@ -51,7 +51,7 @@ uv run ~/.claude/skills/gemini-vision/scripts/gemini_vision.py \
 
 | Flag           | Default            | Description                 |
 | -------------- | ------------------ | --------------------------- |
-| `--model`      | `gemini-2.0-flash` | Gemini model to use         |
+| `--model`      | `gemini-flash-latest` | Gemini model to use      |
 | `--max-tokens` | `4096`             | Maximum output tokens       |
 | `--system`     | _(none)_           | Optional system instruction |
 
@@ -86,6 +86,11 @@ from google.genai import types
 # ❌ Deprecated
 import google.generativeai as genai
 ```
+
+The script creates the client with API version `v1beta`. The SDK's default, `v1`,
+has neither the `-latest` aliases nor preview models such as
+`gemini-3.1-pro-preview` (verified 2026-11-06, when `gemini-2.0-flash` had also
+been retired).
 
 Multiple images are passed as a list; the model sees them in order:
 

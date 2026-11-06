@@ -27,7 +27,7 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-flash-latest"
 DEFAULT_MAX_TOKENS = 4096
 
 # MIME types Gemini's vision API accepts
@@ -127,7 +127,8 @@ def main() -> None:
         print("ERROR: GEMINI_API_KEY environment variable is not set", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=api_key)
+    # The SDK defaults to API v1, which lacks the -latest aliases and preview models.
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(api_version="v1beta"))
 
     print(f"Model: {args.model}", file=sys.stderr)
     print(f"Images ({len(args.images)}):", file=sys.stderr)
