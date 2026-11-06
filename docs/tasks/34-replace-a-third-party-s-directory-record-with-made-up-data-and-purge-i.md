@@ -414,6 +414,11 @@ repair, and of the audit, are in the state directory's
 other accounts were deleted on the laptop after a failed copy. Their output
 is quoted in the task thread.
 
+### Vault decision, 2026-11-06
+
+The user chose to leave the private vault's history unchanged. The historical
+mail-example lines remain there.
+
 ### Pending
 
 - **GitHub Support:** the request is sent; the old commits stay reachable
@@ -421,8 +426,6 @@ is quoted in the task thread.
 - **Gogo search limits:** the account searches skipped other filesystems,
   `node_modules` and `.cache`; the `akaihola@gogo` search also suppressed
   access errors. No further check of those omitted paths is arranged.
-- **Antti's private vault:** decide whether its history should lose the
-  copied skill files too.
 
 ### Checks at the merged commit, 2026-11-05
 
