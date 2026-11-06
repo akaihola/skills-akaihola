@@ -130,6 +130,14 @@ pacer admission for a new follow-up. Check that the intended turn is active
 first, verify the returned delivery and run ID, and use the helper below for
 a separate follow-up turn. Idle or paused targets were not tested.
 
+Steering is not a way around Steward writer admission. Steer a Steward
+writer's turn only with one bounded step its owner explicitly hands over,
+such as a reviewed docs-only cherry-pick, as the Steward's run-ownership
+notes allow; the task's own conversation keeps verification, reporting and
+follow-up. Otherwise wait for the writer's release. (Coordinator 083,
+2026-11-06: each steered request widens a refill and leaves its receipt
+open.)
+
 ## Paced follow-ups
 
 Follow the [ordinary-thread routing decision](../SKILL.md#ordinary-thread-operations) even when a native send tool is
