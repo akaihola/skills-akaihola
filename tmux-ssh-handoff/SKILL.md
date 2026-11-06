@@ -24,6 +24,10 @@ This does not establish passwordless access. Name a new *window* explicitly:
 Antti initially looked for a new pane in window 0 and missed the prepared window.
 A missing completion marker alone cannot prove a command is still running.
 
+Verified 2026-11-06 in interactive Bash: `tmux send-keys` with `C-v C-j`
+inserts a literal newline in an unsubmitted command. This keeps the SSH transport
+and remote command on separate visible lines for review before Enter.
+
 After saving a completed command's result, close the idle windows created for
 that task; leave pre-existing windows and panes alone (user instruction,
 2026-11-06). Identify them from `tmux list-panes -a` using the saved window name
