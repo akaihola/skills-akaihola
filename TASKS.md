@@ -14,9 +14,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## Completed / Accepted
 
-- [ ] [34] Replace personal data with made-up data and purge it from the public
+- [x] [34] Replace personal data with made-up data and purge it from the public
   history and every clone
-      <!-- hai:{"id":"simple-954330e6-620c-43b1-8e13-e1826df5636f","labels":["security","privacy"],"createdAt":"2026-11-01T19:02:05.094Z","updatedAt":"2026-11-05T21:00:52.699Z"} -->
+      <!-- hai:{"id":"simple-954330e6-620c-43b1-8e13-e1826df5636f","labels":["security","privacy"],"createdAt":"2026-11-01T19:02:05.094Z","updatedAt":"2026-11-06T18:12:41.129Z"} -->
 
 - [x] [33] Salvage the Clas Ohlson stdlib commit from kuuskaks' old workspace clone
       <!-- hai:{"id":"simple-6c2869b5-1b40-42e9-9b86-e24946fc8914","priority":"low","createdAt":"2026-11-01T15:54:42.354Z","updatedAt":"2026-11-01T17:21:15.640Z"} -->
