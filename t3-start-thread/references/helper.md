@@ -119,6 +119,17 @@ other agent has acted on the message. Report the message's run ID, which the
 output keeps in `messageTurnId`, and observed state when available. Wait for the requested
 acknowledgement when needed.
 
+## Update an already running turn
+
+Verified 2026-11-06: native `t3_thread_send` with `mode: "steer"` delivered
+an internal implementation handoff to an already running writer. The response
+reported `delivery: "steered"` with the same active `runId`; a subsequent
+`t3_thread_read` showed the persisted message and the writer acting on it
+within that run. No new turn was launched. This is an in-flight update, not
+pacer admission for a new follow-up. Check that the intended turn is active
+first, verify the returned delivery and run ID, and use the helper below for
+a separate follow-up turn. Idle or paused targets were not tested.
+
 ## Paced follow-ups
 
 Follow the [ordinary-thread routing decision](../SKILL.md#ordinary-thread-operations) even when a native send tool is
