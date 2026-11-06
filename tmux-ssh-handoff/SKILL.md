@@ -18,5 +18,8 @@ the command has ended; physical GUI observations still require user evidence.
 Verified 2026-11-06: `tmux new-window -d -t 0` failed with index 0 in use;
 `tmux new-window -a -d -t 0:0 -n NAME 'bash --noprofile --norc'` successfully
 inserted a new window. Literal command preparation without Enter succeeded.
-The SSH authentication and remote desktop environment handoff were not yet tested
-at that point. Do not infer passwordless access from successful preparation.
+The manual SCP/SSH authentication and GNOME launch subsequently succeeded on
+2026-11-06; the remote build exited 0 and Antti reported the physical checks passed.
+This does not establish passwordless access. Name a new *window* explicitly:
+Antti initially looked for a new pane in window 0 and missed the prepared window.
+A missing completion marker alone cannot prove a command is still running.
