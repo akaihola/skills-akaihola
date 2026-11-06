@@ -285,6 +285,29 @@ On 2026-11-04 the agent account's main checkout and plugin-marketplace clone
 still held none of the 49 objects and no old commit, and the laptop's
 remote-tracking refs in the main checkout pointed at rewritten commits.
 
+### Gogo cleanup, 2026-11-06
+
+The three gogo accounts no longer have the `skills-akaihola` main
+checkouts that the cleanup found. The agent also removed eight orphaned
+worktrees belonging to the deleted agent-account checkout, so their checkout
+files cannot retain the old examples. The user submitted the commands in tmux;
+the agent read their output and the worktree-removal command returned status 0.
+
+- `akaihola@gogo`, `agent@gogo` and `coleaders@gogo`: one matching main
+  checkout removed from each account. The agent account also had one skill
+  link into its checkout; the command removed it.
+- The agent account: an administrator search examined 992 Git entries and
+  found no remaining matching repository. Git could not inspect 22 entries:
+  eight were orphaned `skills-akaihola` worktrees, subsequently removed;
+  the other 14 belonged to other project paths or a backup. After removing the
+  eight, the command listed no directories in their worktree parent.
+- The searches stayed on each home filesystem and skipped `node_modules` and
+  `.cache`. The first `akaihola@gogo` search suppressed filesystem errors;
+  therefore its inaccessible paths, if any, were not independently checked.
+  The agent-account administrator search included previously denied container
+  and rehearsal paths. It did not check files outside Git worktrees for copied
+  skills.
+
 ### Remaining clones, 2026-11-05
 
 Every clone that can be reached is now on the rewritten history. No stored
@@ -395,9 +418,9 @@ is quoted in the task thread.
 
 - **GitHub Support:** the request is sent; the old commits stay reachable
   until Support dereferences the pull requests and collects the garbage.
-- **The closet laptop's accounts:** Antti decided to remove every
-  skills-akaihola clone there the next time it is powered on, instead of
-  resyncing them.
+- **Gogo search limits:** the account searches skipped other filesystems,
+  `node_modules` and `.cache`; the `akaihola@gogo` search also suppressed
+  access errors. No further check of those omitted paths is arranged.
 - **Antti's private vault:** decide whether its history should lose the
   copied skill files too.
 
