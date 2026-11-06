@@ -28,3 +28,7 @@ true`. The password prompt stayed on the terminal and did not appear in the
 captured output in that trial. A local simulation confirmed `tee` displayed the
 first line before the command exited and that delivery failures show a concise
 error; live SSH timing and a real delivery failure were not measured.
+
+A 60-second SSH demonstration on 2026-11-06 produced all 60 numbered lines
+in order; SSH and capture exited zero, and the helper confirmed delivery to the
+thread. Per-line arrival times were not independently measured.
