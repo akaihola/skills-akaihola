@@ -32,3 +32,14 @@ error; live SSH timing and a real delivery failure were not measured.
 A 60-second SSH demonstration on 2026-11-06 produced all 60 numbered lines
 in order; SSH and capture exited zero, and the helper confirmed delivery to the
 thread. Per-line arrival times were not independently measured.
+
+On 2026-11-06, a separate one-off used `tmux pipe-pane` on a pane already
+connected to the intermediate host. A local reader selected output between
+unique start and end markers; the end marker was printed after the inner SSH
+connection closed. The reader sent that output and the SSH exit status through
+`send --prompt-file`; the helper reported `delivered: true` and the same
+thread received the result without a completion message from Antti. A synthetic
+input and helper dry run preceded the live check. The inner SSH did not prompt
+for a password; interactive password capture, interrupted delivery and this
+approach's behavior with large output remain untested. This one-off is not a
+reusable helper.
