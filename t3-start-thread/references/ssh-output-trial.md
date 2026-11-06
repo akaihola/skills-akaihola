@@ -1,5 +1,10 @@
 # Reporting SSH output to a thread
 
+When reporting an SSH command to a thread, stream its output in the tmux pane
+as it arrives. Keep the helper’s detailed success receipt private and show a
+short success or failure message in the pane. Remote program buffering may
+delay output. Preserve the SSH exit status and report capture failures.
+
 On 2026-11-06, a one-off trial submitted a non-interactive SSH command in a
 tmux pane, with the user pressing Enter and entering the password in the pane.
 After SSH exited, a local reporter read the command's redirected stdout and
