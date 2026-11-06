@@ -45,6 +45,7 @@ This table is a selection; the [library catalog] also includes local-only source
 | [himalaya-email-manager] | Email management via Himalaya CLI |
 | [hsl] | Helsinki region public transport routes and departures via Digitransit |
 | [learn] | Extract actionable learnings from a conversation and persist them |
+| [legacy-python2] | Run Python 2.7 code against an old Django release in an offline container |
 | [library] | Manage the skill catalog through agent-run cookbooks |
 | [mcp-to-skill] | Convert MCP servers to skills |
 | [motonet] | Motonet product search |
@@ -122,6 +123,7 @@ For personal use.
 [himalaya-email-manager]: himalaya-email-manager/SKILL.md
 [hsl]: hsl/SKILL.md
 [learn]: learn/SKILL.md
+[legacy-python2]: legacy-python2/SKILL.md
 [library]: library/SKILL.md
 [mcp-to-skill]: mcp-to-skill/SKILL.md
 [motonet]: motonet/SKILL.md
