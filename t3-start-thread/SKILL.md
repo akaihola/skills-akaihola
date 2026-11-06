@@ -87,6 +87,7 @@ For a paced follow-up on this integration, use the helper's `send` path even
 when `t3_thread_send` is exposed, unless that native tool has an explicit,
 verified way to preserve pacer admission. Read the
 [paced follow-up guidance](references/helper.md#paced-follow-ups) before sending.
+For webhook-triggered thread turns, see the [webhook limits](references/helper.md#webhook-triggered-turns).
 For other ordinary-thread operations, prefer an exposed native T3 tool.
 Otherwise use the helper below. It uses the running server's authenticated
 WebSocket API and also works when the collaborative browser is unavailable.

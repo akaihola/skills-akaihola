@@ -61,6 +61,17 @@ Settle only threads the user has authorized. This command sends no user message
 and creates no request record; after an interrupted invocation, inspect the
 targets before retrying.
 
+## Webhook-triggered turns
+
+The T3 server checkout inspected on 2026-11-06 logs webhook request bodies
+(up to 64 KiB) and rendered prompts. It rejects a filled-in prompt over
+120,000 characters without starting a provider turn. This follows
+`apps/server/src/scheduledTasks/ScheduledTaskService.ts` and
+`packages/contracts/src/chatAttachment.ts` in that checkout; deployed versions
+may differ. Bound output and avoid sending secrets. Check the delivery outcome:
+acceptance of a request alone does not prove an agent turn started. End-to-end
+SSH-output delivery through a webhook was not tested.
+
 ## Message an existing thread
 
 Use `inspect` to identify the requested thread and its project. For a specific
