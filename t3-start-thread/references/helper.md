@@ -18,6 +18,20 @@ active. Choose the intended parent thread using conversation
 context, rather than assuming the newest thread is the current one.
 `CODEX_THREAD_ID` is the provider's session ID, not necessarily T3's thread ID.
 
+## Thread links across clients
+
+Use `t3-thread://v1/<exact-thread-id>` and prefer the destination's current
+`title` from `t3_thread_read` as the authored Markdown label. A self-link may
+leave the current screen unchanged; test a link to a different existing
+conversation before diagnosing failed navigation.
+
+Observed 2026-11-06: the user reported that Desktop displayed the linked
+thread's current title while Android retained the authored label. The native
+read tool confirmed the current title; the user confirmed Android navigation
+to that thread and return with Back. This was a user-run UI check, not an
+agent-driven Android reproduction. Client versions and other environments
+were not tested. A label difference alone does not establish a broken link.
+
 ## Server discovery and authentication
 
 Without `--url`, the helper reads `origin` from the selected base directory's

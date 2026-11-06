@@ -100,6 +100,9 @@ this helper and the local backend. Missing native tools do not establish that
 the operation is impossible. Describe an observed authentication, connection,
 or API failure precisely; describe an untested path as untested.
 
+For cross-client link labels and navigation checks, read
+[thread links across clients](references/helper.md#thread-links-across-clients).
+
 ## Helper reference
 
 Before ordinary-thread coordination through native tools or the helper, read
