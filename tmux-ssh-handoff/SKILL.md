@@ -23,3 +23,10 @@ The manual SCP/SSH authentication and GNOME launch subsequently succeeded on
 This does not establish passwordless access. Name a new *window* explicitly:
 Antti initially looked for a new pane in window 0 and missed the prepared window.
 A missing completion marker alone cannot prove a command is still running.
+
+After saving a completed command's result, close the idle windows created for
+that task; leave pre-existing windows and panes alone (user instruction,
+2026-11-06). Identify them from `tmux list-panes -a` using the saved window name
+and pane ID before `tmux kill-window`. Verified the same day: `display-message`
+for a missing pane returned empty format fields with exit 0, so its exit status
+alone does not establish that the pane exists. Check the actual pane list.
