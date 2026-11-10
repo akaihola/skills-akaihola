@@ -41,3 +41,13 @@ created pane showed the complete command still at the Bash prompt. For a
 connection through another host, keep the next-hop script visible for review
 and preserve terminal stdin for SSH and sudo authentication. Preparing the
 command does not verify that either hop or the remote script has succeeded.
+
+Verified 2026-11-11: GNU tar archive creation treated a quoted `"*.pub"`
+as a literal file name and exited 2, even with `--wildcards`. A local fixture
+reproduced the failure. Let the remote shell expand the public-file glob:
+`cd /remote/public-directory && tar -cf - manifest.tsv *.pub`. Archive and
+extract a fixture and compare every file before retrying a transfer that
+requires human authentication. The corrected command copied the real public
+keys successfully; the authenticated SSH control connection allowed that
+transfer to resume without repeating key creation. A later `sudo -n -v`
+probe still required a password, so SSH reuse does not establish sudo access.
