@@ -63,6 +63,10 @@ Do not run a credential verification or rotate/revoke credentials without
 authorization for that operation. A confirmed exposed credential requires
 rotation; deleting it from source does not revoke it.
 
+For separately authorized credential checks or adoption by Hermes, read
+[credential handoff notes](references/credential-handoff.md?f). These checks
+are a follow-up operation; the scanner continues to run offline.
+
 ## Offline validation
 
 `--help` exits before installing or launching either scanner. The scanner
