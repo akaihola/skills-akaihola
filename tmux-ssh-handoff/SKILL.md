@@ -34,3 +34,10 @@ that task; leave pre-existing windows and panes alone (user instruction,
 and pane ID before `tmux kill-window`. Verified the same day: `display-message`
 for a missing pane returned empty format fields with exit 0, so its exit status
 alone does not establish that the pane exists. Check the actual pane list.
+
+Verified 2026-11-10: an isolated Bash window also accepted a two-line SSH
+command using literal `C-v C-j`, with no Enter sent. Reading only that newly
+created pane showed the complete command still at the Bash prompt. For a
+connection through another host, keep the next-hop script visible for review
+and preserve terminal stdin for SSH and sudo authentication. Preparing the
+command does not verify that either hop or the remote script has succeeded.

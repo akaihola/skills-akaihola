@@ -17,3 +17,14 @@ Check the specific credential's repository selection and permissions with its
 owner when a write is rejected. Never ask for a token in chat. After access is
 changed, retry only the authorized operation and verify the result. Topic writes
 were not tested in that session.
+
+Verified 2026-11-10: a private repository migration rejected by GitHub's
+email-privacy push restriction succeeded after replacing the owner's author
+and committer email metadata with the account's numeric-ID GitHub noreply
+address. Preserve the original history in a local bundle before rewriting an
+unpublished copy with `git filter-repo --mailmap`. Compare every rewritten
+commit's tree with its original, check both email headers, and push ordinary
+branches only. The verified migration kept all 31 commit trees identical and
+needed no change to the account's email-privacy setting. Rewriting metadata
+changes commit IDs; this observation does not authorize rewriting published
+history.
