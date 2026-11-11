@@ -1,5 +1,7 @@
 # skills-akaihola
 
+> This is a prototype developed using AI coding agents and not intended for production use.
+
 [![Built with Claude Code][built-badge]][Claude Code]
 
 > This project is developed by an AI coding agent ([Claude Code]), with human oversight and direction.
