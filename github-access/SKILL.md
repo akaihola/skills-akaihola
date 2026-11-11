@@ -28,3 +28,11 @@ branches only. The verified migration kept all 31 commit trees identical and
 needed no change to the account's email-privacy setting. Rewriting metadata
 changes commit IDs; this observation does not authorize rewriting published
 history.
+
+Verified 2026-11-11: separate SSH aliases and deploy keys for each service
+account let an older Git/SSH installation read its private GitHub code
+repositories while granting write permission only to its backup repository.
+The migration tested reads and a real fast-forward backup push before changing
+origins, and recorded unchanged application commit IDs. A later automatic
+backup commit reached GitHub after the manual migration push; that later
+commit verified scheduled operation as well as the one-time transfer.

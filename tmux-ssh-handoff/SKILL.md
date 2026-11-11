@@ -10,10 +10,15 @@ an isolated window. Send the complete command with `tmux send-keys -t PANE -l CO
 and no Enter/C-m. Tell Antti the session/window/pane and let him submit it and enter
 passwords there. Do not read password input or store credentials.
 
-When output must return asynchronously, arrange a bounded existing scheduler
-check of a local completion marker written after SSH exits. Retain its ID and
-delete only that check at completion or its deadline. Capture output only after
-the command has ended; physical GUI observations still require user evidence.
+For T3 handoffs, arrange automatic delivery of output and exit status to the
+originating thread when SSH closes; stream output in the pane and preserve
+interactive prompts without capturing password input. Follow the
+[tested output-reporting guidance](../t3-start-thread/references/ssh-output-trial.md)
+and its stated limits. Report capture or delivery failures. Give the pane
+instruction directly; automatic delivery replaces a request for a completion
+message. Immediately before the SSH command, add three shell comments: thread
+host and repository, thread title, and its exact HTTP(S) T3 browser link resolved
+from the live server and thread ID. Physical GUI checks still need user evidence.
 
 Verified 2026-11-06: `tmux new-window -d -t 0` failed with index 0 in use;
 `tmux new-window -a -d -t 0:0 -n NAME 'bash --noprofile --norc'` successfully
