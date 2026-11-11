@@ -53,6 +53,14 @@ runtime origin (matching scheme, hostname and effective port). Other origins
 require `T3_THREAD_AUTH_TOKEN`; do not mint credentials from an unrelated local
 server. Tokens stay in memory.
 
+Verified 2026-11-11 in a two-server session: native T3 MCP tools and the connected
+T3 app addressed different servers. The app's `get_thread` read the existing
+remote conversation that the native tool reported as unavailable. Check the
+intended server before treating that error as a missing owner. The app summary
+also reported `idle` and `active: false` while the durable run was `queued` with
+`pacing: held`; use run metadata to verify paced admission. A successful remote
+read does not establish automatic result delivery to the calling server.
+
 ## Settle threads
 
 Use the thread IDs from `inspect`, which includes each thread's `settledAt`:
