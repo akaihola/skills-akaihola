@@ -105,6 +105,9 @@ For cross-client link labels and navigation checks, read
 
 ## Helper reference
 
+For inspecting instructions supplied at startup, read
+[initial-context inspection](references/initial-context.md).
+
 Before ordinary-thread coordination through native tools or the helper, read
 the [ordinary-thread command reference](references/helper.md). It covers authentication,
 all five subcommands, paced review routing, persistence checks, interrupted
