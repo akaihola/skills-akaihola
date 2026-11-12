@@ -61,6 +61,17 @@ also reported `idle` and `active: false` while the durable run was `queued` with
 `pacing: held`; use run metadata to verify paced admission. A successful remote
 read does not establish automatic result delivery to the calling server.
 
+## Scheduled read-back checks
+
+Verified 2026-11-12: native `schedule_task` accepted an interval as
+`{"type":"interval","everyMs":10800000}` with `bindToCurrentThread:true` and
+returned an enabled schedule, the current conversation ID and `nextRunAt`.
+This establishes persistence and the planned next run, not actual execution.
+For a requested owner-response monitor, have the prompt read existing answers,
+report changes in the bound conversation and disable its own schedule when the
+requested answers have been collected. Scheduled execution was not tested in
+this creation check.
+
 ## Settle threads
 
 Use the thread IDs from `inspect`, which includes each thread's `settledAt`:
