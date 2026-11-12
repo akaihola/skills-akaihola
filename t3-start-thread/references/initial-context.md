@@ -19,6 +19,9 @@ was included; current files can differ from historical snapshots. Trace an
 agent-authored opening request through its parent's saved launch call when
 needed. Reading a file later does not establish startup inclusion.
 
-This method was tested for local Codex sessions only; other providers and remote
-servers require their own session evidence. Keep private transcript contents
-and identifiers out of public skill examples.
+Verified 2026-11-12: the same mapping worked over authenticated SSH on a remote
+T3 server. A nested project's initial block contained exact copies of both the
+repository root and descendant `AGENTS.md` files. Compare files on that server;
+another checkout can retain an older policy. Match actual instruction content
+rather than relying on one historical heading. Other providers remain untested.
+Keep private transcript contents and identifiers out of public skill examples.
