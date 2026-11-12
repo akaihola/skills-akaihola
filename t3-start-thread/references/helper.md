@@ -72,6 +72,12 @@ report changes in the bound conversation and disable its own schedule when the
 requested answers have been collected. Scheduled execution was not tested in
 this creation check.
 
+Later on 2026-11-12, the first interval prompt arrived in the bound conversation
+and its reader retrieved the owner answers. Disabling that same schedule with
+`update_scheduled_task(enabled=false)` returned `enabled:false` and
+`nextRunAt:null`. This verifies one scheduled return and stop, not general
+scheduler reliability or completion of future reader work.
+
 ## Settle threads
 
 Use the thread IDs from `inspect`, which includes each thread's `settledAt`:
