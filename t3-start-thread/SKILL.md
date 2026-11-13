@@ -40,9 +40,11 @@ never replace the main ID with a supporting thread's ID. Record returned task an
 thread IDs in the task record. A reference number alone is project-local and does
 not identify a related thread in another project.
 
-The main task thread stays unsettled for the user. Its final response summarizes
-all work, supporting results, verification and limitations. Only the user settles
-that main thread. Supporting threads may be settled after their results have been
+The main task thread stays unsettled unless the user explicitly asks the agent
+to settle it. For authorized self-settlement, use the
+[detached helper](references/helper.md#settle-after-the-current-run).
+Its final response summarizes all work, supporting results, verification and
+limitations. Supporting threads may be settled after their results have been
 collected and their pending obligations resolved; they may inherit the main's
 automatic-settlement opt-out. If the main identity is missing or ambiguous, report
 that fact instead of inventing it or treating missing thread history as acceptance.

@@ -5,8 +5,10 @@ import io
 import json
 import stat
 import sys
+import time
 from email.message import Message
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Protocol
 from unittest.mock import patch
 from urllib.error import HTTPError
@@ -20,6 +22,103 @@ assert SPEC is not None
 assert SPEC.loader is not None
 helper = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(helper)
+
+
+def deferred_projection() -> dict:
+    """Represent the exact running conversation the caller authorized."""
+    return {
+        "thread": {"id": "parent"},
+        "runs": [
+            {"id": "run", "ordinal": 1, "status": "running", "userMessageId": "user"}
+        ],
+        "messages": [{"id": "user", "role": "user"}],
+    }
+
+
+def deferred_args() -> SimpleNamespace:
+    """Use a short timeout without contacting a server."""
+    return SimpleNamespace(
+        thread=["parent"], after_run="run", timeout=10, dry_run=False
+    )
+
+
+def test_deferred_settle_waits_then_verifies(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Do not dispatch during the run; read back settlement after completion."""
+    projection = deferred_projection()
+    calls = []
+
+    def finish_run(_seconds: float) -> None:
+        assert not calls
+        projection["runs"][0]["status"] = "completed"
+
+    def settle(_args: object, _server: object) -> None:
+        calls.append("settle")
+        projection["thread"]["settledAt"] = "2026-11-13T00:00:00Z"
+
+    server = SimpleNamespace(thread_projection=lambda _thread: projection)
+    monkeypatch.setattr(
+        helper, "time", SimpleNamespace(monotonic=time.monotonic, sleep=finish_run)
+    )
+    monkeypatch.setattr(helper, "settle", settle)
+    helper.settle_after_run(deferred_args(), server)
+    assert calls == ["settle"]
+
+
+def test_deferred_settle_cancels_new_message() -> None:
+    """A steering message in the same run withdraws the old settlement request."""
+    projection = deferred_projection()
+    projection["messages"].append({"id": "new-message", "role": "user"})
+    server = SimpleNamespace(thread_projection=lambda _thread: projection)
+    with patch.object(helper, "settle") as settle, pytest.raises(SystemExit):
+        helper.settle_after_run(deferred_args(), server)
+    settle.assert_not_called()
+
+
+def test_deferred_settle_cancels_new_completed_run() -> None:
+    """A newer run must not be hidden even if it finished between polls."""
+    projection = deferred_projection()
+    projection["runs"].append(
+        {"id": "new-run", "ordinal": 2, "status": "completed"}
+    )
+    server = SimpleNamespace(thread_projection=lambda _thread: projection)
+    with patch.object(helper, "settle") as settle, pytest.raises(SystemExit):
+        helper.settle_after_run(deferred_args(), server)
+    settle.assert_not_called()
+
+
+def test_deferred_settle_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An unfinished run stops the worker without a settlement command."""
+    projection = deferred_projection()
+    server = SimpleNamespace(thread_projection=lambda _thread: projection)
+    ticks = iter([0, 0, 11, 11])
+    monkeypatch.setattr(
+        helper,
+        "time",
+        SimpleNamespace(monotonic=lambda: next(ticks), sleep=lambda _seconds: None),
+    )
+    with patch.object(helper, "settle") as settle, pytest.raises(SystemExit):
+        helper.settle_after_run(deferred_args(), server)
+    settle.assert_not_called()
+
+
+def test_deferred_settle_preserves_failed_run() -> None:
+    """Keep a failed run visible for investigation."""
+    projection = deferred_projection()
+    projection["runs"][0]["status"] = "failed"
+    server = SimpleNamespace(thread_projection=lambda _thread: projection)
+    with patch.object(helper, "settle") as settle, pytest.raises(SystemExit):
+        helper.settle_after_run(deferred_args(), server)
+    settle.assert_not_called()
+
+
+def test_deferred_settle_requires_read_back() -> None:
+    """A command acknowledgement alone must not count as verified settlement."""
+    projection = deferred_projection()
+    projection["runs"][0]["status"] = "completed"
+    server = SimpleNamespace(thread_projection=lambda _thread: projection)
+    with patch.object(helper, "settle") as settle, pytest.raises(SystemExit):
+        helper.settle_after_run(deferred_args(), server)
+    settle.assert_called_once()
 
 
 class FixtureSocket(Protocol):

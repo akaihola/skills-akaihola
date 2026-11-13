@@ -24,6 +24,7 @@ import websocket
 
 # Thread settings a new thread takes from its parent or a settings file.
 SETTINGS = ("modelSelection", "runtimeMode", "interactionMode")
+MAX_SETTLE_WAIT = 240  # Stay within the five-minute authentication session.
 
 
 class SendTargetError(ValueError):
@@ -334,6 +335,45 @@ def settle(args: argparse.Namespace, server: Server) -> None:
         raise SystemExit(1)
 
 
+def settle_after_run(args: argparse.Namespace, server: Server) -> None:
+    """Wait for one successful run, cancelling if the conversation moves on."""
+    thread_id = args.thread[0]
+    deadline = time.monotonic() + args.timeout
+    print(json.dumps({"status": "waiting", "runId": args.after_run}), flush=True)
+    while time.monotonic() < deadline:
+        projection = server.thread_projection(thread_id)
+        runs: list[dict] = projection["runs"]
+        latest = max(runs, key=operator.itemgetter("ordinal"), default={})
+        users = [m for m in projection["messages"] if m["role"] == "user"]
+        reason = None
+        if latest.get("id") != args.after_run:
+            reason = "The requested run is missing or a newer run exists"
+        elif not users or users[-1]["id"] != latest["userMessageId"]:
+            reason = "A newer user message exists"
+        elif projection["thread"].get("archivedAt"):
+            reason = "The thread was archived"
+        elif latest["status"] in {"failed", "cancelled", "interrupted", "rolled_back"}:
+            reason = "The requested run did not complete successfully"
+        if reason:
+            print(json.dumps({"status": "cancelled", "reason": reason}), flush=True)
+            raise SystemExit(1)
+        if latest["status"] == "completed":
+            # Reuse the normal fresh-shell and pending-request checks.
+            settle(args, server)
+            thread = server.thread_projection(thread_id)["thread"]
+            if not thread.get("settledAt"):
+                print(json.dumps({"status": "unverified"}), flush=True)
+                raise SystemExit(1)
+            print(
+                json.dumps({"status": "verified", "settledAt": thread["settledAt"]}),
+                flush=True,
+            )
+            return
+        time.sleep(min(2, max(0, deadline - time.monotonic())))
+    print(json.dumps({"status": "timed-out"}), flush=True)
+    raise SystemExit(1)
+
+
 def save_record(path: Path, record: dict, *, create: bool = False) -> None:
     """Write private handoff state; never store tokens or WebSocket tickets."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -556,7 +596,9 @@ def start(args: argparse.Namespace, server: Server, snapshot: dict) -> None:
 def main() -> None:
     """Parse inspect, start, send, settle, and resume operations."""
     os.umask(0o077)
-    os.environ["SHELL"] = shutil.which("bash") or "/bin/bash"
+    bash = shutil.which("bash")
+    if bash is not None:
+        os.environ["SHELL"] = bash
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="action", required=True)
     for action in ("inspect", "start", "send", "settle"):
@@ -566,6 +608,10 @@ def main() -> None:
         if action == "settle":
             command.add_argument("--thread", action="append", required=True)
             command.add_argument("--dry-run", action="store_true")
+            command.add_argument(
+                "--after-run", help="Wait for this exact run to finish"
+            )
+            command.add_argument("--timeout", type=int, default=180)
         else:
             command.add_argument("--workspace", required=action != "send")
         if action == "send":
@@ -587,6 +633,11 @@ def main() -> None:
     resume = commands.add_parser("resume")
     resume.add_argument("record", type=Path)
     args = parser.parse_args()
+    if args.action == "settle" and args.after_run:
+        if len(args.thread) != 1 or args.dry_run:
+            parser.error("--after-run requires one --thread and no --dry-run")
+        if not 1 <= args.timeout <= MAX_SETTLE_WAIT:
+            parser.error("--timeout must be 1..240 seconds (the auth session lasts 5m)")
     if args.action == "send":
         if args.tracker:
             if args.issue is None or args.issue < 1:
@@ -604,6 +655,9 @@ def main() -> None:
         return
     server = Server(args.url, args.base_dir)
     if args.action == "settle":
+        if args.after_run:
+            settle_after_run(args, server)
+            return
         settle(args, server)
         return
     snapshot = server.snapshot()

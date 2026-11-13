@@ -110,9 +110,46 @@ Verified 2026-11-13: settling the calling thread during its own run returned
 `refused: active` from this helper before dispatch. The local T3 source at
 `c2fa9fc911` also rejects settlement while the session is starting or running
 (`apps/server/src/orchestration/decider.ts`, `thread.settle`). Removing the
-helper's check would therefore not fix self-settlement. A detached helper
-that waits for that run to finish before settling is a proposed workaround,
-not yet tested; cancel it if a newer message or run appears.
+helper's check would therefore not fix self-settlement.
+
+### Settle after the current run
+
+When the user explicitly requests self-settlement, an agent can launch the
+same helper as a detached process just before its final reply:
+
+```bash
+umask 077
+settle_dir="$HOME/.local/state/t3-start-thread"
+mkdir -p "$settle_dir"
+nohup uv run --offline --no-project --script \
+  "$HOME/prg/skills-akaihola/t3-start-thread/scripts/start_thread.py" \
+  settle --thread "$THREAD_ID" --after-run "$RUN_ID" --timeout 180 \
+  > "$settle_dir/$THREAD_ID.settle.log" 2>&1 < /dev/null &
+settle_pid=$!
+```
+
+Resolve `THREAD_ID` and `RUN_ID` from the exact current thread and active run
+on the intended server. This is an agent invocation, not an owner-account
+command handoff. Reuse the same `--url` or `--base-dir` as other operations when
+needed. `nohup`, redirected input/output and `&` let the worker outlive the
+agent's command. Do not launch a second worker for the same run.
+
+The worker checks every two seconds. It settles only after the named run
+completes successfully, and cancels on an observed newer run or user message,
+including a steering message in the same run. The normal settlement checks
+still refuse pending input, approvals and background work. It stops on an
+error or timeout; `--timeout` accepts 1..240 seconds to stay within the
+five-minute authentication session. A network call can extend the wall time.
+
+The log records `waiting`, then `cancelled`, `timed-out`, or the settlement
+response and `verified` with the read-back `settledAt`. An RPC failure records
+the sanitized error type and exits nonzero; do not assume it settled.
+Stop a worker with `kill "$settle_pid"`. It creates no AI turn or recurring job.
+
+The run/message check and settlement command are separate operations. New
+work in that narrow interval is still subject to the server's ordinary
+settlement guard, but this is not an atomic expected-run check. Strict
+protection would require server support for an expected run/message ID.
 
 ## Webhook-triggered turns
 
