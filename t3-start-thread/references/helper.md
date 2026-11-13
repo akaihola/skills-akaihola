@@ -20,6 +20,12 @@ context, rather than assuming the newest thread is the current one.
 
 ## Thread links across clients
 
+Verified 2026-11-13 by inspecting live web frontend assets: browser thread
+navigation used `/$environmentId/$threadId`. Resolve the environment and exact
+thread identity from the intended application; a project ID is not a substitute
+for either. This check established the route pattern, not browser authentication
+or successful navigation to a particular thread.
+
 Use `t3-thread://v1/<exact-thread-id>` and prefer the destination's current
 `title` from `t3_thread_read` as the authored Markdown label. A self-link may
 leave the current screen unchanged; test a link to a different existing

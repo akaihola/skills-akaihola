@@ -40,6 +40,11 @@ Verified 2026-11-06 in interactive Bash: `tmux send-keys` with `C-v C-j`
 inserts a literal newline in an unsubmitted command. This keeps the SSH transport
 and remote command on separate visible lines for review before Enter.
 
+Wait for the new pane's Bash prompt before sending these keys. Verified
+2026-11-13: sending them before Readline was ready accepted an opening shell
+block line prematurely. Cancelling only that unused owned pane, then preparing
+the command after its prompt appeared, kept the complete command unsubmitted.
+
 After saving a completed command's result, close the idle windows created for
 that task; leave pre-existing windows and panes alone (user instruction,
 2026-11-06). Identify them from `tmux list-panes -a` using the saved window name
