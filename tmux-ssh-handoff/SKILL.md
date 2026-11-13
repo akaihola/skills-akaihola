@@ -56,8 +56,11 @@ Verified 2026-11-13 on one Linux desktop: the tmux session lacked graphical
 session variables that the systemd user manager supplied. For an SSH command
 that needs a graphical password dialog, inspect only the required variable
 names and preserve their verified values; keep credentials out of the command.
-Reading those variables does not verify that a remote dialog will open. That
-GUI path remained untested when this note was recorded.
+The subsequent owner-submitted loopback SSH workflow completed its
+authenticated operation, delivered output and both SSH/capture exit statuses
+automatically to the original conversation, and closed its owned pane. This
+verifies that handoff end to end; it does not establish passwordless access or
+physical GUI behavior for other services.
 
 Verified 2026-11-10: an isolated Bash window also accepted a two-line SSH
 command using literal `C-v C-j`, with no Enter sent. Reading only that newly
