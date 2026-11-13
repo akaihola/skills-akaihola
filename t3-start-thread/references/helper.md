@@ -106,6 +106,14 @@ Settle only threads the user has authorized. This command sends no user message
 and creates no request record; after an interrupted invocation, inspect the
 targets before retrying.
 
+Verified 2026-11-13: settling the calling thread during its own run returned
+`refused: active` from this helper before dispatch. The local T3 source at
+`c2fa9fc911` also rejects settlement while the session is starting or running
+(`apps/server/src/orchestration/decider.ts`, `thread.settle`). Removing the
+helper's check would therefore not fix self-settlement. A detached helper
+that waits for that run to finish before settling is a proposed workaround,
+not yet tested; cancel it if a newer message or run appears.
+
 ## Webhook-triggered turns
 
 The T3 server checkout inspected on 2026-11-06 logs webhook request bodies
