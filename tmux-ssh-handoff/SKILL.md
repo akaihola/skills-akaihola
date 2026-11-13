@@ -5,6 +5,13 @@ description: Prepare an authorized SSH command in tmux for Antti to submit and a
 
 # Prepare SSH for manual authentication
 
+For an authorized owner-account handoff, prepare the command in tmux instead of
+asking the user to type or copy-paste shell text. The user's steps are submission
+and authentication in the named pane. Follow account-specific requirements even
+when the agent already runs on the destination computer. If this skill is absent
+from the harness catalog, locate the existing installation; do not substitute a
+chat command handoff. Existing deployment approval requirements still apply.
+
 Use Bash and shell-quote argv. List panes before choosing an idle shell, or create
 an isolated window. Send the complete command with `tmux send-keys -t PANE -l COMMAND`
 and no Enter/C-m. Tell Antti the session/window/pane and let him submit it and enter
@@ -39,6 +46,13 @@ that task; leave pre-existing windows and panes alone (user instruction,
 and pane ID before `tmux kill-window`. Verified the same day: `display-message`
 for a missing pane returned empty format fields with exit 0, so its exit status
 alone does not establish that the pane exists. Check the actual pane list.
+
+Verified 2026-11-13 on one Linux desktop: the tmux session lacked graphical
+session variables that the systemd user manager supplied. For an SSH command
+that needs a graphical password dialog, inspect only the required variable
+names and preserve their verified values; keep credentials out of the command.
+Reading those variables does not verify that a remote dialog will open. That
+GUI path remained untested when this note was recorded.
 
 Verified 2026-11-10: an isolated Bash window also accepted a two-line SSH
 command using literal `C-v C-j`, with no Enter sent. Reading only that newly
