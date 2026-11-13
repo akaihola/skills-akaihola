@@ -118,21 +118,44 @@ When the user explicitly requests self-settlement, an agent can launch the
 same helper as a detached process just before its final reply:
 
 ```bash
-umask 077
-settle_dir="$HOME/.local/state/t3-start-thread"
-mkdir -p "$settle_dir"
-nohup uv run --offline --no-project --script \
-  "$HOME/prg/skills-akaihola/t3-start-thread/scripts/start_thread.py" \
-  settle --thread "$THREAD_ID" --after-run "$RUN_ID" --timeout 180 \
-  > "$settle_dir/$THREAD_ID.settle.log" 2>&1 < /dev/null &
-settle_pid=$!
+python - <<'PYTHON'
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
+thread_id = "EXACT_THREAD_ID"
+run_id = "EXACT_CURRENT_RUN_ID"
+os.umask(0o077)
+state = Path.home() / ".local/state/t3-start-thread"
+state.mkdir(parents=True, exist_ok=True)
+helper = Path.home() / "prg/skills-akaihola/t3-start-thread/scripts/start_thread.py"
+command = [
+    shutil.which("uv"), "run", "--offline", "--no-project", "--script", str(helper),
+    "settle", "--thread", thread_id, "--after-run", run_id, "--timeout", "180",
+]
+with (state / f"{thread_id}.settle.log").open("wb") as log:
+    worker = subprocess.Popen(
+        command, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+print("Detached PID:", worker.pid)
+PYTHON
 ```
 
-Resolve `THREAD_ID` and `RUN_ID` from the exact current thread and active run
+Resolve `thread_id` and `run_id` from the exact current thread and active run
 on the intended server. This is an agent invocation, not an owner-account
-command handoff. Reuse the same `--url` or `--base-dir` as other operations when
-needed. `nohup`, redirected input/output and `&` let the worker outlive the
-agent's command. Do not launch a second worker for the same run.
+command handoff. Add the same `--url` or `--base-dir` as other operations when
+needed. Standard input is closed, output goes to a private log, and
+`start_new_session=True` detaches the worker from the command's session.
+Do not launch a second worker for the same run.
+
+Verified 2026-11-13: the shell form `nohup ... &` left no surviving worker
+and an empty log in the Codex command runner. Its precise termination cause
+was not established. The Python launch above survived its launching command;
+a subsequent process check and the log confirmed `waiting` for the intended
+run. Successful settlement after that run was not yet observed. Offline tests
+cover waiting, newer messages/runs, failure, timeout and settlement read-back.
 
 The worker checks every two seconds. It settles only after the named run
 completes successfully, and cancels on an observed newer run or user message,
@@ -144,7 +167,8 @@ five-minute authentication session. A network call can extend the wall time.
 The log records `waiting`, then `cancelled`, `timed-out`, or the settlement
 response and `verified` with the read-back `settledAt`. An RPC failure records
 the sanitized error type and exits nonzero; do not assume it settled.
-Stop a worker with `kill "$settle_pid"`. It creates no AI turn or recurring job.
+The printed PID identifies the worker for cancellation. It creates no AI turn
+or recurring job.
 
 The run/message check and settlement command are separate operations. New
 work in that narrow interval is still subject to the server's ordinary
