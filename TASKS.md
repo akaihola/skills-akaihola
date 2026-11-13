@@ -12,6 +12,9 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 ## In Progress
 
+- [~] [35] Let an authorized T3 thread settle after its current run finishes
+      <!-- hai:{"id":"simple-8da4a8d0-67dd-4a5e-a9e8-252aab2d5380","createdAt":"2026-11-13T21:38:24.594Z","updatedAt":"2026-11-13T21:38:24.594Z"} -->
+
 ## Completed / Accepted
 
 - [x] [34] Replace personal data with made-up data and purge it from the public
@@ -140,7 +143,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 [1]: docs/tasks/1-protect-android-diagnostics-captures-from-other-local-users.md
 
-<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34 -->
+<!-- hai:reserved-numbers:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35 -->
 
 [2]: docs/tasks/2-require-a-valid-baseline-before-reporting-android-live-traffic-rates.md
 
@@ -209,6 +212,8 @@ they are not pacer inputs. Keep each task in one tracker only.
 [33]: docs/tasks/33-salvage-the-clas-ohlson-stdlib-commit-from-kuuskaks-old-workspace-clon.md
 
 [34]: docs/tasks/34-replace-a-third-party-s-directory-record-with-made-up-data-and-purge-i.md
+
+[35]: docs/tasks/35-let-an-authorized-t3-thread-settle-after-its-current-run-finishes.md
 
 ## Rules
 
