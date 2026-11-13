@@ -291,3 +291,5 @@ that abort suspend, or power profiles that price sleep at 0 mA, are in
   confirmation, comparing batteries.
 - [references/vendor-notes.md](references/vendor-notes.md): vendor-specific
   things to check.
+- [references/voice-stutter.md](references/voice-stutter.md): stutter in
+  voice calls and live voice apps, where the timeline survives, ChatGPT notes.
