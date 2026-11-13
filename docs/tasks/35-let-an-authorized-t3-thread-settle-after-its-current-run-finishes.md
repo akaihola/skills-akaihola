@@ -10,7 +10,7 @@ Agents can now arrange settlement after their final reply without starting anoth
 
 ## Automatic continuation
 
-Owner: the originating conversation. A detached worker is being armed for its current run. The worker will log success, cancellation, timeout or error to [the private settlement log]. Live successful self-settlement cannot be verified until the current reply ends.
+Owner: the originating conversation. A detached worker was launched for its current run and a subsequent process check and private log confirmed it was waiting. The shell-only nohup launch did not survive this command runner; Python Popen with start_new_session=True did. The precise termination cause of the first launch was not established. The worker will log success, cancellation, timeout or error to [the private settlement log]. Live successful self-settlement cannot be verified until the current reply ends.
 
 When the registered clipboard after-rebuild check wakes [the originating conversation], its agent must read this log, record the actual outcome here, and finish or repair this helper task before requesting acceptance. The clipboard task remains separate and still requires the joint clipboard test. No immediate user action is needed.
 

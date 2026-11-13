@@ -42,7 +42,7 @@ not identify a related thread in another project.
 
 The main task thread stays unsettled unless the user explicitly asks the agent
 to settle it. For authorized self-settlement, use the
-[detached helper](references/helper.md#settle-after-the-current-run).
+[detached helper](references/helper.md?f#settle-after-the-current-run).
 Its final response summarizes all work, supporting results, verification and
 limitations. Supporting threads may be settled after their results have been
 collected and their pending obligations resolved; they may inherit the main's

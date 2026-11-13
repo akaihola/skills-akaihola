@@ -14,7 +14,7 @@ they are not pacer inputs. Keep each task in one tracker only.
 
 - [~] [35] Let a T3 thread settle after its run (waiting for agent: verify
       detached worker log)
-      <!-- hai:{"id":"simple-8da4a8d0-67dd-4a5e-a9e8-252aab2d5380","createdAt":"2026-11-13T21:38:24.594Z","updatedAt":"2026-11-13T21:43:21.560Z"} -->
+      <!-- hai:{"id":"simple-8da4a8d0-67dd-4a5e-a9e8-252aab2d5380","createdAt":"2026-11-13T21:38:24.594Z","updatedAt":"2026-11-13T21:45:21.161Z"} -->
 
 ## Completed / Accepted
 
